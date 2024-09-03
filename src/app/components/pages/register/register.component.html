@@ -1,25 +1,3 @@
-<link
-  href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap"
-  rel="stylesheet"
-/>
-
-<style>
-  @keyframes slideUp {
-    0% {
-      opacity: 0;
-      transform: translateY(70px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.55s ease-out forwards;
-  }
-</style>
-
 <div
   class="relative min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-200 via-blue-300 to-blue-100 overflow-hidden"
 >
@@ -27,18 +5,11 @@
     class="absolute inset-0 bg-gradient-to-r from-blue-50 via-blue-200 to-blue-100 opacity-70"
   ></div>
 
-  <h1
-    class="relative z-10 text-5xl font-bold text-gray-700 mb-6 opacity-80 drop-shadow-md animate-slide-up"
-    style="font-family: 'Montserrat', serif"
-  >
-    El Calculetas
-  </h1>
-
   <form
     class="relative z-10 bg-white p-8 rounded-lg shadow-xl w-full max-w-md hover:shadow-2xl transition-shadow duration-300"
   >
     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
-      Iniciar Sesión
+      Registrarse
     </h2>
     <div class="mb-5">
       <label for="user" class="block text-sm font-medium text-gray-600 mb-2"
@@ -50,6 +21,19 @@
         type="text"
         class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
         placeholder="Ingresa tu usuario"
+        required
+      />
+    </div>
+    <div class="mb-5">
+      <label for="user" class="block text-sm font-medium text-gray-600 mb-2"
+        >Email</label
+      >
+      <input
+        id="email"
+        name="email"
+        type="text"
+        class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+        placeholder="Ingresa tu email"
         required
       />
     </div>
@@ -70,7 +54,7 @@
       type="submit"
       class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300"
     >
-      Ingresar
+      Registrarse
     </button>
     <div class="text-center mt-4">
       <a
@@ -82,10 +66,10 @@
     </div>
     <div class="text-center mt-4">
       <a
-        href="/register"
+        href="/login"
         class="text-sm text-blue-500 hover:text-blue-700 transition-colors duration-300"
       >
-        ¿No tenés cuenta? Regístrate
+        ¿Ya tenés cuenta? Iniciá sesión
       </a>
     </div>
   </form>
