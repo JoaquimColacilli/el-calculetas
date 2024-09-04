@@ -1,18 +1,22 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import {
   Auth,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   updateProfile,
+  user,
+  signOut,
 } from '@angular/fire/auth';
 import { Observable, from, catchError, throwError } from 'rxjs';
+import { UserInterface } from '../interfaces/user.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  // Inyección de Auth de Firebase
   private firebaseAuth = inject(Auth);
-
+  user$ = user(this.firebaseAuth);
+  currentUserSig = signal<UserInterface | null | undefined>(undefined);
   /**
    * Registra un nuevo usuario con correo, nombre de usuario y contraseña.
    * @param email Correo electrónico del usuario
@@ -35,7 +39,7 @@ export class AuthService {
       )
       .catch((error) => {
         console.error('Error en el registro:', error);
-        return Promise.reject(error); // Rechazar la promesa para que `from` maneje el error
+        return Promise.reject(error);
       });
 
     return from(promise).pipe(
@@ -45,5 +49,19 @@ export class AuthService {
         );
       })
     );
+  }
+
+  login(email: string, password: string): Observable<void> {
+    const promise = signInWithEmailAndPassword(
+      this.firebaseAuth,
+      email,
+      password
+    ).then(() => {});
+    return from(promise);
+  }
+
+  logout(): Observable<void> {
+    const promise = signOut(this.firebaseAuth);
+    return from(promise);
   }
 }

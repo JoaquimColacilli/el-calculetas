@@ -1,1 +1,5 @@
-<p>dashboard works!</p>
+@if(authService.currentUserSig()) {
+<div>
+  <span (click)="logout()"> Logout </span>
+</div>
+}

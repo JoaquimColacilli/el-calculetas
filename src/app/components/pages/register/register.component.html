@@ -4,7 +4,9 @@
   <div
     class="absolute inset-0 bg-gradient-to-r from-blue-50 via-blue-200 to-blue-100 opacity-70"
   ></div>
-
+  @if (errorMessage){
+  <div>{{ errorMessage }}</div>
+  }
   <form
     [formGroup]="form"
     (ngSubmit)="onSubmit()"

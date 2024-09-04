@@ -21,14 +21,18 @@ export class RegisterComponent {
     email: ['', Validators.required],
     password: ['', Validators.required],
   });
-
+  errorMessage: string | null = null;
   onSubmit(): void {
     const rawForm = this.form.getRawValue();
     this.authService
       .register(rawForm.email, rawForm.username, rawForm.password)
-      .subscribe(() => {
-        this.router.navigateByUrl('/dashboard');
+      .subscribe({
+        next: () => {
+          this.router.navigateByUrl('/dashboard');
+        },
+        error: (error) => {
+          this.errorMessage = error;
+        },
       });
-    console.log('register');
   }
 }
