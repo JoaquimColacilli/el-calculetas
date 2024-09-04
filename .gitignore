@@ -38,6 +38,8 @@ testem.log
 /typings
 
 # Ignorar archivos de configuración de entorno
+/src/app/environments/environment.ts
+/src/environments/environment.ts
 src/app/environments/environment.ts
 
 # System files
