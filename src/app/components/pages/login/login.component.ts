@@ -34,4 +34,15 @@ export class LoginComponent {
       },
     });
   }
+
+  loginWithGoogle(): void {
+    this.authService.loginWithGoogle().subscribe({
+      next: () => {
+        this.router.navigateByUrl('/dashboard');
+      },
+      error: (error) => {
+        this.errorMessage = error.message;
+      },
+    });
+  }
 }

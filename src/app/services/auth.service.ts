@@ -6,9 +6,12 @@ import {
   updateProfile,
   user,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from '@angular/fire/auth';
 import { Observable, from, catchError, throwError, tap } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
+import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -17,14 +20,8 @@ export class AuthService {
   private firebaseAuth = inject(Auth);
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
+  constructor(private firestore: Firestore) {}
 
-  /**
-   * Registra un nuevo usuario con correo, nombre de usuario y contraseña.
-   * @param email Correo electrónico del usuario
-   * @param username Nombre de usuario a mostrar
-   * @param password Contraseña del usuario
-   * @returns Observable que emite void si el registro es exitoso o un error si falla
-   */
   register(
     email: string,
     username: string,
@@ -38,9 +35,17 @@ export class AuthService {
       .then((response) => {
         return updateProfile(response.user, { displayName: username }).then(
           () => {
-            this.currentUserSig.set({
-              email: response.user.email || '',
+            const userRef = doc(this.firestore, `users/${response.user.uid}`);
+            return setDoc(userRef, {
+              uid: response.user.uid,
+              email: response.user.email,
               username: response.user.displayName || username,
+              profilePicture: '',
+            }).then(() => {
+              this.currentUserSig.set({
+                email: response.user.email || '',
+                username: response.user.displayName || username,
+              });
             });
           }
         );
@@ -59,12 +64,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Inicia sesión con correo y contraseña.
-   * @param email Correo electrónico del usuario
-   * @param password Contraseña del usuario
-   * @returns Observable que emite void si el inicio de sesión es exitoso
-   */
   login(email: string, password: string): Observable<void> {
     const promise = signInWithEmailAndPassword(
       this.firebaseAuth,
@@ -86,10 +85,45 @@ export class AuthService {
     );
   }
 
-  /**
-   * Cierra la sesión del usuario.
-   * @returns Observable que emite void si el cierre de sesión es exitoso
-   */
+  loginWithGoogle(): Observable<void> {
+    const provider = new GoogleAuthProvider();
+    const promise = signInWithPopup(this.firebaseAuth, provider)
+      .then(async (response) => {
+        const userRef = doc(this.firestore, `users/${response.user.uid}`);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          await setDoc(userRef, {
+            uid: response.user.uid,
+            email: response.user.email,
+            username: response.user.displayName || '',
+            profilePicture: response.user.photoURL || '',
+          });
+        }
+
+        this.currentUserSig.set({
+          email: response.user.email || '',
+          username: response.user.displayName || '',
+          profilePicture: response.user.photoURL || '',
+        });
+      })
+      .catch((error) => {
+        console.error('Error en el inicio de sesión con Google:', error);
+        return Promise.reject(error);
+      });
+
+    return from(promise).pipe(
+      catchError((error) => {
+        return throwError(
+          () =>
+            new Error(
+              'Error en el inicio de sesión con Google: ' + error.message
+            )
+        );
+      })
+    );
+  }
+
   logout(): Observable<void> {
     const promise = signOut(this.firebaseAuth).then(() => {
       this.currentUserSig.set(null);

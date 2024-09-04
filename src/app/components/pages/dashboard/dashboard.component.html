@@ -1,6 +1,16 @@
 @if(authService.currentUserSig()) {
-<div>
-  {{ authService.currentUserSig()?.username }}
-  <span (click)="logout()"> Logout </span>
+<div class="flex items-center space-x-3">
+  <!-- Imagen de perfil -->
+  <img
+    [src]="
+      authService.currentUserSig()?.profilePicture || 'default-image-url.png'
+    "
+    alt="Profile Picture"
+    class="w-8 h-8 rounded-full object-cover"
+  />
+  <span>{{ authService.currentUserSig()?.username }}</span>
+  <span (click)="logout()" class="ml-2 text-blue-500 cursor-pointer">
+    Logout
+  </span>
 </div>
 }
