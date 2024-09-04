@@ -7,7 +7,7 @@ import {
   user,
   signOut,
 } from '@angular/fire/auth';
-import { Observable, from, catchError, throwError } from 'rxjs';
+import { Observable, from, catchError, throwError, tap } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
 
 @Injectable({
@@ -17,6 +17,7 @@ export class AuthService {
   private firebaseAuth = inject(Auth);
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
+
   /**
    * Registra un nuevo usuario con correo, nombre de usuario y contraseña.
    * @param email Correo electrónico del usuario
@@ -34,9 +35,16 @@ export class AuthService {
       email,
       password
     )
-      .then((response) =>
-        updateProfile(response.user, { displayName: username })
-      )
+      .then((response) => {
+        return updateProfile(response.user, { displayName: username }).then(
+          () => {
+            this.currentUserSig.set({
+              email: response.user.email || '',
+              username: response.user.displayName || username,
+            });
+          }
+        );
+      })
       .catch((error) => {
         console.error('Error en el registro:', error);
         return Promise.reject(error);
@@ -51,17 +59,42 @@ export class AuthService {
     );
   }
 
+  /**
+   * Inicia sesión con correo y contraseña.
+   * @param email Correo electrónico del usuario
+   * @param password Contraseña del usuario
+   * @returns Observable que emite void si el inicio de sesión es exitoso
+   */
   login(email: string, password: string): Observable<void> {
     const promise = signInWithEmailAndPassword(
       this.firebaseAuth,
       email,
       password
-    ).then(() => {});
-    return from(promise);
+    ).then((response) => {
+      this.currentUserSig.set({
+        email: response.user.email || '',
+        username: response.user.displayName || '',
+      });
+    });
+
+    return from(promise).pipe(
+      catchError((error) => {
+        return throwError(
+          () => new Error('Error en el inicio de sesión: ' + error.message)
+        );
+      })
+    );
   }
 
+  /**
+   * Cierra la sesión del usuario.
+   * @returns Observable que emite void si el cierre de sesión es exitoso
+   */
   logout(): Observable<void> {
-    const promise = signOut(this.firebaseAuth);
+    const promise = signOut(this.firebaseAuth).then(() => {
+      this.currentUserSig.set(null);
+    });
+
     return from(promise);
   }
 }
