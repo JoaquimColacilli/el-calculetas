@@ -36,7 +36,12 @@
 
   @if (errorMessage){
   <div>{{ errorMessage }}</div>
+  } @if (isLoading) {
+  <div class="overlay">
+    <div class="spinner"></div>
+  </div>
   }
+
   <form
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
@@ -92,7 +97,7 @@
     </button>
     <div class="text-center mt-4">
       <a
-        href="#"
+        href="/reset-password"
         class="text-sm text-blue-500 hover:text-blue-700 transition-colors duration-300"
       >
         ¿Olvidaste tu contraseña?

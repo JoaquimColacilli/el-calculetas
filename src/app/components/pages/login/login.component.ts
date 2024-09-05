@@ -23,24 +23,32 @@ export class LoginComponent {
   });
 
   errorMessage: string | null = null;
+  isLoading = false;
+
   onSubmit(): void {
+    this.isLoading = true;
     const rawForm = this.form.getRawValue();
     this.authService.login(rawForm.email, rawForm.password).subscribe({
       next: () => {
+        this.isLoading = false;
         this.router.navigateByUrl('/dashboard');
       },
       error: (error) => {
-        this.errorMessage = error;
+        this.isLoading = false;
+        this.errorMessage = error.message;
       },
     });
   }
 
   loginWithGoogle(): void {
+    this.isLoading = true;
     this.authService.loginWithGoogle().subscribe({
       next: () => {
+        this.isLoading = false;
         this.router.navigateByUrl('/dashboard');
       },
       error: (error) => {
+        this.isLoading = false;
         this.errorMessage = error.message;
       },
     });

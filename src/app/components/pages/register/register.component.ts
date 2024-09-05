@@ -21,18 +21,38 @@ export class RegisterComponent {
     email: ['', Validators.required],
     password: ['', Validators.required],
   });
+
   errorMessage: string | null = null;
+  isLoading = false;
+
   onSubmit(): void {
+    this.isLoading = true;
     const rawForm = this.form.getRawValue();
     this.authService
       .register(rawForm.email, rawForm.username, rawForm.password)
       .subscribe({
         next: () => {
+          this.isLoading = false;
           this.router.navigateByUrl('/dashboard');
         },
         error: (error) => {
-          this.errorMessage = error;
+          this.isLoading = false;
+          this.errorMessage = error.message;
         },
       });
+  }
+
+  registerWithGoogle(): void {
+    this.isLoading = true;
+    this.authService.loginWithGoogle().subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.router.navigateByUrl('/dashboard');
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.errorMessage = error.message;
+      },
+    });
   }
 }

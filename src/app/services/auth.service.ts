@@ -8,10 +8,20 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  sendPasswordResetEmail,
 } from '@angular/fire/auth';
-import { Observable, from, catchError, throwError, tap } from 'rxjs';
+import { Observable, from, catchError, throwError, switchMap } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import {
+  Firestore,
+  doc,
+  setDoc,
+  getDoc,
+  query,
+  collection,
+  where,
+  getDocs,
+} from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -118,6 +128,34 @@ export class AuthService {
           () =>
             new Error(
               'Error en el inicio de sesión con Google: ' + error.message
+            )
+        );
+      })
+    );
+  }
+
+  resetPassword(email: string): Observable<void> {
+    const usersCollection = collection(this.firestore, 'users');
+    const emailQuery = query(usersCollection, where('email', '==', email));
+
+    return from(getDocs(emailQuery)).pipe(
+      switchMap((querySnapshot) => {
+        if (querySnapshot.empty) {
+          return throwError(
+            () =>
+              new Error(
+                'El correo ingresado no está registrado en nuestro sistema.'
+              )
+          );
+        } else {
+          return from(sendPasswordResetEmail(this.firebaseAuth, email));
+        }
+      }),
+      catchError((error) => {
+        return throwError(
+          () =>
+            new Error(
+              'Error al enviar el correo de recuperación: ' + error.message
             )
         );
       })
