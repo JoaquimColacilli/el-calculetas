@@ -2,11 +2,14 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FontAwesomeModule],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.css',
 })
@@ -22,6 +25,10 @@ export class ResetPasswordComponent {
   errorMessage: string | null = null;
   successMessage: string | null = null;
   isLoading = false;
+
+  constructor(library: FaIconLibrary) {
+    library.addIconPacks(fas);
+  }
 
   onSubmit(): void {
     this.isLoading = true;

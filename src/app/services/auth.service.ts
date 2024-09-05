@@ -23,6 +23,40 @@ import {
   getDocs,
 } from '@angular/fire/firestore';
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  'auth/invalid-email': 'El formato del correo electrónico es inválido.',
+  'auth/user-disabled': 'Esta cuenta ha sido deshabilitada.',
+  'auth/user-not-found': 'No se encontró una cuenta con este correo.',
+  'auth/wrong-password':
+    'La contraseña es incorrecta. Por favor, intenta nuevamente.',
+  'auth/email-already-in-use':
+    'El correo electrónico ya está en uso por otra cuenta.',
+  'auth/operation-not-allowed':
+    'Esta operación no está permitida. Contacta al soporte.',
+  'auth/weak-password':
+    'La contraseña es demasiado débil. Por favor, elige una más segura.',
+  'auth/invalid-credential': 'La credencial proporcionada es inválida.',
+  'auth/account-exists-with-different-credential':
+    'Ya existe una cuenta con el mismo correo electrónico pero con credenciales diferentes.',
+  'auth/network-request-failed':
+    'Hubo un problema con la conexión de red. Por favor, intenta nuevamente.',
+  'auth/too-many-requests':
+    'Demasiados intentos. Por favor, espera un momento y vuelve a intentar.',
+  'auth/requires-recent-login':
+    'Por seguridad, por favor vuelve a iniciar sesión y repite la operación.',
+};
+
+function getErrorMessage(error: any): string {
+  const errorString = error.message || error.toString();
+  const errorCodeMatch = errorString.match(/auth\/[a-z\-]+/i);
+  const errorCode = errorCodeMatch ? errorCodeMatch[0] : '';
+
+  return (
+    AUTH_ERROR_MESSAGES[errorCode] ||
+    'Ha ocurrido un error. Por favor, intenta nuevamente.'
+  );
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -61,15 +95,15 @@ export class AuthService {
         );
       })
       .catch((error) => {
-        console.error('Error en el registro:', error);
-        return Promise.reject(error);
+        const customMessage = getErrorMessage(error);
+        console.log(customMessage);
+
+        return Promise.reject(new Error(customMessage));
       });
 
     return from(promise).pipe(
       catchError((error) => {
-        return throwError(
-          () => new Error('Error en el registro: ' + error.message)
-        );
+        return throwError(() => new Error(error.message));
       })
     );
   }
@@ -88,9 +122,10 @@ export class AuthService {
 
     return from(promise).pipe(
       catchError((error) => {
-        return throwError(
-          () => new Error('Error en el inicio de sesión: ' + error.message)
-        );
+        const customMessage = getErrorMessage(error);
+        console.log(customMessage);
+
+        return throwError(() => new Error(customMessage));
       })
     );
   }
@@ -118,18 +153,14 @@ export class AuthService {
         });
       })
       .catch((error) => {
-        console.error('Error en el inicio de sesión con Google:', error);
-        return Promise.reject(error);
+        const customMessage = getErrorMessage(error);
+        console.log(customMessage);
+        return Promise.reject(new Error(customMessage));
       });
 
     return from(promise).pipe(
       catchError((error) => {
-        return throwError(
-          () =>
-            new Error(
-              'Error en el inicio de sesión con Google: ' + error.message
-            )
-        );
+        return throwError(() => new Error(error.message));
       })
     );
   }
@@ -152,12 +183,9 @@ export class AuthService {
         }
       }),
       catchError((error) => {
-        return throwError(
-          () =>
-            new Error(
-              'Error al enviar el correo de recuperación: ' + error.message
-            )
-        );
+        const customMessage = getErrorMessage(error);
+        console.log(customMessage);
+        return throwError(() => new Error(customMessage));
       })
     );
   }

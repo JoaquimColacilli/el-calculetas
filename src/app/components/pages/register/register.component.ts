@@ -3,11 +3,14 @@ import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FontAwesomeModule],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css'],
 })
@@ -24,6 +27,10 @@ export class RegisterComponent {
 
   errorMessage: string | null = null;
   isLoading = false;
+
+  constructor(library: FaIconLibrary) {
+    library.addIconPacks(fas);
+  }
 
   onSubmit(): void {
     this.isLoading = true;
