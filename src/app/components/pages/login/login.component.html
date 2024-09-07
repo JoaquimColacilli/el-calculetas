@@ -110,13 +110,19 @@
     <button
       (click)="loginWithGoogle()"
       class="w-full flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-3 rounded-lg transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-gray-300 mt-4"
+      [disabled]="isLoading"
     >
-      <img
-        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-        alt="Google"
-        class="w-6 h-6 mr-2"
-      />
-      Ingresar con Google
+      <ng-container *ngIf="!isLoading; else loading">
+        <img
+          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+          alt="Google"
+          class="w-6 h-6 mr-2"
+        />
+        Iniciar sesión con Google
+      </ng-container>
+      <ng-template #loading>
+        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando...
+      </ng-template>
     </button>
     <div class="text-center mt-4">
       <a

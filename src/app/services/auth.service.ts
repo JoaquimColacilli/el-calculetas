@@ -155,8 +155,12 @@ export class AuthService {
         });
       })
       .catch((error) => {
+        // Detecta si el error es por cierre del popup
+        if (error.code === 'auth/popup-closed-by-user') {
+          console.log('El usuario cerró el popup sin completar el login.');
+        }
+
         const customMessage = getErrorMessage(error);
-        console.log(customMessage);
         return Promise.reject(new Error(customMessage));
       });
 
