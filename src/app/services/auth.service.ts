@@ -23,6 +23,8 @@ import {
   getDocs,
 } from '@angular/fire/firestore';
 
+import { User } from '@angular/fire/auth';
+
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'El formato del correo electrónico es inválido.',
   'auth/user-disabled': 'Esta cuenta ha sido deshabilitada.',
@@ -186,6 +188,25 @@ export class AuthService {
         const customMessage = getErrorMessage(error);
         console.log(customMessage);
         return throwError(() => new Error(customMessage));
+      })
+    );
+  }
+
+  getUserData(): Observable<any> {
+    return this.user$.pipe(
+      switchMap((authUser: User | null) => {
+        if (!authUser || !authUser.uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const userRef = doc(this.firestore, `users/${authUser.uid}`);
+        return from(getDoc(userRef)).pipe(
+          switchMap((docSnapshot) => {
+            if (!docSnapshot.exists()) {
+              throw new Error('Usuario no encontrado en la base de datos');
+            }
+            return [docSnapshot.data()];
+          })
+        );
       })
     );
   }
