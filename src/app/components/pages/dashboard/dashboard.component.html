@@ -9,19 +9,20 @@
         href="#"
         class="flex items-center text-gray-600 hover:text-blue-600 transition"
       >
-        <i class="fas fa-home mr-2"></i> Inicio
+        <fa-icon [icon]="['fas', 'home']" class="mr-2"></fa-icon> Inicio
       </a>
       <a
         href="#"
         class="flex items-center text-gray-600 hover:text-blue-600 transition"
       >
-        <i class="fas fa-chart-bar mr-2"></i> Estadísticas
+        <fa-icon [icon]="['fas', 'chart-bar']" class="mr-2"></fa-icon>
+        Estadísticas
       </a>
       <a
         href="#"
         class="flex items-center text-gray-600 hover:text-blue-600 transition"
       >
-        <i class="fas fa-wallet mr-2"></i> Finanzas
+        <fa-icon [icon]="['fas', 'wallet']" class="mr-2"></fa-icon> Finanzas
       </a>
     </nav>
   </aside>
@@ -33,12 +34,14 @@
       <div class="flex items-center space-x-3">
         <h1 class="text-2xl font-bold text-gray-700">Dashboard</h1>
       </div>
+
       <div class="flex items-center space-x-3 relative px-4">
         <img
-          [src]="userData?.profilePicture || 'default-image-url.png'"
+          [src]="userData?.profilePicture || 'profile_default.png'"
           alt="Profile Picture"
           class="w-10 h-10 rounded-full object-cover"
         />
+
         <div class="flex flex-col leading-tight">
           <div class="flex items-center justify-between">
             <span class="text-gray-800 font-medium">
@@ -55,9 +58,9 @@
             {{ userData?.email || userData?.username }}
           </span>
         </div>
-        <!-- <button
+        <button
           (click)="logout()"
-          class="mt-2 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 py-1 px-3 rounded-full transition-colors duration-300 shadow-sm flex items-center space-x-2"
+          class="bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 py-1 px-3 rounded-full transition-colors duration-300 shadow-sm flex items-center space-x-2"
         >
           <fa-icon
             [icon]="['fas', 'sign-out-alt']"
@@ -65,29 +68,89 @@
             style="display: flex"
           ></fa-icon>
           <span>Logout</span>
-        </button> -->
+        </button>
       </div>
     </header>
 
     <main class="p-6 flex-1 overflow-y-auto">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <button
-            class="bg-green-500 text-white px-4 py-2 rounded-full opacity-50"
-          >
-            Gastos
-          </button>
-        </div>
-        <div class="flex space-x-4">
+      <span
+        class="bg-green-500 bg-opacity-80 text-white py-1 px-3 rounded-full"
+      >
+        Gastos
+      </span>
+      <div
+        class="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between mt-6"
+      >
+        <div class="flex items-center space-x-4">
+          <select class="border border-gray-300 p-2 rounded focus:outline-none">
+            <option>Este año</option>
+            <option>Este mes</option>
+            <option>Últimos 30 días</option>
+          </select>
+
           <input
             type="text"
-            placeholder="Buscar..."
-            class="px-4 py-2 border rounded-lg"
+            placeholder="Nombre, proveedor o obs..."
+            class="border border-gray-300 p-2 rounded focus:outline-none"
           />
-          <button class="bg-gray-200 px-4 py-2 rounded-lg">Filtro</button>
+
+          <button
+            class="bg-white border border-gray-300 p-2 rounded flex items-center space-x-1 hover:bg-gray-100"
+          >
+            <fa-icon [icon]="['fas', 'filter']"></fa-icon>
+            <span>Filtro</span>
+          </button>
+        </div>
+
+        <button
+          class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600"
+        >
+          + Gasto
+        </button>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+        <div class="flex space-x-8 items-center">
+          <div class="text-left">
+            <span class="text-gray-800 text-sm font-semibold"
+              >{{ financeItems.length }} total</span
+            >
+            <span class="text-gray-500 block text-base font-medium">{{
+              totalAmount | currency
+            }}</span>
+          </div>
+          <div class="text-left flex flex-col">
+            <span class="text-red-600 text-sm font-semibold flex items-center">
+              <fa-icon
+                [icon]="['fas', 'circle']"
+                style="margin-right: 5px"
+                class="fa-xs"
+              ></fa-icon>
+              {{ vencidosCount }} atrasados
+            </span>
+            <span class="text-gray-500 block text-base font-medium">{{
+              totalVencidos | currency
+            }}</span>
+          </div>
+          <div class="text-left">
+            <span class="text-green-600 text-sm font-semibold"
+              >{{ pagadosCount }} pagados</span
+            >
+            <span class="text-gray-500 block text-base font-medium">{{
+              totalPagados | currency
+            }}</span>
+          </div>
+          <div class="text-left">
+            <span class="text-yellow-600 text-sm font-semibold"
+              >{{ porPagarCount }} por pagar</span
+            >
+            <span class="text-gray-500 block text-base font-medium">{{
+              totalPorPagar | currency
+            }}</span>
+          </div>
         </div>
       </div>
 
+      <!-- Tabla de gastos -->
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full table-auto">
           <thead class="bg-gray-50">
@@ -134,8 +197,9 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   [ngClass]="{
-                    'bg-green-100 text-green-800': item.status === 'pagado',
-                    'bg-red-100 text-red-800': item.status === 'vencido'
+                    'bg-green-100 text-green-800': item.status === 'Pagado',
+                    'bg-red-100 text-red-800': item.status === 'Vencido',
+                    'bg-yellow-100 text-yellow-800': item.status === 'Por pagar'
                   }"
                   class="px-2 py-1 rounded-full text-xs font-semibold"
                 >

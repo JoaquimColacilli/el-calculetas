@@ -28,6 +28,13 @@ export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
   financeItems: FinanceItem[] = [];
   userData: any = null;
+  totalAmount = 0;
+  totalVencidos = 0;
+  totalPagados = 0;
+  totalPorPagar = 0;
+  vencidosCount = 0;
+  pagadosCount = 0;
+  porPagarCount = 0;
 
   constructor(private router: Router, library: FaIconLibrary) {
     library.addIconPacks(fas);
@@ -36,6 +43,48 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadFinanceItems();
     this.loadUserData();
+    this.calculateTotals();
+    this.calculateCounts();
+  }
+
+  calculateCounts(): void {
+    this.vencidosCount = this.financeItems.filter(
+      (item) => item.status === 'Vencido'
+    ).length;
+    this.pagadosCount = this.financeItems.filter(
+      (item) => item.status === 'Pagado'
+    ).length;
+    this.porPagarCount = this.financeItems.filter(
+      (item) => item.status === 'Por pagar'
+    ).length;
+  }
+
+  calculateTotals(): void {
+    this.totalAmount = this.financeItems.reduce(
+      (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+      0
+    );
+
+    this.totalVencidos = this.financeItems
+      .filter((item) => item.status === 'Vencido')
+      .reduce(
+        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalPagados = this.financeItems
+      .filter((item) => item.status === 'Pagado')
+      .reduce(
+        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalPorPagar = this.financeItems
+      .filter((item) => item.status === 'Por pagar')
+      .reduce(
+        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        0
+      );
   }
 
   loadUserData(): void {

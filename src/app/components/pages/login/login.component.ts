@@ -19,6 +19,7 @@ export class LoginComponent {
   http = inject(HttpClient);
   authService = inject(AuthService);
   router = inject(Router);
+  showPassword = false;
 
   form = this.fb.nonNullable.group({
     email: ['', Validators.required],
@@ -59,5 +60,9 @@ export class LoginComponent {
         this.errorMessage = error.message;
       },
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

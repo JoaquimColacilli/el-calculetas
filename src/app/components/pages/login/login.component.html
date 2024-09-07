@@ -74,19 +74,32 @@
         required
       />
     </div>
-    <div class="mb-6">
-      <label for="password" class="block text-sm font-medium text-gray-600 mb-2"
-        >Contraseña</label
+    <div class="mb-6 relative">
+      <label
+        for="password"
+        class="block text-sm font-medium text-gray-600 mb-2"
       >
+        Contraseña
+      </label>
       <input
         id="password"
         name="password"
-        type="password"
+        [type]="showPassword ? 'text' : 'password'"
         class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
         placeholder="Ingresa tu contraseña"
         formControlName="password"
         required
       />
+      <button
+        type="button"
+        (click)="togglePasswordVisibility()"
+        class="absolute right-3 top-1/2 transform text-gray-600 focus:outline-none"
+      >
+        <fa-icon
+          [icon]="showPassword ? ['fas', 'eye-slash'] : ['fas', 'eye']"
+          class="w-5 h-5"
+        ></fa-icon>
+      </button>
     </div>
     <button
       type="submit"

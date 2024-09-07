@@ -19,6 +19,8 @@ export class RegisterComponent {
   http = inject(HttpClient);
   authService = inject(AuthService);
   router = inject(Router);
+  showPassword = false;
+
   form = this.fb.nonNullable.group({
     username: ['', Validators.required],
     email: ['', Validators.required],
@@ -61,5 +63,9 @@ export class RegisterComponent {
         this.errorMessage = error.message;
       },
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }
