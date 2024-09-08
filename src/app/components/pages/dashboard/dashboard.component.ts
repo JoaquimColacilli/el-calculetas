@@ -2,10 +2,13 @@ import { Component, inject, OnInit } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+
+import { WeatherService } from '../../../services/weather.service';
 
 interface FinanceItem {
   status: string;
@@ -20,7 +23,7 @@ interface FinanceItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule],
+  imports: [CommonModule, FontAwesomeModule, HttpClientModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
@@ -35,8 +38,18 @@ export class DashboardComponent implements OnInit {
   vencidosCount = 0;
   pagadosCount = 0;
   porPagarCount = 0;
+  sueldoIngresado = 0;
+  dineroRestante = 0;
+  totalIngresos = 50000;
+  options = ['Este mes', 'Esta semana', 'Este año'];
+  currentIndex = 0;
+  weatherData: any = null;
 
-  constructor(private router: Router, library: FaIconLibrary) {
+  constructor(
+    private router: Router,
+    library: FaIconLibrary,
+    private weatherService: WeatherService
+  ) {
     library.addIconPacks(fas);
   }
 
@@ -45,6 +58,34 @@ export class DashboardComponent implements OnInit {
     this.loadUserData();
     this.calculateTotals();
     this.calculateCounts();
+    this.getWeatherData();
+  }
+
+  previousOption(): void {
+    if (this.currentIndex === 0) {
+      this.currentIndex = this.options.length - 1;
+    } else {
+      this.currentIndex--;
+    }
+  }
+
+  nextOption(): void {
+    if (this.currentIndex === this.options.length - 1) {
+      this.currentIndex = 0;
+    } else {
+      this.currentIndex++;
+    }
+  }
+
+  getWeatherData() {
+    this.weatherService.getWeather('Buenos Aires', 'AR').subscribe({
+      next: (data) => {
+        this.weatherData = data;
+      },
+      error: (error) => {
+        console.error('Error obteniendo los datos del clima:', error);
+      },
+    });
   }
 
   calculateCounts(): void {
@@ -57,6 +98,10 @@ export class DashboardComponent implements OnInit {
     this.porPagarCount = this.financeItems.filter(
       (item) => item.status === 'Por pagar'
     ).length;
+  }
+
+  calculateDineroRestante(): void {
+    this.dineroRestante = this.totalIngresos - this.totalAmount;
   }
 
   calculateTotals(): void {
@@ -85,6 +130,14 @@ export class DashboardComponent implements OnInit {
         (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
         0
       );
+
+    this.calculateDineroRestante();
+  }
+
+  ingresarSueldo(monto: number): void {
+    this.sueldoIngresado = monto;
+    this.totalIngresos += monto;
+    this.calculateDineroRestante();
   }
 
   loadUserData(): void {
