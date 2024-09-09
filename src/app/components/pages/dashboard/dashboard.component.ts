@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -44,6 +44,10 @@ export class DashboardComponent implements OnInit {
   options = ['Este mes', 'Esta semana', 'Este año'];
   currentIndex = 0;
   weatherData: any = null;
+  isDay: boolean = false;
+  isNight: boolean = false;
+  isUserMenuOpen = false;
+  isClosing = false;
 
   constructor(
     private router: Router,
@@ -59,6 +63,38 @@ export class DashboardComponent implements OnInit {
     this.calculateTotals();
     this.calculateCounts();
     this.getWeatherData();
+    this.calculateDayOrNight();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    const menuElement = document.querySelector('.user-menu');
+    const iconElement = document.querySelector('.icon-menu-toggle');
+
+    if (
+      this.isUserMenuOpen &&
+      !menuElement?.contains(target) &&
+      !iconElement?.contains(target)
+    ) {
+      this.closeUserMenu();
+    }
+  }
+
+  toggleUserMenu() {
+    this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+
+  closeUserMenu() {
+    this.isUserMenuOpen = false;
+    this.isClosing = false;
+  }
+
+  onAnimationEnd() {
+    if (this.isClosing) {
+      this.isUserMenuOpen = false;
+      this.isClosing = false;
+    }
   }
 
   previousOption(): void {
@@ -81,6 +117,7 @@ export class DashboardComponent implements OnInit {
     this.weatherService.getWeather('Buenos Aires', 'AR').subscribe({
       next: (data) => {
         this.weatherData = data;
+        this.calculateDayOrNight();
       },
       error: (error) => {
         console.error('Error obteniendo los datos del clima:', error);
@@ -88,6 +125,20 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  calculateDayOrNight(): void {
+    if (this.weatherData) {
+      console.log('hola');
+      const currentTime = new Date().getTime() / 1000;
+      const sunrise = this.weatherData.sys.sunrise;
+      const sunset = this.weatherData.sys.sunset;
+
+      this.isDay = currentTime >= sunrise && currentTime < sunset;
+      this.isNight = currentTime < sunrise || currentTime >= sunset;
+
+      console.log('Es de día:', this.isDay);
+      console.log('Es de noche:', this.isNight);
+    }
+  }
   calculateCounts(): void {
     this.vencidosCount = this.financeItems.filter(
       (item) => item.status === 'Vencido'
@@ -156,6 +207,18 @@ export class DashboardComponent implements OnInit {
     this.authService.logout().subscribe(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  viewProfile(): void {
+    console.log('Ver Perfil');
+  }
+
+  editProfile(): void {
+    console.log('Editar Perfil');
+  }
+
+  manageAccount(): void {
+    console.log('Administrar Cuenta');
   }
 
   loadFinanceItems(): void {
