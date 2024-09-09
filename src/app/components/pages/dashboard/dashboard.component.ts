@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, HostListener } from '@angular/core';
+import { Component, inject, OnInit, HostListener, NgZone } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -11,6 +11,10 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { WeatherService } from '../../../services/weather.service';
 import { CurrencyService } from '../../../services/currency.service';
 import { FormsModule } from '@angular/forms';
+
+import { ChangeDetectorRef } from '@angular/core';
+
+import Swal from 'sweetalert2';
 
 interface FinanceItem {
   isPaid: boolean;
@@ -64,12 +68,17 @@ export class DashboardComponent implements OnInit {
   newExpense: FinanceItem = this.createEmptyExpense();
   isLoading: boolean = false;
   isRefreshing: boolean = false;
+  showNotification: boolean = false;
+  deletedExpenseName: string = '';
+
+  private zone = inject(NgZone);
 
   constructor(
     private router: Router,
     library: FaIconLibrary,
     private weatherService: WeatherService,
-    private currencyService: CurrencyService
+    private currencyService: CurrencyService,
+    private cdr: ChangeDetectorRef
   ) {
     library.addIconPacks(fas);
   }
@@ -177,16 +186,12 @@ export class DashboardComponent implements OnInit {
 
   calculateDayOrNight(): void {
     if (this.weatherData) {
-      console.log('hola');
       const currentTime = new Date().getTime() / 1000;
       const sunrise = this.weatherData.sys.sunrise;
       const sunset = this.weatherData.sys.sunset;
 
       this.isDay = currentTime >= sunrise && currentTime < sunset;
       this.isNight = currentTime < sunrise || currentTime >= sunset;
-
-      console.log('Es de día:', this.isDay);
-      console.log('Es de noche:', this.isNight);
     }
   }
   calculateCounts(): void {
@@ -259,17 +264,11 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  viewProfile(): void {
-    console.log('Ver Perfil');
-  }
+  viewProfile(): void {}
 
-  editProfile(): void {
-    console.log('Editar Perfil');
-  }
+  editProfile(): void {}
 
-  manageAccount(): void {
-    console.log('Administrar Cuenta');
-  }
+  manageAccount(): void {}
 
   loadFinanceItems(): void {
     this.financeItems = [
@@ -330,13 +329,28 @@ export class DashboardComponent implements OnInit {
     this.newExpense = this.createEmptyExpense();
   }
 
-  editExpense(item: FinanceItem) {
-    console.log('Editando:', item);
-  }
+  editExpense(item: FinanceItem) {}
 
   deleteExpense(item: FinanceItem) {
     this.financeItems = this.financeItems.filter((expense) => expense !== item);
-    console.log('Eliminado:', item);
+    this.cdr.detectChanges();
+
+    this.showDeleteNotification(item.name);
+  }
+
+  showDeleteNotification(deletedItemName: string) {
+    this.deletedExpenseName = deletedItemName;
+    Swal.fire({
+      position: 'top',
+      icon: 'info',
+      title: `Se ha enviado el gasto "${deletedItemName}" a la papelera temporal.`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
   }
 
   createEmptyExpense(): FinanceItem {

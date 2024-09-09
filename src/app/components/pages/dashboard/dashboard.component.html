@@ -588,6 +588,18 @@
               </td>
             </tr>
 
+            <tr *ngIf="financeItems.length === 0 && !addingExpense">
+              <td colspan="8" class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center text-gray-500">
+                  <fa-icon
+                    [icon]="['fas', 'exclamation-circle']"
+                    class="mr-2"
+                  ></fa-icon>
+                  No hay gastos registrados.
+                </div>
+              </td>
+            </tr>
+
             <!-- Fila para cada gasto existente -->
             <tr *ngFor="let item of financeItems">
               <td class="px-6 py-4 whitespace-nowrap">
@@ -661,6 +673,20 @@
                   <fa-icon [icon]="['fas', 'edit']"></fa-icon>
                 </button>
 
+                <div
+                  *ngIf="showNotification"
+                  class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-lg transition-transform duration-500 flex items-center space-x-2"
+                >
+                  <fa-icon
+                    [icon]="['fas', 'info-circle']"
+                    class="text-white text-lg"
+                  ></fa-icon>
+                  <span
+                    >Se ha enviado el gasto "{{ deletedExpenseName }}" a la
+                    papelera temporal.</span
+                  >
+                </div>
+
                 <button
                   class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
                   (click)="deleteExpense(item)"
@@ -672,6 +698,8 @@
           </tbody>
         </table>
       </div>
+
+      <div *ngIf="financeItems.length === 0"></div>
     </main>
   </div>
 </div>
