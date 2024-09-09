@@ -165,10 +165,11 @@
           <span class="text-gray-700 text-sm font-semibold"
             >Gastos del Mes</span
           >
-          <span class="text-3xl font-bold text-red-700 mt-2">{{
-            totalAmount | currency
-          }}</span>
+          <span class="text-3xl font-bold text-red-700 mt-2">
+            {{ totalAmount | currency }}
+          </span>
         </div>
+
         <div
           [ngClass]="{
             'bg-blue-100': isDay && weatherData?.weather[0]?.main === 'Clouds',
@@ -187,7 +188,7 @@
               isNight && weatherData?.weather[0]?.main === 'Drizzle',
             'bg-gray-600': isNight && weatherData?.weather[0]?.main === 'Mist'
           }"
-          class="shadow-lg rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          class="shadow-lg hover:shadow-xl rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105"
           style="width: 200px; height: 130px"
         >
           <fa-icon
@@ -249,6 +250,100 @@
           >
             {{ weatherData?.weather[0]?.description | titlecase }}
           </span>
+        </div>
+        <div
+          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-4 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          style="width: 300px; height: 130px"
+        >
+          <fa-icon
+            [icon]="['fas', 'money-bill-wave']"
+            class="absolute top-1 right-9 text-blue-400 opacity-50"
+            style="font-size: 24px"
+          ></fa-icon>
+
+          <!-- Ícono de recargar -->
+          <fa-icon
+            [icon]="['fas', 'sync-alt']"
+            class="absolute top-2 right-2 text-blue-600 cursor-pointer hover:rotate-180 transition-transform duration-500"
+            style="font-size: 18px"
+            (click)="reloadRates()"
+          ></fa-icon>
+
+          <span class="text-gray-800 text-sm font-semibold mb-1"
+            >Cotización del Dólar</span
+          >
+
+          <!-- Spinner de carga -->
+          <div
+            *ngIf="isLoading"
+            class="flex items-center justify-center w-full h-full"
+          >
+            <fa-icon
+              [icon]="['fas', 'spinner']"
+              class="animate-spin text-blue-600"
+              style="font-size: 24px"
+            ></fa-icon>
+          </div>
+
+          <!-- Contenido de cotizaciones, se muestra solo cuando no está cargando -->
+          <ng-container *ngIf="!isLoading">
+            <!-- Dólar Blue -->
+            <div class="flex items-center w-full justify-between mt-1">
+              <fa-icon
+                [icon]="['fas', 'hand-holding-usd']"
+                class="text-blue-600 mr-2"
+              ></fa-icon>
+              <span class="text-xs font-medium text-gray-800">Blue:</span>
+              <span class="text-xs text-gray-700 ml-auto">
+                C:
+                <span class="font-semibold">{{
+                  dolarBlueCompra | currency : "ARS"
+                }}</span>
+                | V:
+                <span class="font-semibold">{{
+                  dolarBlueVenta | currency : "ARS"
+                }}</span>
+              </span>
+            </div>
+
+            <!-- Dólar Bolsa (MEP) -->
+            <div class="flex items-center w-full justify-between mt-1">
+              <fa-icon
+                [icon]="['fas', 'exchange-alt']"
+                class="text-blue-600 mr-2"
+              ></fa-icon>
+              <span class="text-xs font-medium text-gray-800">MEP:</span>
+              <span class="text-xs text-gray-700 ml-auto">
+                C:
+                <span class="font-semibold">{{
+                  dolarBolsaCompra | currency : "ARS"
+                }}</span>
+                | V:
+                <span class="font-semibold">{{
+                  dolarBolsaVenta | currency : "ARS"
+                }}</span>
+              </span>
+            </div>
+
+            <!-- Dólar Tarjeta -->
+            <div class="flex items-center w-full justify-between mt-1">
+              <fa-icon
+                [icon]="['fas', 'credit-card']"
+                class="text-blue-600 mr-2"
+              ></fa-icon>
+              <span class="text-xs font-medium text-gray-800">Tarjeta:</span>
+              <span class="text-xs text-gray-700 ml-auto">
+                C:
+                <span class="font-semibold">{{
+                  dolarTarjetaCompra | currency : "ARS"
+                }}</span>
+                | V:
+                <span class="font-semibold">{{
+                  dolarTarjetaVenta | currency : "ARS"
+                }}</span>
+              </span>
+            </div>
+          </ng-container>
         </div>
       </div>
 
@@ -402,20 +497,64 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr *ngFor="let item of financeItems">
+              <!-- Columna del switch de pago -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="sr-only peer"
+                    [(ngModel)]="item.isPaid"
+                    (change)="togglePayment(item)"
+                  />
+                  <div
+                    [ngClass]="{
+                      'bg-green-500': item.isPaid,
+                      'bg-gray-200': !item.isPaid
+                    }"
+                    class="w-11 h-6 rounded-full transition-all duration-300 relative"
+                  >
+                    <div
+                      [ngClass]="{
+                        'translate-x-5': item.isPaid,
+                        'translate-x-0': !item.isPaid
+                      }"
+                      class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
+                    ></div>
+                  </div>
+                </label>
+              </td>
+              <!-- Columna de Fecha con estado y fecha -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   [ngClass]="{
-                    'bg-green-100 text-green-800': item.status === 'Pagado',
-                    'bg-red-100 text-red-800': item.status === 'Vencido',
-                    'bg-yellow-100 text-yellow-800': item.status === 'Por pagar'
+                    'text-green-600': item.status === 'Pagado',
+                    'text-red-600': item.status === 'Vencido'
                   }"
-                  class="px-2 py-1 rounded-full text-xs font-semibold"
+                  class="text-sm font-semibold"
                 >
-                  {{ item.status }}
+                  {{ item.status === "Pagado" ? "Pagado" : "Venció" }}
                 </span>
+                <div class="text-xs text-gray-500">{{ item.date }}</div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ item.date }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ item.value }}</td>
+              <!-- Columna Valor con íconos según la moneda -->
+              <td class="px-6 py-4 whitespace-nowrap flex items-center">
+                <ng-container *ngIf="item.currency === 'USD'">
+                  <span class="mr-2 text-sm font-semibold text-gray-700"
+                    >USD</span
+                  >
+                </ng-container>
+                <ng-container *ngIf="item.currency === 'ARS'">
+                  <span class="mr-2 text-sm font-semibold text-gray-700"
+                    >ARS</span
+                  >
+                </ng-container>
+                <ng-container *ngIf="item.currency === 'EUR'">
+                  <span class="mr-2 text-sm font-semibold text-gray-700"
+                    >EUR</span
+                  >
+                </ng-container>
+                <span class="text-sm font-semibold">{{ item.value }}</span>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ item.category }}</td>

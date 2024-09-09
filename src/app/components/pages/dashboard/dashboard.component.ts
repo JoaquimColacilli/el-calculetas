@@ -9,11 +9,15 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 
 import { WeatherService } from '../../../services/weather.service';
+import { CurrencyService } from '../../../services/currency.service';
+import { FormsModule } from '@angular/forms';
 
 interface FinanceItem {
+  isPaid: boolean;
   status: string;
   date: string;
   value: string;
+  currency: string;
   name: string;
   provider: string;
   category: string;
@@ -23,7 +27,7 @@ interface FinanceItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule, HttpClientModule],
+  imports: [CommonModule, FontAwesomeModule, HttpClientModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
@@ -48,11 +52,23 @@ export class DashboardComponent implements OnInit {
   isNight: boolean = false;
   isUserMenuOpen = false;
   isClosing = false;
+  dolarBlueCompra: number = 0;
+  dolarBlueVenta: number = 0;
+  dolarBolsaCompra: number = 0;
+  dolarBolsaVenta: number = 0;
+  dolarTarjetaCompra: number = 0;
+  dolarTarjetaVenta: number = 0;
+  dolarCriptoCompra: number = 0;
+  dolarCriptoVenta: number = 0;
+
+  isLoading: boolean = false;
+  isRefreshing: boolean = false;
 
   constructor(
     private router: Router,
     library: FaIconLibrary,
-    private weatherService: WeatherService
+    private weatherService: WeatherService,
+    private currencyService: CurrencyService
   ) {
     library.addIconPacks(fas);
   }
@@ -64,6 +80,7 @@ export class DashboardComponent implements OnInit {
     this.calculateCounts();
     this.getWeatherData();
     this.calculateDayOrNight();
+    this.loadDollarRates();
   }
 
   @HostListener('document:click', ['$event'])
@@ -95,6 +112,38 @@ export class DashboardComponent implements OnInit {
       this.isUserMenuOpen = false;
       this.isClosing = false;
     }
+  }
+
+  reloadRates() {
+    this.isRefreshing = true;
+    this.isLoading = true;
+
+    setTimeout(() => {
+      this.loadDollarRates();
+      setTimeout(() => {
+        this.isRefreshing = false;
+      }, 500);
+    }, 200);
+  }
+
+  loadDollarRates() {
+    this.currencyService.getDollarRates().subscribe({
+      next: (data) => {
+        this.dolarBlueCompra = data[1].compra;
+        this.dolarBlueVenta = data[1].venta;
+        this.dolarBolsaCompra = data[2].compra;
+        this.dolarBolsaVenta = data[2].venta;
+        this.dolarTarjetaCompra = data[6].compra;
+        this.dolarTarjetaVenta = data[6].venta;
+        this.dolarCriptoCompra = data[5].compra;
+        this.dolarCriptoVenta = data[5].venta;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error obteniendo cotizaciones del dólar:', error);
+        this.isLoading = false;
+      },
+    });
   }
 
   previousOption(): void {
@@ -224,32 +273,44 @@ export class DashboardComponent implements OnInit {
   loadFinanceItems(): void {
     this.financeItems = [
       {
+        isPaid: true,
         status: 'Pagado',
         date: '07/09/2023',
-        value: '$1,900.00',
+        value: '1900.00',
+        currency: 'ARS',
         name: 'Servicios',
         provider: 'Proveedor A',
         category: 'Gastos administrativos',
         obs: 'N/A',
       },
       {
+        isPaid: false,
         status: 'Vencido',
         date: '08/09/2023',
-        value: '$3,200.00',
+        value: '3200.00',
+        currency: 'USD',
         name: 'Juguetes',
         provider: 'Perritones',
         category: 'Compra de productos y suministros',
         obs: 'Urgente',
       },
       {
+        isPaid: true,
         status: 'Pagado',
         date: '09/09/2023',
-        value: '$2,800.00',
+        value: '2800.00',
+        currency: 'EUR',
         name: 'Comederos',
         provider: 'Cerámica de Maíra',
         category: 'Otros',
         obs: '',
       },
     ];
+  }
+
+  togglePayment(item: FinanceItem) {
+    console.log(
+      `Pago para ${item.name} está ahora ${item.isPaid ? 'activo' : 'inactivo'}`
+    );
   }
 }
