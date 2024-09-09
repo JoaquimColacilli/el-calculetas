@@ -60,7 +60,8 @@ export class DashboardComponent implements OnInit {
   dolarTarjetaVenta: number = 0;
   dolarCriptoCompra: number = 0;
   dolarCriptoVenta: number = 0;
-
+  addingExpense: boolean = false;
+  newExpense: FinanceItem = this.createEmptyExpense();
   isLoading: boolean = false;
   isRefreshing: boolean = false;
 
@@ -309,8 +310,46 @@ export class DashboardComponent implements OnInit {
   }
 
   togglePayment(item: FinanceItem) {
-    console.log(
-      `Pago para ${item.name} está ahora ${item.isPaid ? 'activo' : 'inactivo'}`
-    );
+    item.status = item.isPaid ? 'Pagado' : 'Vencido';
+  }
+
+  addExpense() {
+    this.addingExpense = true;
+  }
+
+  saveExpense() {
+    if (this.newExpense.name && this.newExpense.value) {
+      this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+      this.financeItems.unshift({ ...this.newExpense });
+      this.cancelAddingExpense();
+    }
+  }
+
+  cancelAddingExpense() {
+    this.addingExpense = false;
+    this.newExpense = this.createEmptyExpense();
+  }
+
+  editExpense(item: FinanceItem) {
+    console.log('Editando:', item);
+  }
+
+  deleteExpense(item: FinanceItem) {
+    this.financeItems = this.financeItems.filter((expense) => expense !== item);
+    console.log('Eliminado:', item);
+  }
+
+  createEmptyExpense(): FinanceItem {
+    return {
+      isPaid: false,
+      status: 'Por pagar',
+      date: '',
+      value: '',
+      name: '',
+      provider: '',
+      category: '',
+      obs: '',
+      currency: 'ARS',
+    };
   }
 }

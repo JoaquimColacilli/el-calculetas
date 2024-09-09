@@ -405,6 +405,7 @@
 
           <button
             class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center space-x-2"
+            (click)="addExpense()"
           >
             <fa-icon [icon]="['fas', 'plus']"></fa-icon>
             <span>Gasto</span>
@@ -493,11 +494,102 @@
               >
                 Obs.
               </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
+            <!-- Nueva fila editable -->
+            <tr *ngIf="addingExpense" class="bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="sr-only peer"
+                    [(ngModel)]="newExpense.isPaid"
+                  />
+                  <div
+                    [ngClass]="{
+                      'bg-green-500': newExpense.isPaid,
+                      'bg-gray-200': !newExpense.isPaid
+                    }"
+                    class="w-11 h-6 rounded-full transition-all duration-300 relative"
+                  >
+                    <div
+                      [ngClass]="{
+                        'translate-x-5': newExpense.isPaid,
+                        'translate-x-0': !newExpense.isPaid
+                      }"
+                      class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
+                    ></div>
+                  </div>
+                </label>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="date"
+                  [(ngModel)]="newExpense.date"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  [(ngModel)]="newExpense.value"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  [(ngModel)]="newExpense.name"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  [(ngModel)]="newExpense.provider"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  [(ngModel)]="newExpense.category"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="text"
+                  [(ngModel)]="newExpense.obs"
+                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td
+                class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
+              >
+                <button
+                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                  (click)="cancelAddingExpense()"
+                >
+                  <fa-icon [icon]="['fas', 'times']"></fa-icon>
+                </button>
+                <button
+                  class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition flex items-center"
+                  (click)="saveExpense()"
+                >
+                  <fa-icon [icon]="['fas', 'check']"></fa-icon>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Fila para cada gasto existente -->
             <tr *ngFor="let item of financeItems">
-              <!-- Columna del switch de pago -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <label class="flex items-center cursor-pointer">
                   <input
@@ -523,7 +615,6 @@
                   </div>
                 </label>
               </td>
-              <!-- Columna de Fecha con estado y fecha -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   [ngClass]="{
@@ -534,9 +625,10 @@
                 >
                   {{ item.status === "Pagado" ? "Pagado" : "Venció" }}
                 </span>
-                <div class="text-xs text-gray-500">{{ item.date }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ item.date | date : "dd/MM/yyyy" }}
+                </div>
               </td>
-              <!-- Columna Valor con íconos según la moneda -->
               <td class="px-6 py-4 whitespace-nowrap flex items-center">
                 <ng-container *ngIf="item.currency === 'USD'">
                   <span class="mr-2 text-sm font-semibold text-gray-700"
@@ -559,6 +651,23 @@
               <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ item.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ item.obs }}</td>
+              <td
+                class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
+              >
+                <button
+                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
+                  (click)="editExpense(item)"
+                >
+                  <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                </button>
+
+                <button
+                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                  (click)="deleteExpense(item)"
+                >
+                  <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
