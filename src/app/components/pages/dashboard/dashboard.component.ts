@@ -90,10 +90,26 @@ export class DashboardComponent implements OnInit {
   showNotification: boolean = false;
   deletedExpenseName: string = '';
 
+  sortOrder: 'asc' | 'desc' = 'desc';
+
   currentDateTime: string = '';
   private intervalId: any;
 
   searchQuery: string = '';
+  selectedCategory: string | null = null;
+
+  isTodayChecked: boolean = true;
+
+  groupedExpenses: { [key: string]: number } = {};
+
+  totalAmountARS = 0;
+  totalAmountUSD = 0;
+  totalVencidosARS = 0;
+  totalPagadosARS = 0;
+  totalPorPagarARS = 0;
+  totalVencidosUSD = 0;
+  totalPagadosUSD = 0;
+  totalPorPagarUSD = 0;
 
   constructor(
     private router: Router,
@@ -117,6 +133,17 @@ export class DashboardComponent implements OnInit {
 
     this.updateDateTime();
     this.intervalId = setInterval(() => this.updateDateTime(), 1000);
+
+    this.checkAndUpdateExpensesStatus();
+    setInterval(() => {
+      this.checkAndUpdateExpensesStatus();
+    }, 24 * 60 * 60 * 1000);
+
+    this.setTodayDate();
+
+    this.sortFinanceItems();
+
+    this.updateGroupedExpenses();
   }
 
   @HostListener('document:click', ['$event'])
@@ -132,6 +159,18 @@ export class DashboardComponent implements OnInit {
     ) {
       this.closeUserMenu();
     }
+  }
+
+  updateGroupedExpenses() {
+    this.groupedExpenses = this.financeItems.reduce((acc, item) => {
+      // Convertir item.value a string antes de aplicar replace
+      const value = parseFloat(String(item.value).replace(/[\$,]/g, ''));
+      if (!acc[item.currency]) {
+        acc[item.currency] = 0;
+      }
+      acc[item.currency] += value;
+      return acc;
+    }, {} as { [key: string]: number });
   }
 
   ngOnDestroy(): void {
@@ -150,6 +189,20 @@ export class DashboardComponent implements OnInit {
     this.dialog.open(ModalCategoriasComponent, {
       width: '500px',
       panelClass: 'custom-modal-class',
+    });
+  }
+
+  toggleSortOrder() {
+    this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
+    this.sortFinanceItems();
+  }
+
+  sortFinanceItems() {
+    this.financeItems.sort((a, b) => {
+      const dateA = this.parseDate(a.date).getTime();
+      const dateB = this.parseDate(b.date).getTime();
+
+      return this.sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
   }
 
@@ -201,22 +254,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  previousOption(): void {
-    if (this.currentIndex === 0) {
-      this.currentIndex = this.options.length - 1;
-    } else {
-      this.currentIndex--;
-    }
-  }
-
-  nextOption(): void {
-    if (this.currentIndex === this.options.length - 1) {
-      this.currentIndex = 0;
-    } else {
-      this.currentIndex++;
-    }
-  }
-
   getWeatherData() {
     this.weatherService.getWeather('Buenos Aires', 'AR').subscribe({
       next: (data) => {
@@ -239,6 +276,7 @@ export class DashboardComponent implements OnInit {
       this.isNight = currentTime < sunrise || currentTime >= sunset;
     }
   }
+
   calculateCounts(): void {
     this.vencidosCount = this.financeItems.filter(
       (item) => item.status === 'Vencido'
@@ -256,29 +294,69 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateTotals(): void {
-    this.totalAmount = this.financeItems.reduce(
-      (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
-      0
-    );
-
-    this.totalVencidos = this.financeItems
-      .filter((item) => item.status === 'Vencido')
+    // Totales en ARS
+    this.totalAmountARS = this.financeItems
+      .filter((item) => item.currency === 'ARS')
       .reduce(
-        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
         0
       );
 
-    this.totalPagados = this.financeItems
-      .filter((item) => item.status === 'Pagado')
+    this.totalVencidosARS = this.financeItems
+      .filter((item) => item.status === 'Vencido' && item.currency === 'ARS')
       .reduce(
-        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
         0
       );
 
-    this.totalPorPagar = this.financeItems
-      .filter((item) => item.status === 'Por pagar')
+    this.totalPagadosARS = this.financeItems
+      .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
       .reduce(
-        (acc, item) => acc + parseFloat(item.value.replace(/[\$,]/g, '')),
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalPorPagarARS = this.financeItems
+      .filter((item) => item.status === 'Por pagar' && item.currency === 'ARS')
+      .reduce(
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
+        0
+      );
+
+    // Totales en USD
+    this.totalAmountUSD = this.financeItems
+      .filter((item) => item.currency === 'USD')
+      .reduce(
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalVencidosUSD = this.financeItems
+      .filter((item) => item.status === 'Vencido' && item.currency === 'USD')
+      .reduce(
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalPagadosUSD = this.financeItems
+      .filter((item) => item.status === 'Pagado' && item.currency === 'USD')
+      .reduce(
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
+        0
+      );
+
+    this.totalPorPagarUSD = this.financeItems
+      .filter((item) => item.status === 'Por pagar' && item.currency === 'USD')
+      .reduce(
+        (acc, item) =>
+          acc + parseFloat(String(item.value).replace(/[\$,]/g, '')),
         0
       );
 
@@ -328,7 +406,7 @@ export class DashboardComponent implements OnInit {
       {
         isPaid: true,
         status: 'Pagado',
-        date: '07/09/2023',
+        date: '07/07/2024',
         value: '1900.00',
         currency: 'ARS',
         name: 'Servicios',
@@ -339,7 +417,7 @@ export class DashboardComponent implements OnInit {
       {
         isPaid: false,
         status: 'Vencido',
-        date: '08/09/2023',
+        date: '08/09/2024',
         value: '3200.00',
         currency: 'USD',
         name: 'Juguetes',
@@ -350,9 +428,9 @@ export class DashboardComponent implements OnInit {
       {
         isPaid: true,
         status: 'Pagado',
-        date: '09/09/2023',
+        date: '09/09/2024',
         value: '2800.00',
-        currency: 'EUR',
+        currency: 'USD',
         name: 'Comederos',
         provider: 'Cerámica de Maíra',
         category: 'Otros',
@@ -362,30 +440,252 @@ export class DashboardComponent implements OnInit {
   }
 
   togglePayment(item: FinanceInterface) {
-    item.status = item.isPaid ? 'Pagado' : 'Vencido';
+    // Actualiza el estado basado en el checkbox y la fecha
+    this.updateExpenseStatus(item);
+
+    // Recalcula los conteos y totales
+    this.calculateCounts();
+    this.calculateTotals();
+  }
+
+  updateExpenseStatus(item: FinanceInterface) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Asegura que solo se compare la fecha sin la hora
+    const itemDate = this.parseDate(item.date);
+
+    if (item.isPaid) {
+      item.status = 'Pagado';
+    } else {
+      if (itemDate.getTime() === today.getTime()) {
+        item.status = 'Por pagar'; // Si es hoy y está desactivado, va a "Por pagar"
+      } else if (itemDate < today) {
+        item.status = 'Vencido';
+      } else {
+        item.status = 'Por pagar';
+      }
+    }
   }
 
   addExpense() {
     this.addingExpense = true;
+    this.isTodayChecked = true;
+    this.toggleTodayDate();
   }
 
   get filteredFinanceItems(): FinanceInterface[] {
-    if (!this.searchQuery.trim()) {
-      return this.financeItems;
+    const searchQueryLower = this.searchQuery.toLowerCase();
+    const filteredItems = this.financeItems.filter((item) => {
+      const matchesSearchQuery = Object.values(item).some((value) =>
+        String(value).toLowerCase().includes(searchQueryLower)
+      );
+      const matchesCategory = this.selectedCategory
+        ? item.category === this.selectedCategory
+        : true;
+      return matchesSearchQuery && matchesCategory;
+    });
+
+    return this.filterByDate(filteredItems);
+  }
+
+  filterByDate(items: FinanceInterface[]): FinanceInterface[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        return items.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return (
+            itemDate.getFullYear() === currentYear &&
+            itemDate.getMonth() === currentMonth
+          );
+        });
+
+      case 'Esta semana':
+        const currentWeekStart = this.getStartOfWeek(now);
+        const currentWeekEnd = this.getEndOfWeek(now);
+        return items.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return itemDate >= currentWeekStart && itemDate <= currentWeekEnd;
+        });
+
+      case 'Este año':
+        return items.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return itemDate.getFullYear() === currentYear;
+        });
+
+      default:
+        // Asegúrate de que esta sección devuelva todos los ítems si no hay filtro
+        return items;
     }
-    return this.financeItems.filter((item) =>
-      `${item.name} ${item.provider} ${item.obs}`
-        .toLowerCase()
-        .includes(this.searchQuery.toLowerCase())
-    );
+  }
+
+  parseDate(dateString: string): Date {
+    // Verifica si el string es una fecha en formato ISO (YYYY-MM-DD)
+    if (dateString.includes('-')) {
+      return new Date(dateString);
+    }
+
+    // Si no, asume que está en formato dd/mm/yyyy
+    const [day, month, year] = dateString.split('/').map(Number);
+
+    // Si no hay errores al convertir, retorna la fecha
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+      return new Date(year, month - 1, day);
+    }
+
+    // Si el formato no es válido, retorna Invalid Date
+    return new Date('Invalid Date');
+  }
+
+  getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+  }
+
+  getEndOfWeek(date: Date): Date {
+    const startOfWeek = this.getStartOfWeek(date);
+    return new Date(startOfWeek.setDate(startOfWeek.getDate() + 6)); // El último día es domingo
+  }
+
+  // Navegación entre opciones de filtro
+  previousOption(): void {
+    if (this.currentIndex === 0) {
+      this.currentIndex = this.options.length - 1;
+    } else {
+      this.currentIndex--;
+    }
+  }
+
+  nextOption(): void {
+    if (this.currentIndex === this.options.length - 1) {
+      this.currentIndex = 0;
+    } else {
+      this.currentIndex++;
+    }
+  }
+
+  getCategoryName(category: string | { name: string }): string {
+    return typeof category === 'object' ? category.name : category;
   }
 
   saveExpense() {
     if (this.newExpense.name && this.newExpense.value) {
-      this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      this.addingExpense = false;
+
+      let selectedDate = this.parseDate(this.newExpense.date);
+
+      if (this.isTodayChecked) {
+        this.newExpense.date = this.formatDate(today);
+        selectedDate = today;
+      }
+
+      console.log(selectedDate);
+      console.log(today);
+
+      if (selectedDate > today) {
+        this.newExpense.status = 'Por pagar';
+
+        console.log(this.newExpense);
+      } else if (selectedDate < today) {
+        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+        console.log(this.newExpense);
+      } else {
+        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+        console.log(this.newExpense);
+      }
+
+      if (selectedDate.getTime() === today.getTime()) {
+        this.newExpense.status = 'Por pagar';
+      } else if (selectedDate > today) {
+        this.newExpense.status = 'Por pagar';
+      } else {
+        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+      }
+
       this.financeItems.unshift({ ...this.newExpense });
+
+      this.calculateTotals();
+      this.calculateCounts();
+      this.calculateDineroRestante();
+      this.updateGroupedExpenses();
       this.cancelAddingExpense();
     }
+    this.cancelAddingExpense();
+    console.log(this.newExpense);
+  }
+
+  checkAndUpdateExpensesStatus(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    this.financeItems.forEach((item) => {
+      const itemDate = this.parseDate(item.date);
+      if (item.status === 'Por pagar' && itemDate <= today) {
+        item.status = 'Vencido';
+      }
+    });
+
+    this.calculateCounts();
+    this.calculateTotals();
+  }
+
+  toggleTodayDate() {
+    if (this.isTodayChecked) {
+      const today = new Date();
+      const formattedDate = today.toISOString().split('T')[0];
+      this.newExpense.date = formattedDate;
+    } else {
+      this.newExpense.date = '';
+    }
+  }
+
+  setTodayDate(): void {
+    const today = new Date();
+    this.newExpense.date = this.formatDate(today);
+  }
+
+  formatDate(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  formatDateDisplay(dateString: string): string {
+    if (!dateString || typeof dateString !== 'string') {
+      console.error('Fecha inválida o en formato incorrecto:', dateString);
+      return 'Fecha inválida';
+    }
+
+    // Detectar si la fecha es en formato dd/MM/yyyy
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      if (!day || !month || !year) {
+        console.error('Partes de la fecha inválidas:', { day, month, year });
+        return 'Fecha inválida';
+      }
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+
+    // Detectar si la fecha es en formato yyyy-MM-dd
+    if (dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      if (!year || !month || !day) {
+        console.error('Partes de la fecha inválidas:', { year, month, day });
+        return 'Fecha inválida';
+      }
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+
+    console.error('Formato de fecha no reconocido:', dateString);
+    return 'Fecha inválida';
   }
 
   cancelAddingExpense() {

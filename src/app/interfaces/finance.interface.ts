@@ -6,6 +6,6 @@ export interface FinanceInterface {
   currency: string;
   name: string;
   provider: string;
-  category: string;
+  category: string | { name: string };
   obs: string;
 }

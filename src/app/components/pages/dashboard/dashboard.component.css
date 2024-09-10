@@ -12,3 +12,7 @@
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
+
+::ng-deep .ng-select.ng-select-single .ng-select-container {
+  height: 46px !important; /* Ajusta la altura según sea necesario */
+}
