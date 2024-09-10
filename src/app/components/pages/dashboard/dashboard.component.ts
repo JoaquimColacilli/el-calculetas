@@ -234,6 +234,49 @@ export class DashboardComponent implements OnInit {
     }, 200);
   }
 
+  getCountByStatus(status: string): number {
+    return this.filteredFinanceItems.filter((item) => item.status === status)
+      .length;
+  }
+
+  getTotalByCurrency(currency: string): number {
+    return this.filteredFinanceItems
+      .filter((item) => item.currency === currency)
+      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+  }
+
+  getTotalByStatusAndCurrency(status: string, currency: string): number {
+    return this.filteredFinanceItems
+      .filter((item) => item.status === status && item.currency === currency)
+      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+  }
+
+  getCurrentMonthItems(): FinanceInterface[] {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return this.filteredFinanceItems.filter((item) => {
+      const itemDate = this.parseDate(item.date);
+      return (
+        itemDate.getMonth() === currentMonth &&
+        itemDate.getFullYear() === currentYear
+      );
+    });
+  }
+
+  // Método para calcular los gastos del mes agrupados por moneda
+  getGroupedExpensesCurrentMonth(): { [key: string]: number } {
+    return this.getCurrentMonthItems().reduce((acc, item) => {
+      const value = parseFloat(String(item.value));
+      if (!acc[item.currency]) {
+        acc[item.currency] = 0;
+      }
+      acc[item.currency] += value;
+      return acc;
+    }, {} as { [key: string]: number });
+  }
+
   loadDollarRates() {
     this.currencyService.getDollarRates().subscribe({
       next: (data) => {
@@ -289,8 +332,12 @@ export class DashboardComponent implements OnInit {
     ).length;
   }
 
-  calculateDineroRestante(): void {
-    this.dineroRestante = this.totalIngresos - this.totalAmount;
+  calculateDineroRestante(): number {
+    const totalPagadoEsteMes = this.getCurrentMonthItems()
+      .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
+      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+
+    return this.totalIngresos - totalPagadoEsteMes;
   }
 
   calculateTotals(): void {
@@ -393,6 +440,11 @@ export class DashboardComponent implements OnInit {
     this.categories.push(newCategory);
 
     this.newExpense.category = name;
+  }
+
+  hasExpensesCurrentMonth(): boolean {
+    const expenses = this.getGroupedExpensesCurrentMonth();
+    return Object.keys(expenses).length > 0;
   }
 
   viewProfile(): void {}

@@ -138,9 +138,9 @@
           <span class="text-gray-700 text-sm font-semibold"
             >Dinero en Cuenta</span
           >
-          <span class="text-3xl font-bold text-green-700 mt-2">{{
-            dineroRestante | currency
-          }}</span>
+          <span class="text-3xl font-bold text-green-700 mt-2">
+            {{ calculateDineroRestante() | currency }}
+          </span>
         </div>
 
         <!-- Card Total de Ingresos -->
@@ -175,20 +175,37 @@
           >
 
           <div class="mt-2">
-            <ng-container *ngFor="let currency of groupedExpenses | keyvalue">
-              <div class="flex items-center space-x-2">
-                <span class="text-lg font-bold text-red-700">
-                  <ng-container [ngSwitch]="currency.key">
-                    <ng-container *ngSwitchCase="'ARS'">
-                      ${{ currency.value | number : "1.0-2" }} ARS
+            <ng-container *ngIf="hasExpensesCurrentMonth(); else noExpenses">
+              <ng-container
+                *ngFor="
+                  let currency of getGroupedExpensesCurrentMonth() | keyvalue
+                "
+              >
+                <div class="flex items-center space-x-2">
+                  <span class="text-lg font-bold text-red-700">
+                    <ng-container [ngSwitch]="currency.key">
+                      <ng-container *ngSwitchCase="'ARS'">
+                        ${{ currency.value | number : "1.0-2" }} ARS
+                      </ng-container>
+                      <ng-container *ngSwitchCase="'USD'">
+                        ${{ currency.value | number : "1.0-2" }} USD
+                      </ng-container>
                     </ng-container>
-                    <ng-container *ngSwitchCase="'USD'">
-                      ${{ currency.value | number : "1.0-2" }} USD
-                    </ng-container>
-                  </ng-container>
-                </span>
-              </div>
+                  </span>
+                </div>
+              </ng-container>
             </ng-container>
+            <ng-template #noExpenses>
+              <div class="flex items-center space-x-2 mt-2">
+                <fa-icon
+                  [icon]="['fas', 'exclamation-circle']"
+                  class="text-red-500"
+                ></fa-icon>
+                <span class="text-red-500 text-sm font-medium"
+                  >No hay gastos este mes</span
+                >
+              </div>
+            </ng-template>
           </div>
         </div>
 
@@ -458,17 +475,26 @@
       </div>
       <div class="bg-white p-4 rounded-lg shadow-md mb-6">
         <div class="flex space-x-8 items-center">
+          <!-- Total registros -->
           <div class="text-left">
-            <span class="text-gray-800 text-sm font-semibold"
-              >{{ filteredFinanceItems.length }} total</span
-            >
-            <span class="text-gray-500 block text-base font-medium">
-              {{ totalAmountARS | currency : "" : "symbol" : "1.0-0" }} ARS
+            <span class="text-gray-800 text-sm font-semibold">
+              {{ filteredFinanceItems.length }} total
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{ totalAmountUSD | currency : "" : "symbol" : "1.0-0" }} USD
+              {{
+                getTotalByCurrency("ARS") | currency : "" : "symbol" : "1.0-0"
+              }}
+              ARS
+            </span>
+            <span class="text-gray-500 block text-base font-medium">
+              {{
+                getTotalByCurrency("USD") | currency : "" : "symbol" : "1.0-0"
+              }}
+              USD
             </span>
           </div>
+
+          <!-- Atrasados -->
           <div class="text-left flex flex-col">
             <span class="text-red-600 text-sm font-semibold flex items-center">
               <fa-icon
@@ -476,35 +502,63 @@
                 style="margin-right: 5px"
                 class="fa-xs"
               ></fa-icon>
-              {{ vencidosCount }} atrasados
+              {{ getCountByStatus("Vencido") }} atrasados
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{ totalVencidosARS | currency : "" : "symbol" : "1.0-0" }} ARS
+              {{
+                getTotalByStatusAndCurrency("Vencido", "ARS")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              ARS
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{ totalVencidosUSD | currency : "" : "symbol" : "1.0-0" }} USD
-            </span>
-          </div>
-          <div class="text-left">
-            <span class="text-green-600 text-sm font-semibold"
-              >{{ pagadosCount }} pagados</span
-            >
-            <span class="text-gray-500 block text-base font-medium">
-              {{ totalPagadosARS | currency : "" : "symbol" : "1.0-0" }} ARS
-            </span>
-            <span class="text-gray-500 block text-base font-medium">
-              {{ totalPagadosUSD | currency : "" : "symbol" : "1.0-0" }} USD
+              {{
+                getTotalByStatusAndCurrency("Vencido", "USD")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              USD
             </span>
           </div>
+
+          <!-- Pagados -->
           <div class="text-left">
-            <span class="text-yellow-600 text-sm font-semibold"
-              >{{ porPagarCount }} por pagar</span
-            >
-            <span class="text-gray-500 block text-base font-medium">
-              {{ totalPorPagarARS | currency : "" : "symbol" : "1.0-0" }} ARS
+            <span class="text-green-600 text-sm font-semibold">
+              {{ getCountByStatus("Pagado") }} pagados
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{ totalPorPagarUSD | currency : "" : "symbol" : "1.0-0" }} USD
+              {{
+                getTotalByStatusAndCurrency("Pagado", "ARS")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              ARS
+            </span>
+            <span class="text-gray-500 block text-base font-medium">
+              {{
+                getTotalByStatusAndCurrency("Pagado", "USD")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              USD
+            </span>
+          </div>
+
+          <!-- Por pagar -->
+          <div class="text-left">
+            <span class="text-yellow-600 text-sm font-semibold">
+              {{ getCountByStatus("Por pagar") }} por pagar
+            </span>
+            <span class="text-gray-500 block text-base font-medium">
+              {{
+                getTotalByStatusAndCurrency("Por pagar", "ARS")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              ARS
+            </span>
+            <span class="text-gray-500 block text-base font-medium">
+              {{
+                getTotalByStatusAndCurrency("Por pagar", "USD")
+                  | currency : "" : "symbol" : "1.0-0"
+              }}
+              USD
             </span>
           </div>
         </div>
