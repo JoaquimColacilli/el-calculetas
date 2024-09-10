@@ -397,6 +397,16 @@
 
         <div class="flex space-x-2">
           <button
+            class="bg-red-400 text-white py-2 px-4 rounded-lg hover:bg-red-500 transition flex items-center space-x-2"
+            (click)="openModal()"
+          >
+            <fa-icon
+              [icon]="['fas', 'pencil-alt']"
+              class="text-white"
+            ></fa-icon>
+            <span>Editar categorías</span>
+          </button>
+          <button
             class="bg-blue-400 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition flex items-center space-x-2"
           >
             <fa-icon [icon]="['fas', 'wallet']"></fa-icon>
@@ -557,11 +567,17 @@
                 />
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="text"
+                <ng-select
+                  [items]="categories"
+                  bindLabel="name"
                   [(ngModel)]="newExpense.category"
-                  class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  placeholder="Seleccione una categoría"
+                  [addTag]="true"
+                  addTagText="Agregar categoría"
+                  (add)="addCategory($event)"
+                  class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                </ng-select>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <input
@@ -698,8 +714,6 @@
           </tbody>
         </table>
       </div>
-
-      <div *ngIf="financeItems.length === 0"></div>
     </main>
   </div>
 </div>

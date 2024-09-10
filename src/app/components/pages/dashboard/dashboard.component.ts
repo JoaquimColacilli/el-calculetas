@@ -1,4 +1,14 @@
-import { Component, inject, OnInit, HostListener, NgZone } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ElementRef,
+  inject,
+  HostListener,
+} from '@angular/core';
+
+import { MatDialog } from '@angular/material/dialog';
+
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -12,32 +22,38 @@ import { WeatherService } from '../../../services/weather.service';
 import { CurrencyService } from '../../../services/currency.service';
 import { FormsModule } from '@angular/forms';
 
+import { NgSelectModule } from '@ng-select/ng-select';
+
 import { ChangeDetectorRef } from '@angular/core';
 
 import Swal from 'sweetalert2';
 
-interface FinanceItem {
-  isPaid: boolean;
-  status: string;
-  date: string;
-  value: string;
-  currency: string;
-  name: string;
-  provider: string;
-  category: string;
-  obs: string;
-}
+import { FinanceInterface } from '../../../interfaces/finance.interface';
+import {
+  Category,
+  DefaultCategories,
+} from '../../../interfaces/category.interface';
+
+import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule, HttpClientModule, FormsModule],
+  imports: [
+    CommonModule,
+    FontAwesomeModule,
+    HttpClientModule,
+    FormsModule,
+    NgSelectModule,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
+  @ViewChild('categorySelect', { static: true }) categorySelect!: ElementRef;
+
   authService = inject(AuthService);
-  financeItems: FinanceItem[] = [];
+  financeItems: FinanceInterface[] = [];
   userData: any = null;
   totalAmount = 0;
   totalVencidos = 0;
@@ -50,6 +66,8 @@ export class DashboardComponent implements OnInit {
   dineroRestante = 0;
   totalIngresos = 50000;
   options = ['Este mes', 'Esta semana', 'Este año'];
+  categories: Category[] = DefaultCategories;
+
   currentIndex = 0;
   weatherData: any = null;
   isDay: boolean = false;
@@ -65,20 +83,19 @@ export class DashboardComponent implements OnInit {
   dolarCriptoCompra: number = 0;
   dolarCriptoVenta: number = 0;
   addingExpense: boolean = false;
-  newExpense: FinanceItem = this.createEmptyExpense();
+  newExpense: FinanceInterface = this.createEmptyExpense();
   isLoading: boolean = false;
   isRefreshing: boolean = false;
   showNotification: boolean = false;
   deletedExpenseName: string = '';
-
-  private zone = inject(NgZone);
 
   constructor(
     private router: Router,
     library: FaIconLibrary,
     private weatherService: WeatherService,
     private currencyService: CurrencyService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {
     library.addIconPacks(fas);
   }
@@ -106,6 +123,13 @@ export class DashboardComponent implements OnInit {
     ) {
       this.closeUserMenu();
     }
+  }
+
+  openModal(): void {
+    this.dialog.open(ModalCategoriasComponent, {
+      width: '500px',
+      panelClass: 'custom-modal-class',
+    });
   }
 
   toggleUserMenu() {
@@ -264,6 +288,14 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  addCategory(name: string) {
+    const newCategory = { name };
+
+    this.categories.push(newCategory);
+
+    this.newExpense.category = name;
+  }
+
   viewProfile(): void {}
 
   editProfile(): void {}
@@ -308,7 +340,7 @@ export class DashboardComponent implements OnInit {
     ];
   }
 
-  togglePayment(item: FinanceItem) {
+  togglePayment(item: FinanceInterface) {
     item.status = item.isPaid ? 'Pagado' : 'Vencido';
   }
 
@@ -329,9 +361,9 @@ export class DashboardComponent implements OnInit {
     this.newExpense = this.createEmptyExpense();
   }
 
-  editExpense(item: FinanceItem) {}
+  editExpense(item: FinanceInterface) {}
 
-  deleteExpense(item: FinanceItem) {
+  deleteExpense(item: FinanceInterface) {
     this.financeItems = this.financeItems.filter((expense) => expense !== item);
     this.cdr.detectChanges();
 
@@ -353,7 +385,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  createEmptyExpense(): FinanceItem {
+  createEmptyExpense(): FinanceInterface {
     return {
       isPaid: false,
       status: 'Por pagar',

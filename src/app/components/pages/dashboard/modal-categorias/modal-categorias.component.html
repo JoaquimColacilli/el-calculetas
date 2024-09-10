@@ -1,0 +1,70 @@
+<!-- Overlay oscuro y modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
+>
+  <!-- Modal centrado con rectángulo contenedor -->
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-xl p-6 space-y-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">
+        <fa-icon [icon]="['fas', 'tags']" class="text-blue-500 mr-2"></fa-icon>
+        Editar Categorías
+      </h2>
+      <button (click)="closeModal()" class="text-gray-500 hover:text-red-500">
+        <fa-icon [icon]="['fas', 'times']"></fa-icon>
+      </button>
+    </div>
+
+    <!-- Contenedor con sombras y bordes -->
+    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+      <!-- Circulitos de categorías -->
+      <div class="grid grid-cols-4 gap-4 relative">
+        <div
+          *ngFor="let category of categories"
+          class="relative bg-white rounded-full p-2 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition cursor-pointer"
+          (click)="editCategory(category)"
+        >
+          <!-- Botón pequeño para eliminar categoría -->
+          <button
+            (click)="deleteCategory(category)"
+            class="absolute top-2 right-1 bg-gray-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+          >
+            <fa-icon [icon]="['fas', 'times']"></fa-icon>
+          </button>
+          <fa-icon
+            [icon]="['fas', getCategoryIcon(category)]"
+            class="text-lg mb-1"
+          ></fa-icon>
+          <span class="text-xs font-medium text-center">{{
+            category.name
+          }}</span>
+        </div>
+
+        <!-- Botón de agregar nueva categoría como círculo -->
+        <button
+          (click)="addNewCategory()"
+          class="bg-gray-400 text-white rounded-full p-2 flex items-center justify-center shadow-lg hover:bg-gray-500 transition"
+        >
+          <fa-icon [icon]="['fas', 'plus']" class="text-lg"></fa-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input para modificar la categoría seleccionada -->
+    <div
+      *ngIf="selectedCategory"
+      class="mt-4 flex items-center justify-end space-x-2"
+    >
+      <input
+        [(ngModel)]="selectedCategory.name"
+        placeholder="Modificar categoría"
+        class="border border-gray-300 rounded w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button
+        (click)="saveCategory()"
+        class="bg-gray-500 text-white px-4 py-2 rounded-full shadow-md hover:bg-gray-600 transition"
+      >
+        <fa-icon [icon]="['fas', 'save']"></fa-icon>
+      </button>
+    </div>
+  </div>
+</div>
