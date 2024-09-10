@@ -5,6 +5,7 @@ import {
   ElementRef,
   inject,
   HostListener,
+  OnDestroy,
 } from '@angular/core';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -89,6 +90,11 @@ export class DashboardComponent implements OnInit {
   showNotification: boolean = false;
   deletedExpenseName: string = '';
 
+  currentDateTime: string = '';
+  private intervalId: any;
+
+  searchQuery: string = '';
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -108,6 +114,9 @@ export class DashboardComponent implements OnInit {
     this.getWeatherData();
     this.calculateDayOrNight();
     this.loadDollarRates();
+
+    this.updateDateTime();
+    this.intervalId = setInterval(() => this.updateDateTime(), 1000);
   }
 
   @HostListener('document:click', ['$event'])
@@ -123,6 +132,18 @@ export class DashboardComponent implements OnInit {
     ) {
       this.closeUserMenu();
     }
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.intervalId);
+  }
+
+  updateDateTime(): void {
+    const now = new Date();
+    this.currentDateTime = now.toLocaleString('es-ES', {
+      dateStyle: 'full',
+      timeStyle: 'medium',
+    });
   }
 
   openModal(): void {
@@ -346,6 +367,17 @@ export class DashboardComponent implements OnInit {
 
   addExpense() {
     this.addingExpense = true;
+  }
+
+  get filteredFinanceItems(): FinanceInterface[] {
+    if (!this.searchQuery.trim()) {
+      return this.financeItems;
+    }
+    return this.financeItems.filter((item) =>
+      `${item.name} ${item.provider} ${item.obs}`
+        .toLowerCase()
+        .includes(this.searchQuery.toLowerCase())
+    );
   }
 
   saveExpense() {

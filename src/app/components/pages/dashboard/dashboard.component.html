@@ -33,6 +33,16 @@
     >
       <div class="flex items-center space-x-3">
         <h1 class="text-2xl font-bold text-gray-700">Dashboard</h1>
+
+        <div
+          class="flex items-center space-x-2 text-gray-600 text-sm border-l pl-4"
+        >
+          <fa-icon
+            [icon]="['fas', 'calendar-days']"
+            class="text-blue-500"
+          ></fa-icon>
+          <span class="font-medium">{{ currentDateTime }}</span>
+        </div>
       </div>
 
       <div class="flex items-center space-x-3 relative px-4">
@@ -48,7 +58,6 @@
               userData?.username
             }}</span>
 
-            <!-- Icono que despliega el menú con la clase específica -->
             <fa-icon
               [icon]="['fas', 'chevron-down']"
               class="text-gray-500 cursor-pointer icon-menu-toggle"
@@ -60,7 +69,6 @@
             {{ userData?.email || userData?.username }}
           </span>
 
-          <!-- Menú desplegable con clase específica -->
           <div
             *ngIf="isUserMenuOpen || isClosing"
             class="absolute mt-6 w-48 bg-white border rounded-lg shadow-lg py-2 transition-transform duration-300 ease-out origin-top-right scale-95 user-menu"
@@ -382,6 +390,7 @@
               placeholder="Nombre, proveedor o obs..."
               class="border border-gray-300 p-2 pr-10 rounded focus:outline-none"
               style="height: 3rem; width: 100%"
+              [(ngModel)]="searchQuery"
             />
             <fa-icon
               [icon]="['fas', 'search']"
@@ -426,7 +435,7 @@
         <div class="flex space-x-8 items-center">
           <div class="text-left">
             <span class="text-gray-800 text-sm font-semibold"
-              >{{ financeItems.length }} total</span
+              >{{ filteredFinanceItems.length }} total</span
             >
             <span class="text-gray-500 block text-base font-medium">{{
               totalAmount | currency
@@ -604,7 +613,7 @@
               </td>
             </tr>
 
-            <tr *ngIf="financeItems.length === 0 && !addingExpense">
+            <tr *ngIf="filteredFinanceItems.length === 0 && !addingExpense">
               <td colspan="8" class="px-6 py-4 text-center">
                 <div class="flex items-center justify-center text-gray-500">
                   <fa-icon
@@ -617,7 +626,7 @@
             </tr>
 
             <!-- Fila para cada gasto existente -->
-            <tr *ngFor="let item of financeItems">
+            <tr *ngFor="let item of filteredFinanceItems">
               <td class="px-6 py-4 whitespace-nowrap">
                 <label class="flex items-center cursor-pointer">
                   <input

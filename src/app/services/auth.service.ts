@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
+  Persistence,
 } from '@angular/fire/auth';
 import { Observable, from, catchError, throwError, switchMap } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
@@ -212,6 +213,10 @@ export class AuthService {
         );
       })
     );
+  }
+
+  setPersistence(persistence: Persistence): Promise<void> {
+    return this.firebaseAuth.setPersistence(persistence);
   }
 
   logout(): Observable<void> {
