@@ -33,7 +33,7 @@ export class ModalCategoriasComponent {
   }
 
   editCategory(category: Category): void {
-    this.selectedCategory = { ...category }; // Copia de la categoría seleccionada
+    this.selectedCategory = category; // Asigna la categoría seleccionada
   }
 
   saveCategory(): void {
@@ -48,6 +48,9 @@ export class ModalCategoriasComponent {
 
   deleteCategory(category: Category): void {
     this.categories = this.categories.filter((c) => c !== category); // Elimina la categoría
+    if (this.selectedCategory === category) {
+      this.selectedCategory = null; // Si la categoría eliminada estaba seleccionada, resetea la selección
+    }
   }
 
   addNewCategory(): void {

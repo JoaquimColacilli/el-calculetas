@@ -20,7 +20,11 @@
       <div class="grid grid-cols-4 gap-4 relative">
         <div
           *ngFor="let category of categories"
-          class="relative bg-white rounded-full p-2 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition cursor-pointer"
+          [ngClass]="{
+            'bg-gray-300': selectedCategory === category,
+            'bg-white': selectedCategory !== category
+          }"
+          class="relative rounded-full p-2 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition cursor-pointer"
           (click)="editCategory(category)"
         >
           <!-- Botón pequeño para eliminar categoría -->
