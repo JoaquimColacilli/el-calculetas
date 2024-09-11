@@ -171,7 +171,7 @@
             style="font-size: 24px"
           ></fa-icon>
           <span class="text-gray-700 text-sm font-semibold"
-            >Gastos del Mes</span
+            >Gastos de {{ options[currentIndex].toLowerCase() }}</span
           >
 
           <div class="mt-2">
@@ -201,9 +201,9 @@
                   [icon]="['fas', 'exclamation-circle']"
                   class="text-red-500"
                 ></fa-icon>
-                <span class="text-red-500 text-sm font-medium"
-                  >No hay gastos este mes</span
-                >
+                <span class="text-red-500 text-sm font-medium">
+                  No hay gastos {{ options[currentIndex].toLowerCase() }}
+                </span>
               </div>
             </ng-template>
           </div>
@@ -858,6 +858,20 @@
                   <span
                     >Se ha enviado el gasto "{{ deletedExpenseName }}" a la
                     papelera temporal.</span
+                  >
+                </div>
+
+                <div
+                  *ngIf="showNotificationGastoAdded"
+                  class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-lg transition-transform duration-500 flex items-center space-x-2"
+                >
+                  <fa-icon
+                    [icon]="['fas', 'info-circle']"
+                    class="text-white text-lg"
+                  ></fa-icon>
+                  <span
+                    >Se ha añadido el gasto "{{ addedItemName }}"
+                    correctamente.</span
                   >
                 </div>
 

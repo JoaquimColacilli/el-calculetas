@@ -89,7 +89,9 @@ export class DashboardComponent implements OnInit {
   isLoading: boolean = false;
   isRefreshing: boolean = false;
   showNotification: boolean = false;
+  showNotificationGastoAdded: boolean = false;
   deletedExpenseName: string = '';
+  addedItemName: string = '';
 
   sortOrder: 'asc' | 'desc' = 'desc';
 
@@ -656,6 +658,7 @@ export class DashboardComponent implements OnInit {
 
   saveExpense() {
     if (this.newExpense.name && this.newExpense.value) {
+      this.showAddExpense(this.newExpense.name);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -791,6 +794,21 @@ export class DashboardComponent implements OnInit {
       position: 'top',
       icon: 'info',
       title: `Se ha enviado el gasto "${deletedItemName}" a la papelera temporal.`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
+  }
+
+  showAddExpense(addedItemName: string) {
+    this.addedItemName = addedItemName;
+    Swal.fire({
+      position: 'top',
+      icon: 'info',
+      title: `Se ha añadido el gasto "${addedItemName}" correctamente.`,
       showConfirmButton: false,
       timer: 3000,
       toast: true,
