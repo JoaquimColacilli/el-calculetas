@@ -33,7 +33,7 @@ export class ModalCategoriasComponent {
   }
 
   editCategory(category: Category): void {
-    this.selectedCategory = category; // Asigna la categoría seleccionada
+    this.selectedCategory = category;
   }
 
   saveCategory(): void {
@@ -41,22 +41,22 @@ export class ModalCategoriasComponent {
       (c) => c.name === this.selectedCategory?.name
     );
     if (index !== -1 && this.selectedCategory) {
-      this.categories[index] = { ...this.selectedCategory }; // Actualiza la categoría
+      this.categories[index] = { ...this.selectedCategory };
     }
-    this.selectedCategory = null; // Resetea la selección
+    this.selectedCategory = null;
   }
 
   deleteCategory(category: Category): void {
-    this.categories = this.categories.filter((c) => c !== category); // Elimina la categoría
+    this.categories = this.categories.filter((c) => c !== category);
     if (this.selectedCategory === category) {
-      this.selectedCategory = null; // Si la categoría eliminada estaba seleccionada, resetea la selección
+      this.selectedCategory = null;
     }
   }
 
   addNewCategory(): void {
     const newCategory: Category = { name: 'Nueva Categoría' };
     this.categories.push(newCategory);
-    this.editCategory(newCategory); // Abre el input para editar la nueva categoría
+    this.editCategory(newCategory);
   }
 
   getCategoryIcon(category: Category): string {

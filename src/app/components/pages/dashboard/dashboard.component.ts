@@ -36,6 +36,7 @@ import {
 } from '../../../interfaces/category.interface';
 
 import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.component';
+import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -65,7 +66,7 @@ export class DashboardComponent implements OnInit {
   porPagarCount = 0;
   sueldoIngresado = 0;
   dineroRestante = 0;
-  totalIngresos = 50000;
+  totalIngresos = 0;
   options = ['Este mes', 'Esta semana', 'Este año'];
   categories: Category[] = DefaultCategories;
 
@@ -185,10 +186,36 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  openModal(): void {
+  openModalCategorias(): void {
     this.dialog.open(ModalCategoriasComponent, {
       width: '500px',
       panelClass: 'custom-modal-class',
+    });
+  }
+
+  openModalIngresarSueldo(): void {
+    const dialogRef = this.dialog.open(IngresarSueldoComponent, {
+      width: '500px',
+      panelClass: 'custom-modal-class',
+      data: {
+        dolarBolsaVenta: this.dolarBolsaVenta,
+      },
+    });
+
+    // Captura los datos devueltos por el modal
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result && result.salaries) {
+        // Sumamos los sueldos ingresados y actualizamos totalIngresos
+        const totalSueldoIngresado = result.salaries.reduce(
+          (acc: number, salary: string) => {
+            return acc + parseFloat(salary.replace(/[^\d]/g, '')) || 0;
+          },
+          0
+        );
+
+        this.totalIngresos += totalSueldoIngresado;
+        this.calculateDineroRestante(); // Actualizamos el cálculo de dinero restante
+      }
     });
   }
 
@@ -333,11 +360,14 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateDineroRestante(): number {
+    // Calcula el total de gastos pagados del mes en ARS
     const totalPagadoEsteMes = this.getCurrentMonthItems()
       .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
 
-    return this.totalIngresos - totalPagadoEsteMes;
+    // Calcula el dinero restante como la diferencia entre ingresos y gastos
+    this.dineroRestante = this.totalIngresos - totalPagadoEsteMes;
+    return this.dineroRestante;
   }
 
   calculateTotals(): void {
@@ -666,6 +696,7 @@ export class DashboardComponent implements OnInit {
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
+
       this.updateGroupedExpenses();
       this.cancelAddingExpense();
     }
