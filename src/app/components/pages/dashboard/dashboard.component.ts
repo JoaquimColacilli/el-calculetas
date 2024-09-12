@@ -68,6 +68,7 @@ export class DashboardComponent implements OnInit {
   porPagarCount = 0;
   sueldoIngresado = 0;
   dineroRestante = 0;
+  dineroRestanteUSD = 0;
   totalIngresos = 0;
   options = ['Este mes', 'Esta semana', 'Este año'];
   categories: Category[] = DefaultCategories;
@@ -116,6 +117,9 @@ export class DashboardComponent implements OnInit {
   totalVencidosUSD = 0;
   totalPagadosUSD = 0;
   totalPorPagarUSD = 0;
+
+  totalIngresosUSD: number = 0;
+  totalDineroEnCuentaUSD: number = 0;
 
   editingIndex: number | null = null;
   currentExpense: FinanceInterface = this.createEmptyExpense();
@@ -211,19 +215,27 @@ export class DashboardComponent implements OnInit {
       },
     });
 
-    // Captura los datos devueltos por el modal
     dialogRef.afterClosed().subscribe((result) => {
-      if (result && result.salaries) {
-        // Sumamos los sueldos ingresados y actualizamos totalIngresos
-        const totalSueldoIngresado = result.salaries.reduce(
-          (acc: number, salary: string) => {
-            return acc + parseFloat(salary.replace(/[^\d]/g, '')) || 0;
-          },
-          0
-        );
+      console.log(result);
+      if (
+        result &&
+        (result.totalInDollars !== undefined || result.totalInArs !== undefined)
+      ) {
+        // Sumamos los totales de sueldos en USD y ARS
+        const totalSueldoUSD = result.totalInDollars || 0;
+        const totalSueldoIngresado = result.totalInArs || 0;
 
+        // Actualizamos los valores de ingresos en ARS y USD
         this.totalIngresos += totalSueldoIngresado;
-        this.calculateDineroRestante(); // Actualizamos el cálculo de dinero restante
+        this.totalIngresosUSD += totalSueldoUSD;
+
+        // Calculamos el dinero total en cuenta en USD convertido a ARS
+        this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
+
+        console.log('Total Ingresos ARS:', this.totalIngresos);
+        console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
+
+        this.calculateDineroRestante();
       }
     });
   }
@@ -343,7 +355,7 @@ export class DashboardComponent implements OnInit {
       return acc;
     }, {} as { [key: string]: number });
 
-    console.log('Grouped Expenses:', grouped); // Verifica aquí si los ARS están incluidos
+    //console.log('Grouped Expenses:', grouped); // Verifica aquí si los ARS están incluidos
     return grouped;
   }
 
@@ -403,8 +415,10 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateDineroRestante(): number {
-    // Obtiene solo los elementos pagados de este mes en ARS independientemente de la vista actual
     const now = new Date();
+    const dolarBolsaVenta = this.dolarBolsaVenta;
+
+    // Filtra los gastos pagados en ARS de este mes
     const gastosPagadosEsteMes = this.financeItems.filter((item) => {
       const itemDate = this.parseDate(item.date);
       return (
@@ -415,15 +429,44 @@ export class DashboardComponent implements OnInit {
       );
     });
 
-    // Calcula el total de los gastos pagados en ARS para este mes
+    // Suma el total de los gastos pagados en ARS para este mes
     const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
       (acc, item) => acc + parseFloat(String(item.value)),
       0
     );
 
-    // Calcula el dinero restante basado en los ingresos y los gastos pagados del mes
+    // Calcula el dinero restante basado en los ingresos en ARS menos los gastos en ARS
     this.dineroRestante = this.totalIngresos - totalPagadoEsteMes;
+
+    // Devuelve el dinero restante en ARS
     return this.dineroRestante;
+  }
+
+  calculateDineroRestanteUsd(): number {
+    const now = new Date();
+
+    // Filtra los gastos pagados en USD de este mes
+    const gastosPagadosUsd = this.financeItems.filter((item) => {
+      const itemDate = this.parseDate(item.date);
+      return (
+        item.status === 'Pagado' &&
+        item.currency === 'USD' &&
+        itemDate.getFullYear() === now.getFullYear() &&
+        itemDate.getMonth() === now.getMonth()
+      );
+    });
+
+    // Suma los gastos pagados en USD
+    const totalGastosUsd = gastosPagadosUsd.reduce(
+      (acc, item) => acc + parseFloat(String(item.value)),
+      0
+    );
+
+    // Calcula el dinero restante en USD restando los gastos pagados en USD de los ingresos en USD
+    this.dineroRestanteUSD = this.totalIngresosUSD - totalGastosUsd;
+
+    // Devuelve el dinero restante en USD
+    return this.dineroRestanteUSD;
   }
 
   calculateTotals(): void {
