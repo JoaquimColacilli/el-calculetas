@@ -477,8 +477,9 @@
           </button>
 
           <button
-            class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center space-x-2"
+            class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center space-x-2 relative group disabled:bg-gray-400 disabled:cursor-not-allowed"
             (click)="addExpense()"
+            [disabled]="editingIndex !== null"
           >
             <fa-icon [icon]="['fas', 'plus']"></fa-icon>
             <span>Gasto</span>
@@ -605,7 +606,6 @@
                       "
                     ></fa-icon>
                   </button>
-                  <!-- Mostrar el checkbox "Hoy" solo cuando se está editando o agregando -->
                   <label
                     *ngIf="addingExpense || editingIndex !== null"
                     class="flex items-center cursor-pointer ml-2"
@@ -690,9 +690,9 @@
                     'border-red-500': !currentExpense.date && isSaveAttempted
                   }"
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  [value]="getDisplayDate()"
                 />
               </td>
+
               <td
                 class="px-6 py-4 whitespace-nowrap flex items-center space-x-2"
               >
@@ -783,7 +783,7 @@
 
             <!-- Filas de los gastos existentes -->
             <tr *ngFor="let item of filteredFinanceItems; let i = index">
-              <ng-container *ngIf="editingIndex !== i; else editRow">
+              <ng-container *ngIf="editingIndex !== i">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <label class="flex items-center cursor-pointer">
                     <input
@@ -871,133 +871,6 @@
                   </button>
                 </td>
               </ng-container>
-
-              <!-- Fila editable en la misma fila donde se hizo click -->
-              <ng-template #editRow>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <label class="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      [(ngModel)]="currentExpense.isPaid"
-                      (change)="togglePayment(currentExpense)"
-                    />
-                    <div
-                      [ngClass]="{
-                        'bg-green-500': currentExpense.isPaid,
-                        'bg-gray-200': !currentExpense.isPaid
-                      }"
-                      class="w-11 h-6 rounded-full transition-all duration-300 relative"
-                    >
-                      <div
-                        [ngClass]="{
-                          'translate-x-5': currentExpense.isPaid,
-                          'translate-x-0': !currentExpense.isPaid
-                        }"
-                        class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
-                      ></div>
-                    </div>
-                  </label>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="date"
-                    [(ngModel)]="currentExpense.date"
-                    [disabled]="isTodayChecked"
-                    [ngClass]="{
-                      'border-red-500': !currentExpense.date && isSaveAttempted
-                    }"
-                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    [value]="getDisplayDate()"
-                  />
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap flex items-center space-x-2"
-                >
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    [(ngModel)]="currentExpense.value"
-                    [ngClass]="{
-                      'border-red-500': !currentExpense.value && isSaveAttempted
-                    }"
-                    class="border border-gray-300 rounded px-3 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                  <select
-                    [(ngModel)]="currentExpense.currency"
-                    [ngClass]="{
-                      'border-red-500':
-                        !currentExpense.currency && isSaveAttempted
-                    }"
-                    class="border border-gray-300 rounded px-2 py-2 w-2/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="ARS">ARS</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="text"
-                    [(ngModel)]="currentExpense.name"
-                    [ngClass]="{
-                      'border-red-500': !currentExpense.name && isSaveAttempted
-                    }"
-                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="text"
-                    [(ngModel)]="currentExpense.provider"
-                    [ngClass]="{
-                      'border-red-500':
-                        !currentExpense.provider && isSaveAttempted
-                    }"
-                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <ng-select
-                    [items]="categories"
-                    bindLabel="name"
-                    [(ngModel)]="currentExpense.category"
-                    [ngClass]="{
-                      'border-red-500':
-                        !currentExpense.category && isSaveAttempted
-                    }"
-                    placeholder="Seleccione una categoría"
-                    [addTag]="true"
-                    addTagText="Agregar categoría"
-                    (add)="addCategory($event)"
-                    class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></ng-select>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="text"
-                    [(ngModel)]="currentExpense.obs"
-                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
-                >
-                  <button
-                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
-                    (click)="cancelAddingExpense()"
-                  >
-                    <fa-icon [icon]="['fas', 'times']"></fa-icon>
-                  </button>
-                  <button
-                    class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition flex items-center"
-                    (click)="saveExpense()"
-                  >
-                    <fa-icon [icon]="['fas', 'check']"></fa-icon>
-                  </button>
-                </td>
-              </ng-template>
             </tr>
           </tbody>
         </table>

@@ -37,6 +37,7 @@ import {
 
 import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.component';
 import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-dashboard',
@@ -47,6 +48,7 @@ import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.compo
     HttpClientModule,
     FormsModule,
     NgSelectModule,
+    MatTooltipModule,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
@@ -554,12 +556,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  addExpense() {
-    this.addingExpense = true;
-    this.isTodayChecked = true;
-    this.toggleTodayDate();
-  }
-
   get filteredFinanceItems(): FinanceInterface[] {
     const searchQueryLower = this.searchQuery.toLowerCase();
     const filteredItems = this.financeItems.filter((item) => {
@@ -732,11 +728,36 @@ export class DashboardComponent implements OnInit {
     this.isSaveAttempted = false;
   }
 
+  addExpense() {
+    this.addingExpense = true;
+    this.isTodayChecked = true;
+    this.toggleTodayDate();
+    this.getDisplayDate();
+  }
+
   editExpense(index: number): void {
     this.editingIndex = index;
     this.currentExpense = { ...this.financeItems[index] };
     this.addingExpense = true;
+
+    // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
+    if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+      const [day, month, year] = this.currentExpense.date.split('/');
+      this.currentExpense.date = `${year}-${month.padStart(
+        2,
+        '0'
+      )}-${day.padStart(2, '0')}`;
+    }
+
+    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
+    const selectedDate = this.parseDate(this.currentExpense.date);
+
+    console.log(this.currentExpense);
+    this.isTodayChecked = selectedDate.getTime() === today.getTime();
   }
+
   deleteExpense(item: FinanceInterface) {
     this.financeItems = this.financeItems.filter((expense) => expense !== item);
     this.cdr.detectChanges();
@@ -759,16 +780,6 @@ export class DashboardComponent implements OnInit {
     this.calculateTotals();
   }
 
-  toggleTodayDate() {
-    if (this.isTodayChecked) {
-      const today = new Date();
-      const formattedDate = today.toISOString().split('T')[0];
-      this.newExpense.date = formattedDate;
-    } else {
-      this.newExpense.date = '';
-    }
-  }
-
   setTodayDate(): void {
     const today = new Date();
     this.newExpense.date = this.formatDate(today);
@@ -783,9 +794,34 @@ export class DashboardComponent implements OnInit {
 
   getDisplayDate(): string {
     if (this.isTodayChecked) {
-      return this.formatDate(new Date());
+      // Obtener la fecha de hoy correctamente sin cambios de huso horario
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Aseguramos que no haya variación de hora
+      return today.toISOString().split('T')[0]; // Formato ISO compatible con el input date
     } else {
-      return this.currentExpense.date ? this.currentExpense.date : '';
+      // Asegura que si la fecha tiene formato dd/mm/yyyy, se convierta a yyyy-MM-dd
+      if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+        const [day, month, year] = this.currentExpense.date.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      return this.currentExpense.date || '';
+    }
+  }
+
+  toggleTodayDate() {
+    // Definir 'today' al inicio del método para usarlo en ambos casos
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Asegura que se maneje correctamente el día actual sin errores de huso horario
+
+    if (this.isTodayChecked) {
+      // Si el checkbox está marcado, asignar la fecha de hoy
+      this.currentExpense.date = today.toISOString().split('T')[0]; // Formato ISO para el input de tipo date
+    } else {
+      // Si el checkbox está desmarcado, no cambiar la fecha actual del input
+      const currentDate = this.currentExpense.date;
+      if (currentDate !== today.toISOString().split('T')[0]) {
+        this.isTodayChecked = false;
+      }
     }
   }
 
