@@ -114,6 +114,10 @@ export class DashboardComponent implements OnInit {
   totalPagadosUSD = 0;
   totalPorPagarUSD = 0;
 
+  editingIndex: number | null = null;
+  currentExpense: FinanceInterface = this.createEmptyExpense();
+  isSaveAttempted = false;
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -657,17 +661,18 @@ export class DashboardComponent implements OnInit {
   }
 
   saveExpense() {
-    if (this.newExpense.name && this.newExpense.value) {
-      this.showAddExpense(this.newExpense.name);
+    // Check if we are editing or adding a new expense
+    if (this.currentExpense.name && this.currentExpense.value) {
+      this.showAddExpense(this.currentExpense.name);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       this.addingExpense = false;
 
-      let selectedDate = this.parseDate(this.newExpense.date);
+      let selectedDate = this.parseDate(this.currentExpense.date);
 
       if (this.isTodayChecked) {
-        this.newExpense.date = this.formatDate(today);
+        this.currentExpense.date = this.formatDate(today);
         selectedDate = today;
       }
 
@@ -675,36 +680,68 @@ export class DashboardComponent implements OnInit {
       console.log(today);
 
       if (selectedDate > today) {
-        this.newExpense.status = 'Por pagar';
-
-        console.log(this.newExpense);
+        this.currentExpense.status = 'Por pagar';
+        console.log(this.currentExpense);
       } else if (selectedDate < today) {
-        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
-        console.log(this.newExpense);
+        this.currentExpense.status = this.currentExpense.isPaid
+          ? 'Pagado'
+          : 'Vencido';
+        console.log(this.currentExpense);
       } else {
-        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
-        console.log(this.newExpense);
+        this.currentExpense.status = this.currentExpense.isPaid
+          ? 'Pagado'
+          : 'Vencido';
+        console.log(this.currentExpense);
       }
 
       if (selectedDate.getTime() === today.getTime()) {
-        this.newExpense.status = 'Por pagar';
+        this.currentExpense.status = 'Por pagar';
       } else if (selectedDate > today) {
-        this.newExpense.status = 'Por pagar';
+        this.currentExpense.status = 'Por pagar';
       } else {
-        this.newExpense.status = this.newExpense.isPaid ? 'Pagado' : 'Vencido';
+        this.currentExpense.status = this.currentExpense.isPaid
+          ? 'Pagado'
+          : 'Vencido';
       }
 
-      this.financeItems.unshift({ ...this.newExpense });
+      // Check if editing an existing expense
+      if (this.editingIndex !== null) {
+        // Update the existing expense
+        this.financeItems[this.editingIndex] = { ...this.currentExpense };
+        this.editingIndex = null; // Reset the editing index
+      } else {
+        // Add new expense
+        this.financeItems.unshift({ ...this.currentExpense });
+      }
 
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
-
       this.updateGroupedExpenses();
       this.cancelAddingExpense();
+    } else {
+      this.cancelAddingExpense();
+      console.log(this.currentExpense);
     }
-    this.cancelAddingExpense();
-    console.log(this.newExpense);
+  }
+
+  cancelAddingExpense(): void {
+    this.addingExpense = false;
+    this.editingIndex = null;
+    this.currentExpense = this.createEmptyExpense();
+    this.isSaveAttempted = false;
+  }
+
+  editExpense(index: number): void {
+    this.editingIndex = index;
+    this.currentExpense = { ...this.financeItems[index] };
+    this.addingExpense = true;
+  }
+  deleteExpense(item: FinanceInterface) {
+    this.financeItems = this.financeItems.filter((expense) => expense !== item);
+    this.cdr.detectChanges();
+
+    this.showDeleteNotification(item.name);
   }
 
   checkAndUpdateExpensesStatus(): void {
@@ -744,6 +781,14 @@ export class DashboardComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
+  getDisplayDate(): string {
+    if (this.isTodayChecked) {
+      return this.formatDate(new Date());
+    } else {
+      return this.currentExpense.date ? this.currentExpense.date : '';
+    }
+  }
+
   formatDateDisplay(dateString: string): string {
     if (!dateString || typeof dateString !== 'string') {
       console.error('Fecha inválida o en formato incorrecto:', dateString);
@@ -772,20 +817,6 @@ export class DashboardComponent implements OnInit {
 
     console.error('Formato de fecha no reconocido:', dateString);
     return 'Fecha inválida';
-  }
-
-  cancelAddingExpense() {
-    this.addingExpense = false;
-    this.newExpense = this.createEmptyExpense();
-  }
-
-  editExpense(item: FinanceInterface) {}
-
-  deleteExpense(item: FinanceInterface) {
-    this.financeItems = this.financeItems.filter((expense) => expense !== item);
-    this.cdr.detectChanges();
-
-    this.showDeleteNotification(item.name);
   }
 
   showDeleteNotification(deletedItemName: string) {

@@ -126,9 +126,10 @@
     <main class="p-6 flex-1 overflow-y-auto">
       <div class="flex space-x-6 mb-6">
         <!-- Card Dinero Restante -->
+        <!-- Card Dinero Restante -->
         <div
-          class="bg-gradient-to-br from-green-100 to-green-200 shadow-lg rounded-xl p-6 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 200px; height: 130px"
+          class="bg-gradient-to-br from-green-100 to-green-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          style="width: 250px; height: 150px"
         >
           <fa-icon
             [icon]="['fas', 'wallet']"
@@ -138,15 +139,18 @@
           <span class="text-gray-700 text-sm font-semibold"
             >Dinero en Cuenta</span
           >
-          <span class="text-3xl font-bold text-green-700 mt-2">
+          <span
+            class="text-2xl font-bold text-green-700 mt-2"
+            style="overflow-wrap: break-word; word-wrap: break-word"
+          >
             {{ calculateDineroRestante() | currency }}
           </span>
         </div>
 
         <!-- Card Total de Ingresos -->
         <div
-          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-6 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 200px; height: 130px"
+          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          style="width: 250px; height: 150px"
         >
           <fa-icon
             [icon]="['fas', 'coins']"
@@ -156,23 +160,27 @@
           <span class="text-gray-700 text-sm font-semibold"
             >Total de Ingresos</span
           >
-          <span class="text-3xl font-bold text-blue-700 mt-2">{{
-            totalIngresos | currency
-          }}</span>
+          <span
+            class="text-2xl font-bold text-blue-700 mt-2"
+            style="overflow-wrap: break-word; word-wrap: break-word"
+          >
+            {{ totalIngresos | currency }}
+          </span>
         </div>
 
+        <!-- Card Gastos -->
         <div
-          class="bg-gradient-to-br from-red-100 to-red-200 shadow-lg rounded-xl p-6 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 200px; height: auto"
+          class="bg-gradient-to-br from-red-100 to-red-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          style="width: 250px; height: auto; min-height: 150px"
         >
           <fa-icon
             [icon]="['fas', 'chart-line']"
             class="absolute top-3 right-3 text-red-400 opacity-50"
             style="font-size: 24px"
           ></fa-icon>
-          <span class="text-gray-700 text-sm font-semibold"
-            >Gastos de {{ options[currentIndex].toLowerCase() }}</span
-          >
+          <span class="text-gray-700 text-sm font-semibold">
+            Gastos de {{ options[currentIndex].toLowerCase() }}
+          </span>
 
           <div class="mt-2">
             <ng-container *ngIf="hasExpensesCurrentMonth(); else noExpenses">
@@ -182,7 +190,10 @@
                 "
               >
                 <div class="flex items-center space-x-2">
-                  <span class="text-lg font-bold text-red-700">
+                  <span
+                    class="text-lg font-bold text-red-700"
+                    style="overflow-wrap: break-word; word-wrap: break-word"
+                  >
                     <ng-container [ngSwitch]="currency.key">
                       <ng-container *ngSwitchCase="'ARS'">
                         ${{ currency.value | number : "1.0-2" }} ARS
@@ -579,9 +590,9 @@
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
                 <div class="flex items-center justify-between">
-                  <span>Fecha</span>
+                  <span>Fecha *</span>
                   <button
-                    *ngIf="!addingExpense"
+                    *ngIf="!addingExpense && editingIndex === null"
                     class="text-gray-500 hover:text-blue-500 focus:outline-none ml-2"
                     (click)="toggleSortOrder()"
                     title="Ordenar por fecha"
@@ -592,22 +603,20 @@
                           ? ['fas', 'sort-numeric-down']
                           : ['fas', 'sort-numeric-up']
                       "
-                    >
-                    </fa-icon>
+                    ></fa-icon>
                   </button>
+                  <!-- Mostrar el checkbox "Hoy" solo cuando se está editando o agregando -->
                   <label
-                    class="flex items-center cursor-pointer"
-                    *ngIf="addingExpense"
+                    *ngIf="addingExpense || editingIndex !== null"
+                    class="flex items-center cursor-pointer ml-2"
                   >
                     <span>Hoy</span>
-
                     <input
                       type="checkbox"
                       [(ngModel)]="isTodayChecked"
                       (change)="toggleTodayDate()"
                       class="ml-1"
                       title="Hoy"
-                      checked
                     />
                   </label>
                 </div>
@@ -615,22 +624,22 @@
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                Valor
+                Valor *
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                Nombre del gasto
+                Nombre del gasto *
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                Proveedor
+                Proveedor *
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                Categoría
+                Categoría *
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -645,27 +654,27 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <!-- Nueva fila editable -->
+            <!-- Fila editable para agregar un nuevo gasto -->
             <tr *ngIf="addingExpense" class="bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <label class="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     class="sr-only peer"
-                    [(ngModel)]="newExpense.isPaid"
-                    (change)="togglePayment(newExpense)"
+                    [(ngModel)]="currentExpense.isPaid"
+                    (change)="togglePayment(currentExpense)"
                   />
                   <div
                     [ngClass]="{
-                      'bg-green-500': newExpense.isPaid,
-                      'bg-gray-200': !newExpense.isPaid
+                      'bg-green-500': currentExpense.isPaid,
+                      'bg-gray-200': !currentExpense.isPaid
                     }"
                     class="w-11 h-6 rounded-full transition-all duration-300 relative"
                   >
                     <div
                       [ngClass]="{
-                        'translate-x-5': newExpense.isPaid,
-                        'translate-x-0': !newExpense.isPaid
+                        'translate-x-5': currentExpense.isPaid,
+                        'translate-x-0': !currentExpense.isPaid
                       }"
                       class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
                     ></div>
@@ -675,9 +684,13 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <input
                   type="date"
-                  [(ngModel)]="newExpense.date"
+                  [(ngModel)]="currentExpense.date"
                   [disabled]="isTodayChecked"
+                  [ngClass]="{
+                    'border-red-500': !currentExpense.date && isSaveAttempted
+                  }"
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  [value]="getDisplayDate()"
                 />
               </td>
               <td
@@ -687,30 +700,43 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  [(ngModel)]="newExpense.value"
+                  [(ngModel)]="currentExpense.value"
+                  [ngClass]="{
+                    'border-red-500': !currentExpense.value && isSaveAttempted
+                  }"
                   class="border border-gray-300 rounded px-3 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.00"
                 />
                 <select
-                  [(ngModel)]="newExpense.currency"
+                  [(ngModel)]="currentExpense.currency"
+                  [ngClass]="{
+                    'border-red-500':
+                      !currentExpense.currency && isSaveAttempted
+                  }"
                   class="border border-gray-300 rounded px-2 py-2 w-2/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="ARS">ARS</option>
                   <option value="USD">USD</option>
                 </select>
               </td>
-
               <td class="px-6 py-4 whitespace-nowrap">
                 <input
                   type="text"
-                  [(ngModel)]="newExpense.name"
+                  [(ngModel)]="currentExpense.name"
+                  [ngClass]="{
+                    'border-red-500': !currentExpense.name && isSaveAttempted
+                  }"
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <input
                   type="text"
-                  [(ngModel)]="newExpense.provider"
+                  [(ngModel)]="currentExpense.provider"
+                  [ngClass]="{
+                    'border-red-500':
+                      !currentExpense.provider && isSaveAttempted
+                  }"
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </td>
@@ -718,19 +744,22 @@
                 <ng-select
                   [items]="categories"
                   bindLabel="name"
-                  [(ngModel)]="newExpense.category"
+                  [(ngModel)]="currentExpense.category"
+                  [ngClass]="{
+                    'border-red-500':
+                      !currentExpense.category && isSaveAttempted
+                  }"
                   placeholder="Seleccione una categoría"
                   [addTag]="true"
                   addTagText="Agregar categoría"
                   (add)="addCategory($event)"
                   class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                </ng-select>
+                ></ng-select>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <input
                   type="text"
-                  [(ngModel)]="newExpense.obs"
+                  [(ngModel)]="currentExpense.obs"
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </td>
@@ -752,136 +781,223 @@
               </td>
             </tr>
 
-            <tr *ngIf="filteredFinanceItems.length === 0 && !addingExpense">
-              <td colspan="8" class="px-6 py-4 text-center">
-                <div class="flex items-center justify-center text-gray-500">
-                  <fa-icon
-                    [icon]="['fas', 'exclamation-circle']"
-                    class="mr-2"
-                  ></fa-icon>
-                  No hay gastos registrados.
-                </div>
-              </td>
-            </tr>
-
-            <!-- Fila para cada gasto existente -->
-            <tr *ngFor="let item of filteredFinanceItems">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <label class="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    class="sr-only peer"
-                    [(ngModel)]="item.isPaid"
-                    (change)="togglePayment(item)"
-                  />
-                  <div
-                    [ngClass]="{
-                      'bg-green-500': item.isPaid,
-                      'bg-gray-200': !item.isPaid
-                    }"
-                    class="w-11 h-6 rounded-full transition-all duration-300 relative"
-                  >
+            <!-- Filas de los gastos existentes -->
+            <tr *ngFor="let item of filteredFinanceItems; let i = index">
+              <ng-container *ngIf="editingIndex !== i; else editRow">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <label class="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      [(ngModel)]="item.isPaid"
+                      (change)="togglePayment(item)"
+                    />
                     <div
                       [ngClass]="{
-                        'translate-x-5': item.isPaid,
-                        'translate-x-0': !item.isPaid
+                        'bg-green-500': item.isPaid,
+                        'bg-gray-200': !item.isPaid
                       }"
-                      class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
-                    ></div>
+                      class="w-11 h-6 rounded-full transition-all duration-300 relative"
+                    >
+                      <div
+                        [ngClass]="{
+                          'translate-x-5': item.isPaid,
+                          'translate-x-0': !item.isPaid
+                        }"
+                        class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
+                      ></div>
+                    </div>
+                  </label>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    [ngClass]="{
+                      'text-green-600': item.status === 'Pagado',
+                      'text-red-600': item.status === 'Vencido',
+                      'text-yellow-600': item.status === 'Por pagar'
+                    }"
+                    class="text-sm font-semibold"
+                  >
+                    {{
+                      item.status === "Pagado"
+                        ? "Pagado"
+                        : item.status === "Por pagar"
+                        ? "Por pagar"
+                        : "Venció"
+                    }}
+                  </span>
+                  <div class="text-xs text-gray-500">
+                    {{ formatDateDisplay(item.date) }}
                   </div>
-                </label>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  [ngClass]="{
-                    'text-green-600': item.status === 'Pagado',
-                    'text-red-600': item.status === 'Vencido',
-                    'text-yellow-600': item.status === 'Por pagar'
-                  }"
-                  class="text-sm font-semibold"
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap flex items-center">
+                  <ng-container *ngIf="item.currency === 'USD'">
+                    <span class="mr-2 text-sm font-semibold text-gray-700"
+                      >USD</span
+                    >
+                  </ng-container>
+                  <ng-container *ngIf="item.currency === 'ARS'">
+                    <span class="mr-2 text-sm font-semibold text-gray-700"
+                      >ARS</span
+                    >
+                  </ng-container>
+                  <ng-container *ngIf="item.currency === 'EUR'">
+                    <span class="mr-2 text-sm font-semibold text-gray-700"
+                      >EUR</span
+                    >
+                  </ng-container>
+                  <span class="text-sm font-semibold">{{ item.value }}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ getCategoryName(item.category) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ item.obs }}</td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
                 >
-                  {{
-                    item.status === "Pagado"
-                      ? "Pagado"
-                      : item.status === "Por pagar"
-                      ? "Por pagar"
-                      : "Venció"
-                  }}
-                </span>
-                <div class="text-xs text-gray-500">
-                  {{ formatDateDisplay(item.date) }}
-                </div>
-              </td>
+                  <button
+                    class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
+                    (click)="editExpense(i)"
+                  >
+                    <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                  </button>
+                  <button
+                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                    (click)="deleteExpense(item)"
+                  >
+                    <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+                  </button>
+                </td>
+              </ng-container>
 
-              <td class="px-6 py-4 whitespace-nowrap flex items-center">
-                <ng-container *ngIf="item.currency === 'USD'">
-                  <span class="mr-2 text-sm font-semibold text-gray-700"
-                    >USD</span
-                  >
-                </ng-container>
-                <ng-container *ngIf="item.currency === 'ARS'">
-                  <span class="mr-2 text-sm font-semibold text-gray-700"
-                    >ARS</span
-                  >
-                </ng-container>
-                <ng-container *ngIf="item.currency === 'EUR'">
-                  <span class="mr-2 text-sm font-semibold text-gray-700"
-                    >EUR</span
-                  >
-                </ng-container>
-                <span class="text-sm font-semibold">{{ item.value }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ getCategoryName(item.category) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ item.obs }}</td>
-              <td
-                class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
-              >
-                <button
-                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
-                  (click)="editExpense(item)"
+              <!-- Fila editable en la misma fila donde se hizo click -->
+              <ng-template #editRow>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <label class="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      [(ngModel)]="currentExpense.isPaid"
+                      (change)="togglePayment(currentExpense)"
+                    />
+                    <div
+                      [ngClass]="{
+                        'bg-green-500': currentExpense.isPaid,
+                        'bg-gray-200': !currentExpense.isPaid
+                      }"
+                      class="w-11 h-6 rounded-full transition-all duration-300 relative"
+                    >
+                      <div
+                        [ngClass]="{
+                          'translate-x-5': currentExpense.isPaid,
+                          'translate-x-0': !currentExpense.isPaid
+                        }"
+                        class="w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 absolute top-0.5 left-0.5"
+                      ></div>
+                    </div>
+                  </label>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="date"
+                    [(ngModel)]="currentExpense.date"
+                    [disabled]="isTodayChecked"
+                    [ngClass]="{
+                      'border-red-500': !currentExpense.date && isSaveAttempted
+                    }"
+                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    [value]="getDisplayDate()"
+                  />
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap flex items-center space-x-2"
                 >
-                  <fa-icon [icon]="['fas', 'edit']"></fa-icon>
-                </button>
-
-                <div
-                  *ngIf="showNotification"
-                  class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-lg transition-transform duration-500 flex items-center space-x-2"
-                >
-                  <fa-icon
-                    [icon]="['fas', 'info-circle']"
-                    class="text-white text-lg"
-                  ></fa-icon>
-                  <span
-                    >Se ha enviado el gasto "{{ deletedExpenseName }}" a la
-                    papelera temporal.</span
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [(ngModel)]="currentExpense.value"
+                    [ngClass]="{
+                      'border-red-500': !currentExpense.value && isSaveAttempted
+                    }"
+                    class="border border-gray-300 rounded px-3 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                  <select
+                    [(ngModel)]="currentExpense.currency"
+                    [ngClass]="{
+                      'border-red-500':
+                        !currentExpense.currency && isSaveAttempted
+                    }"
+                    class="border border-gray-300 rounded px-2 py-2 w-2/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                </div>
-
-                <div
-                  *ngIf="showNotificationGastoAdded"
-                  class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-lg transition-transform duration-500 flex items-center space-x-2"
+                    <option value="ARS">ARS</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="text"
+                    [(ngModel)]="currentExpense.name"
+                    [ngClass]="{
+                      'border-red-500': !currentExpense.name && isSaveAttempted
+                    }"
+                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="text"
+                    [(ngModel)]="currentExpense.provider"
+                    [ngClass]="{
+                      'border-red-500':
+                        !currentExpense.provider && isSaveAttempted
+                    }"
+                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <ng-select
+                    [items]="categories"
+                    bindLabel="name"
+                    [(ngModel)]="currentExpense.category"
+                    [ngClass]="{
+                      'border-red-500':
+                        !currentExpense.category && isSaveAttempted
+                    }"
+                    placeholder="Seleccione una categoría"
+                    [addTag]="true"
+                    addTagText="Agregar categoría"
+                    (add)="addCategory($event)"
+                    class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  ></ng-select>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="text"
+                    [(ngModel)]="currentExpense.obs"
+                    class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
                 >
-                  <fa-icon
-                    [icon]="['fas', 'info-circle']"
-                    class="text-white text-lg"
-                  ></fa-icon>
-                  <span
-                    >Se ha añadido el gasto "{{ addedItemName }}"
-                    correctamente.</span
+                  <button
+                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                    (click)="cancelAddingExpense()"
                   >
-                </div>
-
-                <button
-                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
-                  (click)="deleteExpense(item)"
-                >
-                  <fa-icon [icon]="['fas', 'trash']"></fa-icon>
-                </button>
-              </td>
+                    <fa-icon [icon]="['fas', 'times']"></fa-icon>
+                  </button>
+                  <button
+                    class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition flex items-center"
+                    (click)="saveExpense()"
+                  >
+                    <fa-icon [icon]="['fas', 'check']"></fa-icon>
+                  </button>
+                </td>
+              </ng-template>
             </tr>
           </tbody>
         </table>
