@@ -94,6 +94,7 @@ export class DashboardComponent implements OnInit {
   showNotificationGastoAdded: boolean = false;
   deletedExpenseName: string = '';
   addedItemName: string = '';
+  editedItemName: string = '';
 
   sortOrder: 'asc' | 'desc' = 'desc';
 
@@ -288,21 +289,52 @@ export class DashboardComponent implements OnInit {
 
   getCurrentMonthItems(): FinanceInterface[] {
     const now = new Date();
-    const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
 
-    return this.filteredFinanceItems.filter((item) => {
-      const itemDate = this.parseDate(item.date);
-      return (
-        itemDate.getMonth() === currentMonth &&
-        itemDate.getFullYear() === currentYear
-      );
-    });
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        return this.financeItems.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return (
+            itemDate.getFullYear() === currentYear &&
+            itemDate.getMonth() === currentMonth
+          );
+        });
+
+      case 'Este año':
+        return this.financeItems.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return itemDate.getFullYear() === currentYear;
+        });
+
+      case 'Esta semana':
+        const startOfWeek = this.getStartOfWeek(now);
+        const endOfWeek = this.getEndOfWeek(now);
+        return this.financeItems.filter((item) => {
+          const itemDate = this.parseDate(item.date);
+          return itemDate >= startOfWeek && itemDate <= endOfWeek;
+        });
+
+      default:
+        return this.financeItems;
+    }
+  }
+
+  getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que el inicio de la semana sea el lunes
+    return new Date(date.setDate(diff));
+  }
+
+  getEndOfWeek(date: Date): Date {
+    const startOfWeek = this.getStartOfWeek(date);
+    return new Date(startOfWeek.setDate(startOfWeek.getDate() + 6)); // El último día es domingo
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
   getGroupedExpensesCurrentMonth(): { [key: string]: number } {
-    return this.getCurrentMonthItems().reduce((acc, item) => {
+    const grouped = this.getCurrentMonthItems().reduce((acc, item) => {
       const value = parseFloat(String(item.value));
       if (!acc[item.currency]) {
         acc[item.currency] = 0;
@@ -310,6 +342,9 @@ export class DashboardComponent implements OnInit {
       acc[item.currency] += value;
       return acc;
     }, {} as { [key: string]: number });
+
+    console.log('Grouped Expenses:', grouped); // Verifica aquí si los ARS están incluidos
+    return grouped;
   }
 
   loadDollarRates() {
@@ -368,12 +403,25 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateDineroRestante(): number {
-    // Calcula el total de gastos pagados del mes en ARS
-    const totalPagadoEsteMes = this.getCurrentMonthItems()
-      .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
-      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+    // Obtiene solo los elementos pagados de este mes en ARS independientemente de la vista actual
+    const now = new Date();
+    const gastosPagadosEsteMes = this.financeItems.filter((item) => {
+      const itemDate = this.parseDate(item.date);
+      return (
+        item.status === 'Pagado' &&
+        item.currency === 'ARS' &&
+        itemDate.getFullYear() === now.getFullYear() &&
+        itemDate.getMonth() === now.getMonth()
+      );
+    });
 
-    // Calcula el dinero restante como la diferencia entre ingresos y gastos
+    // Calcula el total de los gastos pagados en ARS para este mes
+    const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
+      (acc, item) => acc + parseFloat(String(item.value)),
+      0
+    );
+
+    // Calcula el dinero restante basado en los ingresos y los gastos pagados del mes
     this.dineroRestante = this.totalIngresos - totalPagadoEsteMes;
     return this.dineroRestante;
   }
@@ -624,17 +672,6 @@ export class DashboardComponent implements OnInit {
     return new Date('Invalid Date');
   }
 
-  getStartOfWeek(date: Date): Date {
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
-  }
-
-  getEndOfWeek(date: Date): Date {
-    const startOfWeek = this.getStartOfWeek(date);
-    return new Date(startOfWeek.setDate(startOfWeek.getDate() + 6)); // El último día es domingo
-  }
-
   // Navegación entre opciones de filtro
   previousOption(): void {
     if (this.currentIndex === 0) {
@@ -702,7 +739,8 @@ export class DashboardComponent implements OnInit {
 
       // Check if editing an existing expense
       if (this.editingIndex !== null) {
-        // Update the existing expense
+        this.showEditExpense(this.currentExpense.name);
+
         this.financeItems[this.editingIndex] = { ...this.currentExpense };
         this.editingIndex = null; // Reset the editing index
       } else {
@@ -876,6 +914,21 @@ export class DashboardComponent implements OnInit {
       position: 'top',
       icon: 'info',
       title: `Se ha añadido el gasto "${addedItemName}" correctamente.`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
+  }
+
+  showEditExpense(editedItemName: string) {
+    this.editedItemName = editedItemName;
+    Swal.fire({
+      position: 'top',
+      icon: 'info',
+      title: `Se ha moficiado el gasto "${editedItemName}" correctamente.`,
       showConfirmButton: false,
       timer: 3000,
       toast: true,
