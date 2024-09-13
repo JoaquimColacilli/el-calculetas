@@ -39,6 +39,8 @@ import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.co
 import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { NumberFormatPipe } from '../../../pipes/number-format.pipe';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -49,6 +51,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     FormsModule,
     NgSelectModule,
     MatTooltipModule,
+    NumberFormatPipe,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
@@ -297,6 +300,20 @@ export class DashboardComponent implements OnInit {
     return this.filteredFinanceItems
       .filter((item) => item.status === status && item.currency === currency)
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+  }
+
+  handleValueChange(event: string): void {
+    // Elimina los puntos existentes y convierte el valor a número
+    const numericValue = parseFloat(event.replace(/\./g, '').replace(',', '.'));
+
+    // Utiliza Intl.NumberFormat para formatear consistentemente
+    const formattedValue = new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numericValue);
+
+    // Asigna el valor formateado
+    this.currentExpense.value = isNaN(numericValue) ? '' : formattedValue;
   }
 
   getCurrentMonthItems(): FinanceInterface[] {
