@@ -80,6 +80,13 @@
           >
             <fa-icon [icon]="['fas', 'exchange-alt']"></fa-icon>
           </button>
+
+          <button
+            class="text-gray-400 hover:text-red-600 focus:outline-none"
+            (click)="removeSalary(i)"
+          >
+            <fa-icon [icon]="['fas', 'times']"></fa-icon>
+          </button>
         </div>
       </div>
     </ng-container>
@@ -94,7 +101,6 @@
       </button>
     </div>
 
-    <!-- Mostrar conversiones solo si al menos una moneda ha sido seleccionada -->
     <!-- Mostrar conversiones solo si hay al menos un valor ingresado -->
     <div
       *ngIf="

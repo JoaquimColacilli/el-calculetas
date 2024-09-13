@@ -217,7 +217,7 @@
           </span>
 
           <div
-            *ngIf="totalIngresos === 0 || totalIngresosUSD === 0"
+            *ngIf="totalIngresos === 0 && totalIngresosUSD === 0"
             class="flex items-center space-x-2 mt-2"
           >
             <fa-icon
@@ -232,12 +232,12 @@
 
         <!-- Card Gastos -->
         <div
-          class="bg-gradient-to-br from-red-100 to-red-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          class="bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
           style="width: 250px; height: 130px"
         >
           <fa-icon
             [icon]="['fas', 'chart-line']"
-            class="absolute top-3 right-3 text-red-400 opacity-50"
+            class="absolute top-3 right-3 text-gray-400 opacity-50"
             style="font-size: 24px"
           ></fa-icon>
           <span class="text-gray-700 text-sm font-semibold">
@@ -253,7 +253,7 @@
               >
                 <div class="flex items-center space-x-2">
                   <span
-                    class="text-lg font-bold text-red-700"
+                    class="text-lg font-bold text-gray-700"
                     style="overflow-wrap: break-word; word-wrap: break-word"
                   >
                     <ng-container [ngSwitch]="currency.key">

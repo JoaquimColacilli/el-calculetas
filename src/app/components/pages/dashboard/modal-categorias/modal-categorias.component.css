@@ -1,0 +1,4 @@
+.ring-warning {
+  border: 2px solid red; /* Ajusta según el estilo que desees */
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5); /* Efecto de anillo */
+}

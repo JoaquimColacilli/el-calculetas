@@ -20,27 +20,57 @@
       <div class="grid grid-cols-4 gap-4 relative">
         <div
           *ngFor="let category of categories"
-          [ngClass]="{
-            'bg-gray-300': selectedCategory === category,
-            'bg-white': selectedCategory !== category
-          }"
+          [ngClass]="getCategoryClasses(category)"
           class="relative rounded-full p-2 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition cursor-pointer"
           (click)="editCategory(category)"
         >
-          <!-- Botón pequeño para eliminar categoría -->
+          <!-- Botón de finalizar edición con check cuando está en modo edición o si la categoría tiene el ring rojo -->
           <button
+            *ngIf="
+              selectedCategory === category || warningCategories.has(category)
+            "
+            (click)="saveCategory(category)"
+            [ngClass]="{
+              'bg-gray-600 text-black': selectedCategory === category,
+              'bg-red-500 text-white':
+                warningCategories.has(category) && selectedCategory !== category
+            }"
+            class="absolute top-2 right-1 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+          >
+            <fa-icon [icon]="['fas', 'check']" class="text-white"></fa-icon>
+          </button>
+
+          <!-- Botón de eliminar categoría cuando no está en modo edición -->
+          <button
+            *ngIf="
+              selectedCategory !== category && !warningCategories.has(category)
+            "
             (click)="deleteCategory(category)"
             class="absolute top-2 right-1 bg-gray-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
           >
             <fa-icon [icon]="['fas', 'times']"></fa-icon>
           </button>
+
+          <!-- Icono de la categoría, siempre visible -->
           <fa-icon
             [icon]="['fas', getCategoryIcon(category)]"
             class="text-lg mb-1"
           ></fa-icon>
-          <span class="text-xs font-medium text-center">{{
-            category.name
-          }}</span>
+
+          <!-- Texto editable o no editable según el modo de edición -->
+          <input
+            *ngIf="selectedCategory === category"
+            [(ngModel)]="category.name"
+            class="bg-white border border-gray-300 rounded text-center text-xs font-medium w-20 focus:outline-none focus:ring-blue-500"
+            (click)="$event.stopPropagation()"
+            #categoryInput
+          />
+          <span
+            *ngIf="selectedCategory !== category"
+            class="text-xs font-medium text-center"
+          >
+            {{ category.name }}
+          </span>
         </div>
 
         <!-- Botón de agregar nueva categoría como círculo -->
@@ -54,21 +84,5 @@
     </div>
 
     <!-- Input para modificar la categoría seleccionada -->
-    <div
-      *ngIf="selectedCategory"
-      class="mt-4 flex items-center justify-end space-x-2"
-    >
-      <input
-        [(ngModel)]="selectedCategory.name"
-        placeholder="Modificar categoría"
-        class="border border-gray-300 rounded w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <button
-        (click)="saveCategory()"
-        class="bg-gray-500 text-white px-4 py-2 rounded-full shadow-md hover:bg-gray-600 transition"
-      >
-        <fa-icon [icon]="['fas', 'save']"></fa-icon>
-      </button>
-    </div>
   </div>
 </div>

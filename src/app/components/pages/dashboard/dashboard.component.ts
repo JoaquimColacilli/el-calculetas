@@ -617,10 +617,8 @@ export class DashboardComponent implements OnInit {
   }
 
   addCategory(name: string) {
-    const newCategory = { name };
-
+    const newCategory: Category = { name, type: 'others' };
     this.categories.push(newCategory);
-
     this.newExpense.category = name;
   }
 

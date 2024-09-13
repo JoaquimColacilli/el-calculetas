@@ -147,4 +147,18 @@ export class IngresarSueldoComponent implements OnInit {
         this.totalCombinedSalaryInDollars > 0)
     );
   }
+
+  removeSalary(index: number): void {
+    this.salaries.splice(index, 1);
+    this.selectedCurrencies.splice(index, 1);
+    this.isCurrencySelected.splice(index, 1);
+
+    if (this.salaries.length === 0) {
+      this.salaries.push('');
+      this.isCurrencySelected.push(false);
+      this.selectedCurrencies.push('');
+    }
+
+    this.calculateTotalSalaries();
+  }
 }
