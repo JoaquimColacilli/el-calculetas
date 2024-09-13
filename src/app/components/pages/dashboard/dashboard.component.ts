@@ -402,6 +402,59 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  getCardColor(): string {
+    const dineroRestanteARS = this.calculateDineroRestante();
+    const dineroRestanteUSD =
+      this.calculateDineroRestanteUsd() * this.dolarBolsaVenta;
+
+    // Si no hay ningún gasto pagado, retorna color gris
+    if (this.dineroEnCuentaEsCero()) {
+      return 'from-gray-100 to-gray-200';
+    }
+
+    // Sumar ambos valores convertidos a ARS para unificar el cálculo del porcentaje
+    const totalDineroRestante = dineroRestanteARS + dineroRestanteUSD;
+    const percentage = (totalDineroRestante / 100000) * 100;
+
+    if (percentage <= 20) {
+      return 'from-red-100 to-red-200';
+    } else if (percentage <= 50) {
+      return 'from-yellow-100 to-yellow-200';
+    } else if (percentage <= 80) {
+      return 'from-blue-100 to-blue-200';
+    } else {
+      return 'from-green-100 to-green-200';
+    }
+  }
+
+  getTextColor(): string {
+    const dineroRestanteARS = this.calculateDineroRestante();
+    const dineroRestanteUSD =
+      this.calculateDineroRestanteUsd() * this.dolarBolsaVenta;
+
+    // Si no hay ningún gasto pagado, retorna texto negro
+    if (this.dineroEnCuentaEsCero()) {
+      return 'text-black';
+    }
+
+    const totalDineroRestante = dineroRestanteARS + dineroRestanteUSD;
+    const percentage = (totalDineroRestante / 100000) * 100;
+
+    if (percentage <= 20) {
+      return 'text-red-800';
+    } else if (percentage <= 50) {
+      return 'text-yellow-800';
+    } else if (percentage <= 80) {
+      return 'text-blue-800';
+    } else {
+      return 'text-green-800';
+    }
+  }
+
+  dineroEnCuentaEsCero(): boolean {
+    return !this.filteredFinanceItems.some((item) => item.isPaid);
+  }
+
   calculateCounts(): void {
     this.vencidosCount = this.financeItems.filter(
       (item) => item.status === 'Vencido'

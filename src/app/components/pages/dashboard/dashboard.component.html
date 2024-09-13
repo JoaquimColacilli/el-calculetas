@@ -126,37 +126,66 @@
     <main class="p-6 flex-1 overflow-y-auto">
       <div class="flex space-x-6 mb-6">
         <!-- Card Dinero Restante -->
-        <!-- Card Dinero en Cuenta -->
         <div
-          class="bg-gradient-to-br from-green-100 to-green-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+          [ngClass]="[
+            'bg-gradient-to-br',
+            getCardColor(),
+            'shadow-lg',
+            'rounded-xl',
+            'p-5',
+            'flex',
+            'flex-col',
+            'items-start',
+            'relative',
+            'transform',
+            'transition-transform',
+            'duration-300',
+            'hover:scale-105',
+            'hover:shadow-xl'
+          ]"
           style="width: 250px; height: 130px"
         >
           <fa-icon
             [icon]="['fas', 'wallet']"
-            class="absolute top-3 right-3 text-green-400 opacity-50"
+            class="absolute top-3 right-3 opacity-50"
+            [ngClass]="getTextColor()"
             style="font-size: 24px"
           ></fa-icon>
-          <span class="text-gray-700 text-sm font-semibold"
-            >Dinero en Cuenta</span
-          >
-          <span
-            class="text-xl font-bold text-green-700 mt-2"
-            style="overflow-wrap: break-word; word-wrap: break-word"
-          >
-            {{
-              calculateDineroRestante() | currency : "ARS" : "symbol" : "1.2-2"
-            }}
+          <span class="text-sm font-semibold" [ngClass]="getTextColor()">
+            Dinero en Cuenta
           </span>
-          <span
-            class="text-xl font-bold text-green-500 mt-1"
-            *ngIf="totalDineroEnCuentaUSD > 0"
-            style="overflow-wrap: break-word; word-wrap: break-word"
+
+          <!-- Mostrar los valores solo si no son cero -->
+          <ng-container *ngIf="!dineroEnCuentaEsCero()">
+            <span
+              class="text-xl font-bold mt-2"
+              style="overflow-wrap: break-word; word-wrap: break-word"
+              [ngClass]="getTextColor()"
+            >
+              {{ calculateDineroRestante() | currency }} ARS
+            </span>
+            <span
+              class="text-xl font-bold mt-1"
+              style="overflow-wrap: break-word; word-wrap: break-word"
+              [ngClass]="getTextColor()"
+            >
+              {{ calculateDineroRestanteUsd() | currency }} USD
+            </span>
+          </ng-container>
+
+          <!-- Mensaje cuando no hay dinero en cuenta -->
+          <div
+            *ngIf="dineroEnCuentaEsCero()"
+            class="flex items-center space-x-2 mt-2"
           >
-            {{
-              calculateDineroRestanteUsd()
-                | currency : "USD" : "symbol" : "1.2-2"
-            }}
-          </span>
+            <fa-icon
+              [icon]="['fas', 'exclamation-circle']"
+              class="text-black"
+            ></fa-icon>
+            <span class="text-black text-sm font-medium">
+              No hay gastos pagos {{ options[currentIndex].toLowerCase() }}
+            </span>
+          </div>
         </div>
 
         <!-- Card Total de Ingresos -->
@@ -173,18 +202,32 @@
             >Total de Ingresos</span
           >
           <span
+            *ngIf="totalIngresos !== 0 || totalIngresosUSD !== 0"
             class="text-xl font-bold text-blue-700 mt-2"
             style="overflow-wrap: break-word; word-wrap: break-word"
           >
-            {{ totalIngresos | currency : "ARS" : "symbol" : "1.2-2" }}
+            {{ totalIngresos | currency }} ARS
           </span>
           <span
+            *ngIf="totalIngresos !== 0 || totalIngresosUSD !== 0"
             class="text-xl font-bold text-blue-500 mt-1"
-            *ngIf="totalIngresosUSD > 0"
             style="overflow-wrap: break-word; word-wrap: break-word"
           >
-            {{ totalIngresosUSD | currency : "USD" : "symbol" : "1.2-2" }}
+            {{ totalIngresosUSD | currency }} USD
           </span>
+
+          <div
+            *ngIf="totalIngresos === 0 || totalIngresosUSD === 0"
+            class="flex items-center space-x-2 mt-2"
+          >
+            <fa-icon
+              [icon]="['fas', 'exclamation-circle']"
+              class="text-black"
+            ></fa-icon>
+            <span class="text-black text-sm font-medium">
+              No se ingresó un sueldo este mes
+            </span>
+          </div>
         </div>
 
         <!-- Card Gastos -->
