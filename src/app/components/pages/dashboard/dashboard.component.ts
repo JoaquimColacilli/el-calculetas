@@ -805,69 +805,77 @@ export class DashboardComponent implements OnInit {
   }
 
   saveExpense() {
-    // Check if we are editing or adding a new expense
-    if (this.currentExpense.name && this.currentExpense.value) {
-      this.showAddExpense(this.currentExpense.name);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    this.isSaveAttempted = true;
 
-      this.addingExpense = false;
+    // Verifica que todos los campos obligatorios estén llenos
+    if (
+      !this.currentExpense.name ||
+      !this.currentExpense.value ||
+      !this.currentExpense.date ||
+      !this.currentExpense.provider ||
+      !this.currentExpense.category
+    ) {
+      // No guarda si faltan campos
+      console.log('Faltan campos obligatorios.');
+      return;
+    }
 
-      let selectedDate = this.parseDate(this.currentExpense.date);
+    this.showAddExpense(this.currentExpense.name);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      if (this.isTodayChecked) {
-        this.currentExpense.date = this.formatDate(today);
-        selectedDate = today;
-      }
+    this.addingExpense = false;
 
-      console.log(selectedDate);
-      console.log(today);
+    let selectedDate = this.parseDate(this.currentExpense.date);
 
-      if (selectedDate > today) {
-        this.currentExpense.status = 'Por pagar';
-        console.log(this.currentExpense);
-      } else if (selectedDate < today) {
-        this.currentExpense.status = this.currentExpense.isPaid
-          ? 'Pagado'
-          : 'Vencido';
-        console.log(this.currentExpense);
-      } else {
-        this.currentExpense.status = this.currentExpense.isPaid
-          ? 'Pagado'
-          : 'Vencido';
-        console.log(this.currentExpense);
-      }
+    if (this.isTodayChecked) {
+      this.currentExpense.date = this.formatDate(today);
+      selectedDate = today;
+    }
 
-      if (selectedDate.getTime() === today.getTime()) {
-        this.currentExpense.status = 'Por pagar';
-      } else if (selectedDate > today) {
-        this.currentExpense.status = 'Por pagar';
-      } else {
-        this.currentExpense.status = this.currentExpense.isPaid
-          ? 'Pagado'
-          : 'Vencido';
-      }
+    console.log(selectedDate);
+    console.log(today);
 
-      // Check if editing an existing expense
-      if (this.editingIndex !== null) {
-        this.showEditExpense(this.currentExpense.name);
-
-        this.financeItems[this.editingIndex] = { ...this.currentExpense };
-        this.editingIndex = null; // Reset the editing index
-      } else {
-        // Add new expense
-        this.financeItems.unshift({ ...this.currentExpense });
-      }
-
-      this.calculateTotals();
-      this.calculateCounts();
-      this.calculateDineroRestante();
-      this.updateGroupedExpenses();
-      this.cancelAddingExpense();
+    if (selectedDate > today) {
+      this.currentExpense.status = 'Por pagar';
+      console.log(this.currentExpense);
+    } else if (selectedDate < today) {
+      this.currentExpense.status = this.currentExpense.isPaid
+        ? 'Pagado'
+        : 'Vencido';
+      console.log(this.currentExpense);
     } else {
-      this.cancelAddingExpense();
+      this.currentExpense.status = this.currentExpense.isPaid
+        ? 'Pagado'
+        : 'Vencido';
       console.log(this.currentExpense);
     }
+
+    if (selectedDate.getTime() === today.getTime()) {
+      this.currentExpense.status = 'Por pagar';
+    } else if (selectedDate > today) {
+      this.currentExpense.status = 'Por pagar';
+    } else {
+      this.currentExpense.status = this.currentExpense.isPaid
+        ? 'Pagado'
+        : 'Vencido';
+    }
+
+    // Check if editing an existing expense
+    if (this.editingIndex !== null) {
+      this.showEditExpense(this.currentExpense.name);
+      this.financeItems[this.editingIndex] = { ...this.currentExpense };
+      this.editingIndex = null; // Reset the editing index
+    } else {
+      // Add new expense
+      this.financeItems.unshift({ ...this.currentExpense });
+    }
+
+    this.calculateTotals();
+    this.calculateCounts();
+    this.calculateDineroRestante();
+    this.updateGroupedExpenses();
+    this.cancelAddingExpense();
   }
 
   cancelAddingExpense(): void {
