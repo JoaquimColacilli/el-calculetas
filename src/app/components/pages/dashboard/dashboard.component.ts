@@ -128,6 +128,9 @@ export class DashboardComponent implements OnInit {
   currentExpense: FinanceInterface = this.createEmptyExpense();
   isSaveAttempted = false;
 
+  selectAll = false;
+  showSelectButton: boolean = false;
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -876,6 +879,13 @@ export class DashboardComponent implements OnInit {
     this.calculateDineroRestante();
     this.updateGroupedExpenses();
     this.cancelAddingExpense();
+  }
+
+  toggleSelectAll() {
+    this.selectAll = !this.selectAll; // Cambia el estado de selectAll
+    this.filteredFinanceItems.forEach((item) => {
+      item.selected = this.selectAll; // Asigna el valor de selectAll a cada checkbox de las filas
+    });
   }
 
   cancelAddingExpense(): void {

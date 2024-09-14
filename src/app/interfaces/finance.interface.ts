@@ -8,4 +8,5 @@ export interface FinanceInterface {
   provider: string;
   category: string | { name: string };
   obs: string;
+  selected?: boolean; // Nueva propiedad opcional para manejar la selección
 }

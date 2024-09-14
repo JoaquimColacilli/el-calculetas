@@ -713,6 +713,17 @@
               >
                 Acciones
               </th>
+
+              <th
+                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+              >
+                <input
+                  type="checkbox"
+                  class="checkbox-ripple cursor-pointer hover:bg-blue-100 transition-colors"
+                  (click)="toggleSelectAll()"
+                  title="Seleccionar todo"
+                />
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -931,6 +942,14 @@
                   >
                     <fa-icon [icon]="['fas', 'trash']"></fa-icon>
                   </button>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="item.selected"
+                    class="checkbox-ripple cursor-pointer transition duration-300 rounded-full"
+                    title="Seleccionar"
+                  />
                 </td>
               </ng-container>
             </tr>
