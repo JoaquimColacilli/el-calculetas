@@ -9,6 +9,22 @@
   }
 }
 
+@keyframes slide-in {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s forwards;
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
@@ -37,6 +53,6 @@
 }
 
 .checkbox-ripple:hover::after {
-  width: 250%; /* Ajustar el tamaño del círculo */
-  height: 250%; /* Ajustar el tamaño del círculo */
+  width: 250%;
+  height: 250%;
 }

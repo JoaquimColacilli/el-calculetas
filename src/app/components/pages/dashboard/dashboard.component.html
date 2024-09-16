@@ -639,7 +639,19 @@
         </div>
       </div>
 
-      <!-- Tabla de gastos -->
+      <div
+        *ngIf="haySeleccionados"
+        class="bg-gray-100 rounded-lg shadow-lg transition-transform transform animate-slide-in mb-2 flex justify-between items-center px-6 py-3"
+      >
+        <span class="flex-1">Seleccionados: {{ countSelectedItems }}</span>
+        <button
+          (click)="eliminarSeleccionados()"
+          class="flex items-center justify-center px-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300"
+        >
+          <fa-icon [icon]="'trash'"></fa-icon>
+        </button>
+      </div>
+
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full table-auto">
           <thead class="bg-gray-50">
@@ -721,6 +733,7 @@
                   type="checkbox"
                   class="checkbox-ripple cursor-pointer hover:bg-blue-100 transition-colors"
                   (click)="toggleSelectAll()"
+                  [checked]="selectAll"
                   title="Seleccionar todo"
                 />
               </th>
@@ -853,6 +866,43 @@
                 </button>
               </td>
             </tr>
+            <tr *ngIf="getCurrentMonthItems().length === 0">
+              <td colspan="100%" class="text-center py-6">
+                <div
+                  class="flex flex-col items-center justify-center text-gray-500"
+                >
+                  <!-- Icono de Información con estilo suave y moderno -->
+                  <fa-icon
+                    [icon]="['fas', 'info-circle']"
+                    class="text-5xl text-blue-400 mb-3"
+                  ></fa-icon>
+
+                  <!-- Mensaje claro y directo con énfasis en el estado actual -->
+                  <p class="text-xl font-semibold mb-2">
+                    No hay gastos agregados
+                    {{ options[currentIndex] | lowercase }}.
+                  </p>
+
+                  <!-- Mensaje secundario para guiar al usuario -->
+                  <p class="text-md text-gray-400 mb-4">
+                    Agrega tus primeros gastos para comenzar a gestionar tus
+                    finanzas.
+                  </p>
+
+                  <!-- Botón de acción para mejorar la interacción -->
+                  <button
+                    (click)="addExpense()"
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition duration-300"
+                  >
+                    <fa-icon
+                      [icon]="['fas', 'plus-circle']"
+                      class="mr-2"
+                    ></fa-icon>
+                    Agregar Gasto
+                  </button>
+                </div>
+              </td>
+            </tr>
 
             <!-- Filas de los gastos existentes -->
             <tr *ngFor="let item of filteredFinanceItems; let i = index">
@@ -926,7 +976,15 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ getCategoryName(item.category) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ item.obs }}</td>
+                <td *ngIf="item.obs" class="px-6 py-4 whitespace-nowrap">
+                  {{ item.obs }}
+                </td>
+                <td
+                  *ngIf="!item.obs"
+                  class="px-6 py-4 whitespace-nowrap text-gray-500 italic font-light"
+                >
+                  Vacío
+                </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
                 >
@@ -948,6 +1006,7 @@
                     type="checkbox"
                     [(ngModel)]="item.selected"
                     class="checkbox-ripple cursor-pointer transition duration-300 rounded-full"
+                    (change)="onCheckboxChange()"
                     title="Seleccionar"
                   />
                 </td>

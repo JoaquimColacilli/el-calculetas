@@ -131,6 +131,8 @@ export class DashboardComponent implements OnInit {
   selectAll = false;
   showSelectButton: boolean = false;
 
+  haySeleccionados = false;
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -195,6 +197,17 @@ export class DashboardComponent implements OnInit {
 
   ngOnDestroy(): void {
     clearInterval(this.intervalId);
+  }
+
+  get countSelectedItems(): number {
+    return this.financeItems.filter((item) => item.selected).length;
+  }
+
+  eliminarSeleccionados() {
+    this.financeItems = this.financeItems.filter((item) => !item.selected);
+    this.selectAll = false;
+    this.haySeleccionados = false;
+    this.cdr.detectChanges();
   }
 
   updateDateTime(): void {
@@ -356,12 +369,17 @@ export class DashboardComponent implements OnInit {
   getStartOfWeek(date: Date): Date {
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que el inicio de la semana sea el lunes
-    return new Date(date.setDate(diff));
+    const startOfWeek = new Date(date.setDate(diff));
+    startOfWeek.setHours(0, 0, 0, 0); // Asegura que el tiempo sea a la medianoche
+    return startOfWeek;
   }
 
   getEndOfWeek(date: Date): Date {
     const startOfWeek = this.getStartOfWeek(date);
-    return new Date(startOfWeek.setDate(startOfWeek.getDate() + 6)); // El último día es domingo
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Ajusta para que el fin de la semana sea el domingo
+    endOfWeek.setHours(23, 59, 59, 999); // Asegura que el tiempo sea al final del día
+    return endOfWeek;
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
@@ -769,38 +787,66 @@ export class DashboardComponent implements OnInit {
   }
 
   parseDate(dateString: string): Date {
-    // Verifica si el string es una fecha en formato ISO (YYYY-MM-DD)
     if (dateString.includes('-')) {
       return new Date(dateString);
     }
 
-    // Si no, asume que está en formato dd/mm/yyyy
     const [day, month, year] = dateString.split('/').map(Number);
-
-    // Si no hay errores al convertir, retorna la fecha
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
       return new Date(year, month - 1, day);
     }
 
-    // Si el formato no es válido, retorna Invalid Date
-    return new Date('Invalid Date');
+    return new Date('Invalid Date'); // Maneja fechas no válidas
   }
 
-  // Navegación entre opciones de filtro
-  previousOption(): void {
-    if (this.currentIndex === 0) {
-      this.currentIndex = this.options.length - 1;
-    } else {
+  previousOption() {
+    if (this.currentIndex > 0) {
       this.currentIndex--;
+    } else {
+      this.currentIndex = this.options.length - 1;
+    }
+    this.changeView(this.getViewFromIndex(this.currentIndex));
+  }
+
+  nextOption() {
+    if (this.currentIndex < this.options.length - 1) {
+      this.currentIndex++;
+    } else {
+      this.currentIndex = 0;
+    }
+    this.changeView(this.getViewFromIndex(this.currentIndex));
+  }
+
+  getViewFromIndex(index: number): 'year' | 'month' | 'week' {
+    switch (this.options[index]) {
+      case 'Este año':
+        return 'year';
+      case 'Este mes':
+        return 'month';
+      case 'Esta semana':
+        return 'week';
+      default:
+        return 'month';
     }
   }
 
-  nextOption(): void {
-    if (this.currentIndex === this.options.length - 1) {
-      this.currentIndex = 0;
-    } else {
-      this.currentIndex++;
-    }
+  changeView(view: 'year' | 'month' | 'week') {
+    this.currentIndex = this.options.indexOf(
+      view === 'year'
+        ? 'Este año'
+        : view === 'month'
+        ? 'Este mes'
+        : 'Esta semana'
+    );
+
+    const visibleItems = this.getCurrentMonthItems();
+    visibleItems.forEach((item) => {
+      item.selected = false; // Deselecciona cada elemento visible
+    });
+
+    this.selectAll = false; // Asegura que selectAll esté siempre en false al cambiar de vista
+    this.actualizarEstadoSeleccionados(); // Actualiza el estado de selección
+    this.cdr.detectChanges(); // Detecta los cambios
   }
 
   getCategoryName(category: string | { name: string }): string {
@@ -881,11 +927,28 @@ export class DashboardComponent implements OnInit {
     this.cancelAddingExpense();
   }
 
+  onCheckboxChange() {
+    this.selectAll = this.financeItems.every((item) => item.selected);
+    this.actualizarEstadoSeleccionados();
+  }
+
+  actualizarEstadoSeleccionados() {
+    const visibleItems = this.getCurrentMonthItems();
+    this.haySeleccionados = visibleItems.some((item) => item.selected);
+    // Evita cambiar selectAll a true automáticamente al iniciar la vista
+    this.selectAll =
+      this.haySeleccionados && visibleItems.every((item) => item.selected);
+  }
+
   toggleSelectAll() {
-    this.selectAll = !this.selectAll; // Cambia el estado de selectAll
-    this.filteredFinanceItems.forEach((item) => {
-      item.selected = this.selectAll; // Asigna el valor de selectAll a cada checkbox de las filas
+    this.selectAll = !this.selectAll;
+    const visibleItems = this.getCurrentMonthItems();
+
+    visibleItems.forEach((item) => {
+      item.selected = this.selectAll;
     });
+
+    this.actualizarEstadoSeleccionados();
   }
 
   cancelAddingExpense(): void {
