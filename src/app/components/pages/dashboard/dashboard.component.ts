@@ -7,6 +7,7 @@ import {
   HostListener,
   NgZone,
   ChangeDetectorRef,
+  Directive,
 } from '@angular/core';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -74,6 +75,9 @@ import {
 export class DashboardComponent implements OnInit {
   @ViewChild('categorySelect', { static: true }) categorySelect!: ElementRef;
 
+  @Directive({
+    selector: '[appThousandSeparator]',
+  })
   authService = inject(AuthService);
   private auth = inject(Auth);
   private firestore = inject(Firestore);
@@ -160,7 +164,8 @@ export class DashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
     private zone: NgZone,
-    private financeService: FinanceService
+    private financeService: FinanceService,
+    private el: ElementRef
   ) {
     library.addIconPacks(fas);
   }
@@ -208,6 +213,16 @@ export class DashboardComponent implements OnInit {
 
   private getCurrentUserUid(): string | null {
     return this.auth.currentUser?.uid || null;
+  }
+
+  @HostListener('input', ['$event'])
+  onInputChange(event: InputEvent): void {
+    const input = event.target as HTMLInputElement;
+    let value = input.value.replace(/\D/g, '');
+
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
   }
 
   createEmptyExpense(): FinanceInterface {
@@ -295,6 +310,11 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    // Convertir el valor a número, quitar puntos y luego volver a string
+    this.currentExpense.value = this.currentExpense.value
+      ? parseFloat(this.currentExpense.value.replace(/\./g, '')).toString()
+      : '0'; // Asegura que se guarde como string
+
     this.showAddExpense(this.currentExpense.name);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -308,7 +328,6 @@ export class DashboardComponent implements OnInit {
       selectedDate = today;
     }
 
-    // Correctly categorize today's expense
     if (selectedDate.getTime() === today.getTime()) {
       this.currentExpense.status = 'Por pagar';
     } else if (selectedDate > today) {
@@ -535,16 +554,17 @@ export class DashboardComponent implements OnInit {
   }
 
   handleValueChange(event: string): void {
-    // Elimina los puntos existentes y convierte el valor a número
-    const numericValue = parseFloat(event.replace(/\./g, '').replace(',', '.'));
+    // Remover puntos y comas, y convertir a número
+    const numericValue = parseFloat(event.replace(/[^0-9.]/g, ''));
 
-    // Utiliza Intl.NumberFormat para formatear consistentemente
+    // Formatear a dos decimales sin agregar separadores de miles
     const formattedValue = new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: false, // Desactiva el uso de comas
     }).format(numericValue);
 
-    // Asigna el valor formateado
+    // Asignar el valor formateado o vacío si no es un número válido
     this.currentExpense.value = isNaN(numericValue) ? '' : formattedValue;
   }
 
@@ -925,31 +945,42 @@ export class DashboardComponent implements OnInit {
     ];
   }
 
-  togglePayment(item: FinanceInterface) {
-    // Actualiza el estado basado en el checkbox y la fecha
+  togglePayment(item: FinanceInterface): void {
     this.updateExpenseStatus(item);
 
-    // Recalcula los conteos y totales
+    this.updateExpenseInFirebase(item);
+
     this.calculateCounts();
     this.calculateTotals();
   }
 
-  updateExpenseStatus(item: FinanceInterface) {
+  updateExpenseStatus(item: FinanceInterface): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Asegura que solo se compare la fecha sin la hora
+    today.setHours(0, 0, 0, 0);
     const itemDate = this.parseDate(item.date);
 
     if (item.isPaid) {
       item.status = 'Pagado';
     } else {
       if (itemDate.getTime() === today.getTime()) {
-        item.status = 'Por pagar'; // Si es hoy y está desactivado, va a "Por pagar"
+        item.status = 'Por pagar';
       } else if (itemDate < today) {
         item.status = 'Vencido';
       } else {
         item.status = 'Por pagar';
       }
     }
+  }
+
+  async updateExpenseInFirebase(expense: FinanceInterface): Promise<void> {
+    const uid = await this.authService.getCurrentUserUid();
+    if (!uid || !expense.id) return;
+
+    const expenseDoc = doc(this.firestore, `users/${uid}/gastos/${expense.id}`);
+    await updateDoc(expenseDoc, {
+      isPaid: expense.isPaid,
+      status: expense.status,
+    });
   }
 
   get filteredFinanceItems(): FinanceInterface[] {
