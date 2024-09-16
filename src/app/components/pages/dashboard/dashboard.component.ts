@@ -5,7 +5,8 @@ import {
   ElementRef,
   inject,
   HostListener,
-  OnDestroy,
+  NgZone,
+  ChangeDetectorRef,
 } from '@angular/core';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -25,8 +26,6 @@ import { FormsModule } from '@angular/forms';
 
 import { NgSelectModule } from '@ng-select/ng-select';
 
-import { ChangeDetectorRef } from '@angular/core';
-
 import Swal from 'sweetalert2';
 
 import { FinanceInterface } from '../../../interfaces/finance.interface';
@@ -40,6 +39,22 @@ import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.compo
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { NumberFormatPipe } from '../../../pipes/number-format.pipe';
+
+// import { ExpensesService } from '../../../services/gastos.service';
+import { FinanceService } from '../../../services/finance.service';
+
+import { Auth } from '@angular/fire/auth';
+import {
+  Firestore,
+  collection,
+  doc,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+} from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-dashboard',
@@ -60,6 +75,9 @@ export class DashboardComponent implements OnInit {
   @ViewChild('categorySelect', { static: true }) categorySelect!: ElementRef;
 
   authService = inject(AuthService);
+  private auth = inject(Auth);
+  private firestore = inject(Firestore);
+
   financeItems: FinanceInterface[] = [];
   userData: any = null;
   totalAmount = 0;
@@ -93,6 +111,7 @@ export class DashboardComponent implements OnInit {
   addingExpense: boolean = false;
   newExpense: FinanceInterface = this.createEmptyExpense();
   isLoading: boolean = false;
+  isLoadingData: boolean = false;
   isRefreshing: boolean = false;
   showNotification: boolean = false;
   showNotificationGastoAdded: boolean = false;
@@ -139,13 +158,14 @@ export class DashboardComponent implements OnInit {
     private weatherService: WeatherService,
     private currencyService: CurrencyService,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private zone: NgZone,
+    private financeService: FinanceService
   ) {
     library.addIconPacks(fas);
   }
 
-  ngOnInit(): void {
-    this.loadFinanceItems();
+  async ngOnInit(): Promise<void> {
     this.loadUserData();
     this.calculateTotals();
     this.calculateCounts();
@@ -166,6 +186,202 @@ export class DashboardComponent implements OnInit {
     this.sortFinanceItems();
 
     this.updateGroupedExpenses();
+
+    this.loadExpenses();
+  }
+
+  loadExpenses(): void {
+    this.isLoadingData = true;
+    this.financeService.getExpenses().subscribe({
+      next: (expenses) => {
+        this.financeItems = expenses;
+
+        console.log(this.financeItems);
+        this.isLoadingData = false;
+      },
+      error: (error) => {
+        console.error('Error loading expenses:', error);
+        this.isLoadingData = false;
+      },
+    });
+  }
+
+  private getCurrentUserUid(): string | null {
+    return this.auth.currentUser?.uid || null;
+  }
+
+  createEmptyExpense(): FinanceInterface {
+    return {
+      isPaid: false,
+      status: 'Por pagar',
+      date: '',
+      value: '',
+      name: '',
+      provider: '',
+      category: '',
+      obs: '',
+      currency: 'ARS',
+    };
+  }
+
+  // Obtener los gastos del usuario actual
+  async getExpenses(): Promise<void> {
+    const uid = this.getCurrentUserUid();
+    if (!uid) return;
+
+    const gastosCollection = collection(this.firestore, `users/${uid}/gastos`);
+    const querySnapshot = await getDocs(gastosCollection);
+    this.financeItems = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as FinanceInterface[];
+    this.cdr.detectChanges();
+  }
+
+  // Agregar un nuevo gasto
+  addExpense() {
+    this.addingExpense = true;
+    this.isTodayChecked = true;
+    this.toggleTodayDate();
+    this.getDisplayDate();
+  }
+
+  // Editar un gasto existente
+  editExpense(expense: FinanceInterface): void {
+    const index = this.financeItems.findIndex((item) => item.id === expense.id);
+    this.editingIndex = index;
+    this.currentExpense = { ...expense };
+    this.addingExpense = true;
+
+    // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
+    if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+      const [day, month, year] = this.currentExpense.date.split('/');
+      this.currentExpense.date = `${year}-${month.padStart(
+        2,
+        '0'
+      )}-${day.padStart(2, '0')}`;
+      this.getExpenses();
+    }
+
+    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
+    const selectedDate = this.parseDate(this.currentExpense.date);
+
+    console.log(this.currentExpense);
+    this.isTodayChecked = selectedDate.getTime() === today.getTime();
+  }
+
+  async addExpenseToFirebase(expense: FinanceInterface): Promise<void> {
+    const uid = this.getCurrentUserUid();
+    if (!uid) return;
+
+    const gastosCollection = collection(this.firestore, `users/${uid}/gastos`);
+    await addDoc(gastosCollection, expense);
+    this.getExpenses();
+  }
+
+  async saveExpense(): Promise<void> {
+    this.isSaveAttempted = true;
+
+    if (
+      !this.currentExpense.name ||
+      !this.currentExpense.value ||
+      !this.currentExpense.date ||
+      !this.currentExpense.provider ||
+      !this.currentExpense.category
+    ) {
+      console.log('Faltan campos obligatorios.');
+      return;
+    }
+
+    this.showAddExpense(this.currentExpense.name);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    this.addingExpense = false;
+
+    let selectedDate = this.parseDate(this.currentExpense.date);
+
+    if (this.isTodayChecked) {
+      this.currentExpense.date = this.formatDate(today);
+      selectedDate = today;
+    }
+
+    // Correctly categorize today's expense
+    if (selectedDate.getTime() === today.getTime()) {
+      this.currentExpense.status = 'Por pagar';
+    } else if (selectedDate > today) {
+      this.currentExpense.status = 'Por pagar';
+    } else {
+      this.currentExpense.status = this.currentExpense.isPaid
+        ? 'Pagado'
+        : 'Vencido';
+    }
+
+    if (this.editingIndex !== null) {
+      await this.editExpense(this.currentExpense);
+      this.showEditExpense(this.currentExpense.name);
+      this.editingIndex = null;
+    } else {
+      await this.addExpenseToFirebase(this.currentExpense);
+      this.financeItems.unshift({ ...this.currentExpense });
+    }
+
+    this.calculateTotals();
+    this.calculateCounts();
+    this.calculateDineroRestante();
+    this.updateGroupedExpenses();
+    this.cancelAddingExpense();
+
+    this.getExpenses();
+  }
+
+  startEditingExpense(expense: FinanceInterface): void {
+    this.addingExpense = true;
+    this.editingIndex = this.filteredFinanceItems.indexOf(expense);
+    this.currentExpense = { ...expense };
+
+    // Convertir la fecha al formato correcto si es necesario
+    if (this.currentExpense.date.includes('/')) {
+      const [day, month, year] = this.currentExpense.date.split('/');
+      this.currentExpense.date = `${year}-${month.padStart(
+        2,
+        '0'
+      )}-${day.padStart(2, '0')}`;
+    }
+
+    // Ajustar el checkbox según la fecha
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = this.parseDate(this.currentExpense.date);
+    this.isTodayChecked = selectedDate.getTime() === today.getTime();
+  }
+
+  // Eliminar un gasto
+  async deleteExpense(expense: FinanceInterface): Promise<void> {
+    const uid = this.getCurrentUserUid();
+    if (!uid || !expense.id) return;
+
+    try {
+      const expenseDoc = doc(
+        this.firestore,
+        `users/${uid}/gastos/${expense.id}`
+      );
+      await deleteDoc(expenseDoc);
+      this.getExpenses(); // Refresca los gastos tras eliminar uno
+      this.showDeleteNotification(expense.name); // Muestra notificación
+    } catch (error) {
+      console.error('Error al eliminar el gasto:', error);
+    }
+  }
+
+  getTodayDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   @HostListener('document:click', ['$event'])
@@ -853,79 +1069,7 @@ export class DashboardComponent implements OnInit {
     return typeof category === 'object' ? category.name : category;
   }
 
-  saveExpense() {
-    this.isSaveAttempted = true;
-
-    // Verifica que todos los campos obligatorios estén llenos
-    if (
-      !this.currentExpense.name ||
-      !this.currentExpense.value ||
-      !this.currentExpense.date ||
-      !this.currentExpense.provider ||
-      !this.currentExpense.category
-    ) {
-      // No guarda si faltan campos
-      console.log('Faltan campos obligatorios.');
-      return;
-    }
-
-    this.showAddExpense(this.currentExpense.name);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    this.addingExpense = false;
-
-    let selectedDate = this.parseDate(this.currentExpense.date);
-
-    if (this.isTodayChecked) {
-      this.currentExpense.date = this.formatDate(today);
-      selectedDate = today;
-    }
-
-    console.log(selectedDate);
-    console.log(today);
-
-    if (selectedDate > today) {
-      this.currentExpense.status = 'Por pagar';
-      console.log(this.currentExpense);
-    } else if (selectedDate < today) {
-      this.currentExpense.status = this.currentExpense.isPaid
-        ? 'Pagado'
-        : 'Vencido';
-      console.log(this.currentExpense);
-    } else {
-      this.currentExpense.status = this.currentExpense.isPaid
-        ? 'Pagado'
-        : 'Vencido';
-      console.log(this.currentExpense);
-    }
-
-    if (selectedDate.getTime() === today.getTime()) {
-      this.currentExpense.status = 'Por pagar';
-    } else if (selectedDate > today) {
-      this.currentExpense.status = 'Por pagar';
-    } else {
-      this.currentExpense.status = this.currentExpense.isPaid
-        ? 'Pagado'
-        : 'Vencido';
-    }
-
-    // Check if editing an existing expense
-    if (this.editingIndex !== null) {
-      this.showEditExpense(this.currentExpense.name);
-      this.financeItems[this.editingIndex] = { ...this.currentExpense };
-      this.editingIndex = null; // Reset the editing index
-    } else {
-      // Add new expense
-      this.financeItems.unshift({ ...this.currentExpense });
-    }
-
-    this.calculateTotals();
-    this.calculateCounts();
-    this.calculateDineroRestante();
-    this.updateGroupedExpenses();
-    this.cancelAddingExpense();
-  }
+  //
 
   onCheckboxChange() {
     this.selectAll = this.financeItems.every((item) => item.selected);
@@ -957,43 +1101,116 @@ export class DashboardComponent implements OnInit {
     this.currentExpense = this.createEmptyExpense();
     this.isSaveAttempted = false;
   }
+  // saveExpense() {
+  //   this.isSaveAttempted = true;
 
-  addExpense() {
-    this.addingExpense = true;
-    this.isTodayChecked = true;
-    this.toggleTodayDate();
-    this.getDisplayDate();
-  }
+  //   // Verifica que todos los campos obligatorios estén llenos
+  //   if (
+  //     !this.currentExpense.name ||
+  //     !this.currentExpense.value ||
+  //     !this.currentExpense.date ||
+  //     !this.currentExpense.provider ||
+  //     !this.currentExpense.category
+  //   ) {
+  //     // No guarda si faltan campos
+  //     console.log('Faltan campos obligatorios.');
+  //     return;
+  //   }
 
-  editExpense(index: number): void {
-    this.editingIndex = index;
-    this.currentExpense = { ...this.financeItems[index] };
-    this.addingExpense = true;
+  //   this.showAddExpense(this.currentExpense.name);
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
 
-    // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
-    if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
-      const [day, month, year] = this.currentExpense.date.split('/');
-      this.currentExpense.date = `${year}-${month.padStart(
-        2,
-        '0'
-      )}-${day.padStart(2, '0')}`;
-    }
+  //   this.addingExpense = false;
 
-    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
-    const selectedDate = this.parseDate(this.currentExpense.date);
+  //   let selectedDate = this.parseDate(this.currentExpense.date);
 
-    console.log(this.currentExpense);
-    this.isTodayChecked = selectedDate.getTime() === today.getTime();
-  }
+  //   if (this.isTodayChecked) {
+  //     this.currentExpense.date = this.formatDate(today);
+  //     selectedDate = today;
+  //   }
 
-  deleteExpense(item: FinanceInterface) {
-    this.financeItems = this.financeItems.filter((expense) => expense !== item);
-    this.cdr.detectChanges();
+  //   console.log(selectedDate);
+  //   console.log(today);
 
-    this.showDeleteNotification(item.name);
-  }
+  //   if (selectedDate > today) {
+  //     this.currentExpense.status = 'Por pagar';
+  //     console.log(this.currentExpense);
+  //   } else if (selectedDate < today) {
+  //     this.currentExpense.status = this.currentExpense.isPaid
+  //       ? 'Pagado'
+  //       : 'Vencido';
+  //     console.log(this.currentExpense);
+  //   } else {
+  //     this.currentExpense.status = this.currentExpense.isPaid
+  //       ? 'Pagado'
+  //       : 'Vencido';
+  //     console.log(this.currentExpense);
+  //   }
+
+  //   if (selectedDate.getTime() === today.getTime()) {
+  //     this.currentExpense.status = 'Por pagar';
+  //   } else if (selectedDate > today) {
+  //     this.currentExpense.status = 'Por pagar';
+  //   } else {
+  //     this.currentExpense.status = this.currentExpense.isPaid
+  //       ? 'Pagado'
+  //       : 'Vencido';
+  //   }
+
+  //   // Check if editing an existing expense
+  //   if (this.editingIndex !== null) {
+  //     this.showEditExpense(this.currentExpense.name);
+  //     this.financeItems[this.editingIndex] = { ...this.currentExpense };
+  //     this.editingIndex = null; // Reset the editing index
+  //   } else {
+  //     // Add new expense
+  //     this.financeItems.unshift({ ...this.currentExpense });
+  //   }
+
+  //   this.calculateTotals();
+  //   this.calculateCounts();
+  //   this.calculateDineroRestante();
+  //   this.updateGroupedExpenses();
+  //   this.cancelAddingExpense();
+  // }
+
+  // addExpense() {
+  //   this.addingExpense = true;
+  //   this.isTodayChecked = true;
+  //   this.toggleTodayDate();
+  //   this.getDisplayDate();
+  // }
+
+  // editExpense(index: number): void {
+  //   this.editingIndex = index;
+  //   this.currentExpense = { ...this.financeItems[index] };
+  //   this.addingExpense = true;
+
+  //   // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
+  //   if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+  //     const [day, month, year] = this.currentExpense.date.split('/');
+  //     this.currentExpense.date = `${year}-${month.padStart(
+  //       2,
+  //       '0'
+  //     )}-${day.padStart(2, '0')}`;
+  //   }
+
+  //   // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
+  //   const selectedDate = this.parseDate(this.currentExpense.date);
+
+  //   console.log(this.currentExpense);
+  //   this.isTodayChecked = selectedDate.getTime() === today.getTime();
+  // }
+
+  // deleteExpense(item: FinanceInterface) {
+  //   this.financeItems = this.financeItems.filter((expense) => expense !== item);
+  //   this.cdr.detectChanges();
+
+  //   this.showDeleteNotification(item.name);
+  // }
 
   checkAndUpdateExpensesStatus(): void {
     const today = new Date();
@@ -1130,17 +1347,17 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  createEmptyExpense(): FinanceInterface {
-    return {
-      isPaid: false,
-      status: 'Por pagar',
-      date: '',
-      value: '',
-      name: '',
-      provider: '',
-      category: '',
-      obs: '',
-      currency: 'ARS',
-    };
-  }
+  // createEmptyExpense(): FinanceInterface {
+  //   return {
+  //     isPaid: false,
+  //     status: 'Por pagar',
+  //     date: '',
+  //     value: '',
+  //     name: '',
+  //     provider: '',
+  //     category: '',
+  //     obs: '',
+  //     currency: 'ARS',
+  //   };
+  // }
 }

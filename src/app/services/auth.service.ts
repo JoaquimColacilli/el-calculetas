@@ -25,6 +25,7 @@ import {
 } from '@angular/fire/firestore';
 
 import { User } from '@angular/fire/auth';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'El formato del correo electrónico es inválido.',
@@ -67,7 +68,7 @@ export class AuthService {
   private firebaseAuth = inject(Auth);
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore, private auth: Auth) {}
 
   register(
     email: string,
@@ -225,5 +226,18 @@ export class AuthService {
     });
 
     return from(promise);
+  }
+
+  async getCurrentUserUid(): Promise<string | null> {
+    const currentUser = await this.auth.currentUser;
+
+    // Check if currentUser is null or undefined
+    if (!currentUser) {
+      console.log('User is not authenticated.');
+      return null;
+    }
+
+    console.log(currentUser.uid);
+    return currentUser.uid;
   }
 }

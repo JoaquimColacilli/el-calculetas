@@ -1,4 +1,5 @@
 export interface FinanceInterface {
+  id?: string;
   isPaid: boolean;
   status: string;
   date: string;
@@ -8,5 +9,5 @@ export interface FinanceInterface {
   provider: string;
   category: string | { name: string };
   obs: string;
-  selected?: boolean; // Nueva propiedad opcional para manejar la selección
+  selected?: boolean;
 }

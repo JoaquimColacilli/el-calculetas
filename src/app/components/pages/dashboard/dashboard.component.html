@@ -272,9 +272,9 @@
               <div class="flex items-center space-x-2 mt-2">
                 <fa-icon
                   [icon]="['fas', 'exclamation-circle']"
-                  class="text-red-500"
+                  class="text-black"
                 ></fa-icon>
-                <span class="text-red-500 text-sm font-medium">
+                <span class="text-black text-sm font-medium">
                   No hay gastos {{ options[currentIndex].toLowerCase() }}
                 </span>
               </div>
@@ -866,6 +866,13 @@
                 </button>
               </td>
             </tr>
+
+            @if (isLoadingData) {
+            <div class="overlay">
+              <div class="spinner"></div>
+            </div>
+            }
+
             <tr *ngIf="getCurrentMonthItems().length === 0">
               <td colspan="100%" class="text-center py-6">
                 <div
@@ -990,7 +997,7 @@
                 >
                   <button
                     class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
-                    (click)="editExpense(i)"
+                    (click)="editExpense(item)"
                   >
                     <fa-icon [icon]="['fas', 'edit']"></fa-icon>
                   </button>
