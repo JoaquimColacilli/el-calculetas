@@ -75,9 +75,6 @@ import {
 export class DashboardComponent implements OnInit {
   @ViewChild('categorySelect', { static: true }) categorySelect!: ElementRef;
 
-  @Directive({
-    selector: '[appThousandSeparator]',
-  })
   authService = inject(AuthService);
   private auth = inject(Auth);
   private firestore = inject(Firestore);
@@ -213,16 +210,6 @@ export class DashboardComponent implements OnInit {
 
   private getCurrentUserUid(): string | null {
     return this.auth.currentUser?.uid || null;
-  }
-
-  @HostListener('input', ['$event'])
-  onInputChange(event: InputEvent): void {
-    const input = event.target as HTMLInputElement;
-    let value = input.value.replace(/\D/g, '');
-
-    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
   }
 
   createEmptyExpense(): FinanceInterface {
@@ -466,32 +453,36 @@ export class DashboardComponent implements OnInit {
       panelClass: 'custom-modal-class',
       data: {
         dolarBolsaVenta: this.dolarBolsaVenta,
+        salaryDetails: this.getSalaryDetails(),
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       console.log(result);
-      if (
-        result &&
-        (result.totalInDollars !== undefined || result.totalInArs !== undefined)
-      ) {
-        // Sumamos los totales de sueldos en USD y ARS
-        const totalSueldoUSD = result.totalInDollars || 0;
-        const totalSueldoIngresado = result.totalInArs || 0;
+      if (result && Array.isArray(result)) {
+        result.forEach((salary) => {
+          if (salary.currency === 'USD') {
+            this.totalIngresosUSD += salary.amount;
+          } else if (salary.currency === 'ARS') {
+            this.totalIngresos += salary.amount;
+          }
+        });
 
-        // Actualizamos los valores de ingresos en ARS y USD
-        this.totalIngresos += totalSueldoIngresado;
-        this.totalIngresosUSD += totalSueldoUSD;
-
-        // Calculamos el dinero total en cuenta en USD convertido a ARS
+        // Actualizas los valores combinados
         this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
-
         console.log('Total Ingresos ARS:', this.totalIngresos);
         console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
 
         this.calculateDineroRestante();
       }
     });
+  }
+
+  getSalaryDetails(): Array<{ amount: number; currency: string }> {
+    return [
+      { amount: this.totalIngresosUSD, currency: 'USD' },
+      { amount: this.totalIngresos, currency: 'ARS' },
+    ];
   }
 
   toggleSortOrder() {
@@ -553,19 +544,15 @@ export class DashboardComponent implements OnInit {
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
   }
 
-  handleValueChange(event: string): void {
-    // Remover puntos y comas, y convertir a número
-    const numericValue = parseFloat(event.replace(/[^0-9.]/g, ''));
+  handleValueChange(value: string): void {
+    // Remover todo lo que no sea número y los puntos anteriores
+    let numericValue = value.replace(/\D/g, '');
 
-    // Formatear a dos decimales sin agregar separadores de miles
-    const formattedValue = new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      useGrouping: false, // Desactiva el uso de comas
-    }).format(numericValue);
+    // Aplicar el formato de miles usando puntos
+    const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-    // Asignar el valor formateado o vacío si no es un número válido
-    this.currentExpense.value = isNaN(numericValue) ? '' : formattedValue;
+    // Asignar el valor formateado al modelo
+    this.currentExpense.value = formattedValue;
   }
 
   getCurrentMonthItems(): FinanceInterface[] {
@@ -948,7 +935,10 @@ export class DashboardComponent implements OnInit {
   togglePayment(item: FinanceInterface): void {
     this.updateExpenseStatus(item);
 
-    this.updateExpenseInFirebase(item);
+    // Añade un pequeño retraso antes de actualizar en Firebase
+    setTimeout(() => {
+      this.updateExpenseInFirebase(item);
+    }, 300); // 300ms es suficiente para permitir la animación
 
     this.calculateCounts();
     this.calculateTotals();

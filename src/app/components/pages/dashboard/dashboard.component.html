@@ -785,10 +785,10 @@
                 <input
                   type="text"
                   [(ngModel)]="currentExpense.value"
+                  (ngModelChange)="handleValueChange($event)"
                   [ngClass]="{
                     'border-red-500': !currentExpense.value && isSaveAttempted
                   }"
-                  appThousandSeparator
                   placeholder="0.00"
                   class="border border-gray-300 rounded px-3 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -936,6 +936,7 @@
                     </div>
                   </label>
                 </td>
+
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
                     [ngClass]="{
@@ -974,7 +975,7 @@
                     >
                   </ng-container>
                   <span class="text-sm font-semibold">{{
-                    item.value | number : "1.0.0"
+                    item.value | number : "1.0"
                   }}</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>

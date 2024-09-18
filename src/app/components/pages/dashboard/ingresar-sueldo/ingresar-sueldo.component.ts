@@ -23,22 +23,27 @@ export class IngresarSueldoComponent implements OnInit {
   selectedCurrency: string = '';
   selectedCurrencies: string[] = [];
   isCurrencySelected: boolean[] = [false];
-  // Arrays para almacenar conversiones de cada salario
+
   totalSalaryInDollarsArray: number[] = [];
   totalSalaryInArsArray: number[] = [];
   totalCombinedSalaryInArs: number = 0;
   totalCombinedSalaryInDollars: number = 0;
 
-  // Variables para controlar la visualización de conversiones
   showUsdToArs: boolean = false;
   showArsToUsd: boolean = false;
 
   totalOriginalSalariesInUsd: number = 0;
   totalOriginalSalariesInArs: number = 0;
 
+  showCurrencySelectionOnce: boolean = false;
+
   constructor(
     public dialogRef: MatDialogRef<IngresarSueldoComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { dolarBolsaVenta: number },
+    @Inject(MAT_DIALOG_DATA)
+    public data: {
+      dolarBolsaVenta: number;
+      salaryDetails?: Array<{ amount: number; currency: string }>;
+    },
     library: FaIconLibrary
   ) {
     library.addIconPacks(fas);
@@ -46,6 +51,39 @@ export class IngresarSueldoComponent implements OnInit {
 
   ngOnInit(): void {
     this.dolarBolsaVenta = this.data.dolarBolsaVenta;
+
+    if (
+      Array.isArray(this.data.salaryDetails) &&
+      this.data.salaryDetails.length > 0
+    ) {
+      const allZeros = this.data.salaryDetails.every(
+        (detail) => detail.amount === 0
+      );
+
+      if (allZeros) {
+        this.showCurrencySelectionOnce = true; // Mostrar solo una vez si todos los sueldos son 0
+        this.salaries = [''];
+        this.isCurrencySelected = [false];
+        this.selectedCurrencies = [''];
+      } else {
+        // Si hay valores, inicializamos los sueldos como antes
+        this.salaries = this.data.salaryDetails.map((detail) => {
+          return detail.amount === 0 ? '' : `$${detail.amount}`;
+        });
+        this.selectedCurrencies = this.data.salaryDetails.map(
+          (detail) => detail.currency
+        );
+        this.isCurrencySelected = this.selectedCurrencies.map(
+          (currency, index) => {
+            return this.salaries[index] !== ''; // Solo seleccionamos si hay un valor
+          }
+        );
+      }
+    } else {
+      this.salaries = [''];
+      this.isCurrencySelected = [false];
+      this.selectedCurrencies = [''];
+    }
   }
 
   closeModal(): void {
@@ -95,24 +133,25 @@ export class IngresarSueldoComponent implements OnInit {
       }
     });
 
-    // Asegúrate de que los valores se estén calculando correctamente
     console.log('Total USD:', this.totalSalaryInDollars);
     console.log('Total ARS:', this.totalSalaryInArs);
   }
 
   saveSalary(): void {
-    this.calculateTotalSalaries();
+    const salaryDetails = this.salaries.map((salary, index) => {
+      const value =
+        parseFloat(salary.replace(/[^\d,]/g, '').replace(/,/g, '.')) || 0;
+      const currency = this.selectedCurrencies[index];
 
-    // Asegúrate de que los valores de totalInDollars y totalInArs sean correctos antes de cerrar
-    console.log({
-      totalInDollars: this.totalSalaryInDollars,
-      totalInArs: this.totalSalaryInArs,
+      return {
+        amount: value,
+        currency: currency,
+      };
     });
 
-    this.dialogRef.close({
-      totalInDollars: this.totalSalaryInDollars,
-      totalInArs: this.totalSalaryInArs,
-    });
+    console.log(salaryDetails); // Verificar el array de objetos
+
+    this.dialogRef.close(salaryDetails);
   }
 
   trackByIndex(index: number): number {
