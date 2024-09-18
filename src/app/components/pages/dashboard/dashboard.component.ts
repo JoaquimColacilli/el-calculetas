@@ -120,6 +120,8 @@ export class DashboardComponent implements OnInit {
   addedItemName: string = '';
   editedItemName: string = '';
 
+  salaryDetails: Array<{ amount: number; currency: string }> = [];
+
   sortOrder: 'asc' | 'desc' = 'desc';
 
   currentDateTime: string = '';
@@ -460,6 +462,13 @@ export class DashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       console.log(result);
       if (result && Array.isArray(result)) {
+        // Actualiza salaryDetails con los sueldos ingresados
+        this.salaryDetails = result;
+
+        // Resetea y recalcula los ingresos totales
+        this.totalIngresos = 0;
+        this.totalIngresosUSD = 0;
+
         result.forEach((salary) => {
           if (salary.currency === 'USD') {
             this.totalIngresosUSD += salary.amount;
@@ -479,10 +488,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getSalaryDetails(): Array<{ amount: number; currency: string }> {
-    return [
-      { amount: this.totalIngresosUSD, currency: 'USD' },
-      { amount: this.totalIngresos, currency: 'ARS' },
-    ];
+    return this.salaryDetails || [];
   }
 
   toggleSortOrder() {
