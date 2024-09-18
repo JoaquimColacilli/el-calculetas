@@ -45,32 +45,45 @@
             />
           </div>
 
-          <!-- Indicador de moneda seleccionada y botón para cambiar moneda -->
           <div
             *ngIf="isCurrencySelected[i]"
-            class="flex items-center text-sm text-gray-500 space-x-2"
+            class="text-sm text-gray-500 space-y-2"
           >
-            <span>Moneda seleccionada:</span>
-            <span class="font-bold">
-              {{
-                selectedCurrencies[i] === "ARS"
-                  ? "Pesos (ARS)"
-                  : "Dólares (USD)"
-              }}
-            </span>
-            <button
-              class="text-gray-400 hover:text-gray-600 focus:outline-none"
-              (click)="resetCurrencySelection(i)"
-            >
-              <fa-icon [icon]="['fas', 'exchange-alt']"></fa-icon>
-            </button>
+            <!-- Indicador de moneda seleccionada -->
+            <div class="flex items-center space-x-1">
+              <span>Moneda seleccionada:</span>
+              <span class="font-bold">
+                {{
+                  selectedCurrencies[i] === "ARS"
+                    ? "Pesos (ARS)"
+                    : "Dólares (USD)"
+                }}
+              </span>
 
-            <button
-              class="text-gray-400 hover:text-red-600 focus:outline-none"
-              (click)="removeSalary(i)"
-            >
-              <fa-icon [icon]="['fas', 'times']"></fa-icon>
-            </button>
+              <button
+                class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                (click)="resetCurrencySelection(i)"
+              >
+                <fa-icon [icon]="['fas', 'exchange-alt']"></fa-icon>
+              </button>
+
+              <button
+                class="text-gray-400 hover:text-red-600 focus:outline-none"
+                (click)="removeSalary(i)"
+              >
+                <fa-icon [icon]="['fas', 'times']"></fa-icon>
+              </button>
+            </div>
+
+            <!-- Checkbox "Válido mes siguiente" debajo de la selección de moneda -->
+            <div class="flex items-center space-x-2 mt-1 justify-center">
+              <span class=""> Válido para mes siguiente</span>
+              <input
+                type="checkbox"
+                [(ngModel)]="validForNextMonth[i]"
+                class="form-checkbox h-4 w-4 text-blue-600"
+              />
+            </div>
           </div>
 
           <div *ngIf="!isCurrencySelected[i]" class="flex space-x-4">

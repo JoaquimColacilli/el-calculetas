@@ -55,7 +55,9 @@ import {
   deleteDoc,
   query,
   where,
+  setDoc,
 } from '@angular/fire/firestore';
+import { SueldoService } from '../../../services/sueldo.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -120,7 +122,11 @@ export class DashboardComponent implements OnInit {
   addedItemName: string = '';
   editedItemName: string = '';
 
-  salaryDetails: Array<{ amount: number; currency: string }> = [];
+  salaryDetails: Array<{
+    amount: number;
+    currency: string;
+    validForNextMonth: boolean;
+  }> = [];
 
   sortOrder: 'asc' | 'desc' = 'desc';
 
@@ -164,7 +170,8 @@ export class DashboardComponent implements OnInit {
     private dialog: MatDialog,
     private zone: NgZone,
     private financeService: FinanceService,
-    private el: ElementRef
+    private el: ElementRef,
+    private sueldoService: SueldoService
   ) {
     library.addIconPacks(fas);
   }
@@ -191,6 +198,8 @@ export class DashboardComponent implements OnInit {
 
     this.updateGroupedExpenses();
 
+    this.loadSalaries();
+
     this.loadExpenses();
   }
 
@@ -206,6 +215,38 @@ export class DashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error loading expenses:', error);
         this.isLoadingData = false;
+      },
+    });
+  }
+
+  loadSalaries(): void {
+    this.sueldoService.getSalaries().subscribe({
+      next: (salariesData) => {
+        // Verifica que los datos contengan el array de sueldos
+        const salaries = salariesData?.salaries || [];
+
+        this.salaryDetails = salaries;
+
+        // Calcular los totales a partir de los sueldos cargados
+        this.totalIngresos = 0;
+        this.totalIngresosUSD = 0;
+
+        salaries.forEach((salary: any) => {
+          if (salary.currency === 'USD') {
+            this.totalIngresosUSD += salary.amount;
+          } else if (salary.currency === 'ARS') {
+            this.totalIngresos += salary.amount;
+          }
+        });
+
+        this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
+        console.log('Total Ingresos ARS:', this.totalIngresos);
+        console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
+
+        this.calculateDineroRestante();
+      },
+      error: (error) => {
+        console.error('Error al cargar los sueldos desde Firebase:', error);
       },
     });
   }
@@ -455,20 +496,20 @@ export class DashboardComponent implements OnInit {
       panelClass: 'custom-modal-class',
       data: {
         dolarBolsaVenta: this.dolarBolsaVenta,
-        salaryDetails: this.getSalaryDetails(),
+        salaryDetails: this.getSalaryDetails(), // Cargar sueldos actuales
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log(result);
       if (result && Array.isArray(result)) {
-        // Actualiza salaryDetails con los sueldos ingresados
+        // Sobrescribir los sueldos existentes con los nuevos
         this.salaryDetails = result;
 
-        // Resetea y recalcula los ingresos totales
+        // Resetear los ingresos totales antes de recalcular
         this.totalIngresos = 0;
         this.totalIngresosUSD = 0;
 
+        // Recalcular ingresos totales con los nuevos valores
         result.forEach((salary) => {
           if (salary.currency === 'USD') {
             this.totalIngresosUSD += salary.amount;
@@ -477,7 +518,10 @@ export class DashboardComponent implements OnInit {
           }
         });
 
-        // Actualizas los valores combinados
+        // Guardar los nuevos ingresos en Firebase
+        this.saveSalariesToFirebase(result);
+
+        // Actualizar el total en cuenta
         this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
         console.log('Total Ingresos ARS:', this.totalIngresos);
         console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
@@ -487,7 +531,22 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  getSalaryDetails(): Array<{ amount: number; currency: string }> {
+  saveSalariesToFirebase(salaries: any[]): void {
+    this.sueldoService.addSalaries(salaries).subscribe({
+      next: () => {
+        console.log('Sueldo guardado exitosamente en Firebase');
+      },
+      error: (error) => {
+        console.error('Error al guardar sueldo en Firebase:', error);
+      },
+    });
+  }
+
+  getSalaryDetails(): Array<{
+    amount: number;
+    currency: string;
+    validForNextMonth: boolean;
+  }> {
     return this.salaryDetails || [];
   }
 

@@ -23,6 +23,7 @@ export class IngresarSueldoComponent implements OnInit {
   selectedCurrency: string = '';
   selectedCurrencies: string[] = [];
   isCurrencySelected: boolean[] = [false];
+  validForNextMonth: boolean[] = [true];
 
   totalSalaryInDollarsArray: number[] = [];
   totalSalaryInArsArray: number[] = [];
@@ -42,7 +43,11 @@ export class IngresarSueldoComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA)
     public data: {
       dolarBolsaVenta: number;
-      salaryDetails?: Array<{ amount: number; currency: string }>;
+      salaryDetails?: Array<{
+        amount: number;
+        currency: string;
+        validForNextMonth: boolean;
+      }>;
     },
     library: FaIconLibrary
   ) {
@@ -56,33 +61,35 @@ export class IngresarSueldoComponent implements OnInit {
       Array.isArray(this.data.salaryDetails) &&
       this.data.salaryDetails.length > 0
     ) {
-      const allZeros = this.data.salaryDetails.every(
-        (detail) => detail.amount === 0
-      );
+      // Si hay sueldos ingresados anteriormente
+      this.salaries = [];
+      this.selectedCurrencies = [];
+      this.isCurrencySelected = [];
+      this.validForNextMonth = [];
 
-      if (allZeros) {
-        this.showCurrencySelectionOnce = true; // Mostrar solo una vez si todos los sueldos son 0
-        this.salaries = [''];
-        this.isCurrencySelected = [false];
-        this.selectedCurrencies = [''];
-      } else {
-        // Si hay valores, inicializamos los sueldos como antes
-        this.salaries = this.data.salaryDetails.map((detail) => {
-          return detail.amount === 0 ? '' : `$${detail.amount}`;
-        });
-        this.selectedCurrencies = this.data.salaryDetails.map(
-          (detail) => detail.currency
-        );
-        this.isCurrencySelected = this.selectedCurrencies.map(
-          (currency, index) => {
-            return this.salaries[index] !== ''; // Solo seleccionamos si hay un valor
-          }
-        );
+      this.data.salaryDetails.forEach((detail) => {
+        // Evitar sueldos con amount 0
+        if (detail.amount > 0) {
+          this.salaries.push(`$${detail.amount}`);
+          this.selectedCurrencies.push(detail.currency);
+          this.isCurrencySelected.push(true);
+          this.validForNextMonth.push(detail.validForNextMonth ?? true); // Inicializar con true por defecto
+        }
+      });
+
+      // Si todos los sueldos tienen amount 0, mostrar un input vacío para ingresar un nuevo sueldo
+      if (this.salaries.length === 0) {
+        this.salaries.push('');
+        this.selectedCurrencies.push('');
+        this.isCurrencySelected.push(false);
+        this.validForNextMonth.push(true); // Inicializar con true
       }
     } else {
+      // Si no hay sueldos anteriores, inicializar con un input vacío
       this.salaries = [''];
-      this.isCurrencySelected = [false];
       this.selectedCurrencies = [''];
+      this.isCurrencySelected = [false];
+      this.validForNextMonth = [true];
     }
   }
 
@@ -91,9 +98,15 @@ export class IngresarSueldoComponent implements OnInit {
   }
 
   addSalary(): void {
-    this.salaries.push('');
-    this.isCurrencySelected.push(false);
-    this.selectedCurrencies.push('');
+    // Solo agregar un nuevo input si el último sueldo ya tiene moneda seleccionada
+    if (this.isCurrencySelected[this.isCurrencySelected.length - 1]) {
+      this.salaries.push('');
+      this.selectedCurrencies.push('');
+      this.isCurrencySelected.push(false);
+      this.validForNextMonth.push(true); // Inicializar con true
+    } else {
+      console.warn('Complete el sueldo anterior antes de agregar uno nuevo.');
+    }
   }
 
   updateSalaries(index: number, event: Event): void {
@@ -132,25 +145,26 @@ export class IngresarSueldoComponent implements OnInit {
         this.totalSalaryInArs += value;
       }
     });
-
-    console.log('Total USD:', this.totalSalaryInDollars);
-    console.log('Total ARS:', this.totalSalaryInArs);
   }
 
   saveSalary(): void {
-    const salaryDetails = this.salaries.map((salary, index) => {
-      const value =
-        parseFloat(salary.replace(/[^\d,]/g, '').replace(/,/g, '.')) || 0;
-      const currency = this.selectedCurrencies[index];
+    const salaryDetails = this.salaries
+      .map((salary, index) => {
+        const value =
+          parseFloat(salary.replace(/[^\d,]/g, '').replace(/,/g, '.')) || 0;
+        const currency = this.selectedCurrencies[index];
+        const validForNextMonth = this.validForNextMonth[index];
 
-      return {
-        amount: value,
-        currency: currency,
-      };
-    });
+        return {
+          amount: value,
+          currency,
+          validForNextMonth,
+        };
+      })
+      .filter((salary) => salary.amount > 0 && salary.currency); // Filtrar solo sueldos con valores válidos
 
-    console.log(salaryDetails); // Verificar el array de objetos
-
+    console.log(salaryDetails);
+    // Devolver el array de sueldos válidos
     this.dialogRef.close(salaryDetails);
   }
 
@@ -188,14 +202,18 @@ export class IngresarSueldoComponent implements OnInit {
   }
 
   removeSalary(index: number): void {
+    // Eliminar sueldo y todas las propiedades asociadas
     this.salaries.splice(index, 1);
     this.selectedCurrencies.splice(index, 1);
     this.isCurrencySelected.splice(index, 1);
+    this.validForNextMonth.splice(index, 1);
 
     if (this.salaries.length === 0) {
+      // Si todos los sueldos se eliminaron, restablecer los arrays
       this.salaries.push('');
-      this.isCurrencySelected.push(false);
       this.selectedCurrencies.push('');
+      this.isCurrencySelected.push(false);
+      this.validForNextMonth.push(true);
     }
 
     this.calculateTotalSalaries();
