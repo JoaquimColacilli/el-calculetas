@@ -26,13 +26,11 @@ export class SueldoService {
           throw new Error('Usuario no autenticado');
         }
 
-        // Asegúrate de que estás accediendo al documento correcto
         const salariesDocRef = doc(
           this.firestore,
           `users/${uid}/salaries/currentSalaries`
         );
 
-        // Devuelve los datos del documento, que contendrá los sueldos
         return docData(salariesDocRef);
       }),
       catchError((error) => {
@@ -42,7 +40,6 @@ export class SueldoService {
     );
   }
 
-  // Agregar los sueldos del usuario
   addSalaries(salaries: any[]): Observable<void> {
     return this.authService.getUserData().pipe(
       switchMap(async (userData) => {

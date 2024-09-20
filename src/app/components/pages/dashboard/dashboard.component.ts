@@ -169,8 +169,9 @@ export class DashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
     private zone: NgZone,
-    private financeService: FinanceService,
     private el: ElementRef,
+    private financeService: FinanceService,
+
     private sueldoService: SueldoService
   ) {
     library.addIconPacks(fas);
@@ -208,7 +209,7 @@ export class DashboardComponent implements OnInit {
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
         this.financeItems = expenses;
-
+        console.log(expenses);
         console.log(this.financeItems);
         this.isLoadingData = false;
       },
@@ -292,43 +293,44 @@ export class DashboardComponent implements OnInit {
   }
 
   // Editar un gasto existente
-  editExpense(expense: FinanceInterface): void {
-    const index = this.financeItems.findIndex((item) => item.id === expense.id);
-    this.editingIndex = index;
-    this.currentExpense = { ...expense };
-    this.addingExpense = true;
+  // editExpense(expense: FinanceInterface): void {
+  //   const index = this.financeItems.findIndex((item) => item.id === expense.id);
+  //   this.editingIndex = index;
+  //   this.currentExpense = { ...expense };
+  //   this.addingExpense = true;
 
-    // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
-    if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
-      const [day, month, year] = this.currentExpense.date.split('/');
-      this.currentExpense.date = `${year}-${month.padStart(
-        2,
-        '0'
-      )}-${day.padStart(2, '0')}`;
-      this.getExpenses();
-    }
+  //   // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
+  //   if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+  //     const [day, month, year] = this.currentExpense.date.split('/');
+  //     this.currentExpense.date = `${year}-${month.padStart(
+  //       2,
+  //       '0'
+  //     )}-${day.padStart(2, '0')}`;
+  //     this.getExpenses();
+  //   }
 
-    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
-    const selectedDate = this.parseDate(this.currentExpense.date);
+  //   // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
+  //   const selectedDate = this.parseDate(this.currentExpense.date);
 
-    console.log(this.currentExpense);
-    this.isTodayChecked = selectedDate.getTime() === today.getTime();
-  }
+  //   console.log(this.currentExpense);
+  //   this.isTodayChecked = selectedDate.getTime() === today.getTime();
+  // }
 
-  async addExpenseToFirebase(expense: FinanceInterface): Promise<void> {
-    const uid = this.getCurrentUserUid();
-    if (!uid) return;
+  // async addExpenseToFirebase(expense: FinanceInterface): Promise<void> {
+  //   const uid = this.getCurrentUserUid();
+  //   if (!uid) return;
 
-    const gastosCollection = collection(this.firestore, `users/${uid}/gastos`);
-    await addDoc(gastosCollection, expense);
-    this.getExpenses();
-  }
+  //   const gastosCollection = collection(this.firestore, `users/${uid}/gastos`);
+  //   await addDoc(gastosCollection, expense);
+  //   this.getExpenses();
+  // }
 
   async saveExpense(): Promise<void> {
     this.isSaveAttempted = true;
 
+    // Validar si todos los campos requeridos están llenos
     if (
       !this.currentExpense.name ||
       !this.currentExpense.value ||
@@ -346,44 +348,90 @@ export class DashboardComponent implements OnInit {
       : '0'; // Asegura que se guarde como string
 
     this.showAddExpense(this.currentExpense.name);
+
+    // Obtener la fecha de hoy y formatearla para comparación
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Resetear las horas para solo comparar la fecha
+    const formattedToday = this.formatDate(today); // 'dd/MM/yyyy'
+
+    // Convertir la fecha ingresada 'YYYY-MM-DD' a 'DD/MM/YYYY' para comparación
+    const selectedDateFormatted = this.convertDateToDDMMYYYY(
+      this.currentExpense.date
+    );
 
     this.addingExpense = false;
 
-    let selectedDate = this.parseDate(this.currentExpense.date);
-
-    if (this.isTodayChecked) {
-      this.currentExpense.date = this.formatDate(today);
-      selectedDate = today;
-    }
-
-    if (selectedDate.getTime() === today.getTime()) {
-      this.currentExpense.status = 'Por pagar';
-    } else if (selectedDate > today) {
+    // Cambiar la lógica para comparar directamente la fecha ingresada con la fecha de hoy formateada
+    if (this.isTodayChecked || selectedDateFormatted === formattedToday) {
+      // Si está marcado el check o la fecha ingresada es hoy, marcar como 'Por pagar'
+      this.currentExpense.date = formattedToday;
       this.currentExpense.status = 'Por pagar';
     } else {
-      this.currentExpense.status = this.currentExpense.isPaid
-        ? 'Pagado'
-        : 'Vencido';
+      // Parsear la fecha ingresada para comparación si no es hoy
+      const selectedDate = this.parseDate(this.currentExpense.date);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // Determinar el estado del gasto según la fecha seleccionada
+      if (selectedDate > today) {
+        this.currentExpense.status = 'Por pagar';
+      } else {
+        this.currentExpense.status = this.currentExpense.isPaid
+          ? 'Pagado'
+          : 'Vencido';
+      }
     }
 
-    if (this.editingIndex !== null) {
-      await this.editExpense(this.currentExpense);
-      this.showEditExpense(this.currentExpense.name);
-      this.editingIndex = null;
-    } else {
-      await this.addExpenseToFirebase(this.currentExpense);
-      this.financeItems.unshift({ ...this.currentExpense });
+    console.log(this.currentExpense.status);
+
+    try {
+      // Si se está editando, actualiza el gasto
+      if (this.editingIndex !== null && this.currentExpense.id) {
+        this.financeService
+          .updateExpense(this.currentExpense.id, this.currentExpense)
+          .subscribe({
+            next: () => {
+              console.log('Gasto actualizado exitosamente');
+              this.loadExpenses(); // Recargar los gastos desde Firebase
+            },
+            error: (error) => {
+              console.error('Error al actualizar el gasto:', error);
+            },
+          });
+        this.showEditExpense(this.currentExpense.name);
+        this.editingIndex = null;
+      } else {
+        // Agregar el nuevo gasto usando el servicio con suscripción
+        this.financeService
+          .addExpenseToFirebase(this.currentExpense)
+          .subscribe({
+            next: () => {
+              this.financeItems.unshift({ ...this.currentExpense });
+              console.log('Gasto agregado exitosamente');
+            },
+            error: (error) => {
+              console.error('Error al agregar el gasto:', error);
+            },
+          });
+      }
+
+      // Actualizar cálculos y estado de la interfaz
+      this.calculateTotals();
+      this.calculateCounts();
+      this.calculateDineroRestante();
+      this.updateGroupedExpenses();
+      this.cancelAddingExpense();
+
+      // Recargar los gastos desde Firebase
+      await this.loadExpenses();
+    } catch (error) {
+      console.error('Error al guardar el gasto:', error);
     }
+  }
 
-    this.calculateTotals();
-    this.calculateCounts();
-    this.calculateDineroRestante();
-    this.updateGroupedExpenses();
-    this.cancelAddingExpense();
-
-    this.getExpenses();
+  // Método para convertir una fecha 'YYYY-MM-DD' a 'DD/MM/YYYY'
+  convertDateToDDMMYYYY(date: string): string {
+    const [year, month, day] = date.split('-');
+    return `${day}/${month}/${year}`;
   }
 
   startEditingExpense(expense: FinanceInterface): void {
@@ -1025,6 +1073,29 @@ export class DashboardComponent implements OnInit {
         item.status = 'Por pagar';
       }
     }
+  }
+
+  editExpense(expense: FinanceInterface): void {
+    const index = this.financeItems.findIndex((item) => item.id === expense.id);
+    this.editingIndex = index;
+    this.currentExpense = { ...expense };
+    this.addingExpense = true;
+
+    // Convertir la fecha del formato dd/MM/yyyy a yyyy-MM-dd si es necesario
+    if (this.currentExpense.date && this.currentExpense.date.includes('/')) {
+      const [day, month, year] = this.currentExpense.date.split('/');
+      this.currentExpense.date = `${year}-${month.padStart(
+        2,
+        '0'
+      )}-${day.padStart(2, '0')}`;
+    }
+
+    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
+    const selectedDate = this.parseDate(this.currentExpense.date);
+
+    this.isTodayChecked = selectedDate.getTime() === today.getTime();
   }
 
   async updateExpenseInFirebase(expense: FinanceInterface): Promise<void> {

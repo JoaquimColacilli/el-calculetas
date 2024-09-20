@@ -1,3 +1,5 @@
+import { Timestamp, FieldValue } from 'firebase/firestore';
+
 export interface FinanceInterface {
   id?: string;
   isPaid: boolean;
@@ -10,4 +12,5 @@ export interface FinanceInterface {
   category: string | { name: string };
   obs: string;
   selected?: boolean;
+  timestamp?: Timestamp | FieldValue;
 }
