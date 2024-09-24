@@ -1,6 +1,7 @@
 export interface Category {
+  id?: string;
   name: string;
-  type: string; // Agregamos el identificador único
+  type: string;
 }
 
 export const DefaultCategories: Category[] = [

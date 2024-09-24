@@ -22,10 +22,12 @@ import {
   collection,
   where,
   getDocs,
+  addDoc,
 } from '@angular/fire/firestore';
 
 import { User } from '@angular/fire/auth';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { DefaultCategories } from '../interfaces/category.interface';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'El formato del correo electrónico es inválido.',
@@ -82,18 +84,31 @@ export class AuthService {
     )
       .then((response) => {
         return updateProfile(response.user, { displayName: username }).then(
-          () => {
+          async () => {
             const userRef = doc(this.firestore, `users/${response.user.uid}`);
-            return setDoc(userRef, {
+
+            // Crear el documento del usuario
+            await setDoc(userRef, {
               uid: response.user.uid,
               email: response.user.email,
               username: response.user.displayName || username,
               profilePicture: '',
-            }).then(() => {
-              this.currentUserSig.set({
-                email: response.user.email || '',
-                username: response.user.displayName || username,
-              });
+            });
+
+            // Crear la colección de categorías por defecto para el usuario
+            const categoriesCollection = collection(
+              this.firestore,
+              `users/${response.user.uid}/categories`
+            );
+
+            // Añadir categorías por defecto
+            for (const category of DefaultCategories) {
+              await addDoc(categoriesCollection, category);
+            }
+
+            this.currentUserSig.set({
+              email: response.user.email || '',
+              username: response.user.displayName || username,
             });
           }
         );
@@ -142,12 +157,24 @@ export class AuthService {
         const userDoc = await getDoc(userRef);
 
         if (!userDoc.exists()) {
+          // El usuario es nuevo, agregar los datos básicos y las categorías predeterminadas
           await setDoc(userRef, {
             uid: response.user.uid,
             email: response.user.email,
             username: response.user.displayName || '',
             profilePicture: response.user.photoURL || '',
           });
+
+          // Crear la colección de categorías por defecto para el usuario
+          const categoriesCollection = collection(
+            this.firestore,
+            `users/${response.user.uid}/categories`
+          );
+
+          // Añadir categorías por defecto
+          for (const category of DefaultCategories) {
+            await addDoc(categoriesCollection, category);
+          }
         }
 
         this.currentUserSig.set({

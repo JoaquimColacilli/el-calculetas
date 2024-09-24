@@ -35,6 +35,8 @@ import {
   DefaultCategories,
 } from '../../../interfaces/category.interface';
 
+import { CategoryService } from '../../../services/category.service';
+
 import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.component';
 import { IngresarSueldoComponent } from './ingresar-sueldo/ingresar-sueldo.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -95,7 +97,7 @@ export class DashboardComponent implements OnInit {
   dineroRestanteUSD = 0;
   totalIngresos = 0;
   options = ['Este mes', 'Esta semana', 'Este año'];
-  categories: Category[] = DefaultCategories;
+  categories: Category[] = [];
 
   currentIndex = 0;
   weatherData: any = null;
@@ -171,7 +173,7 @@ export class DashboardComponent implements OnInit {
     private zone: NgZone,
     private el: ElementRef,
     private financeService: FinanceService,
-
+    private categoryService: CategoryService,
     private sueldoService: SueldoService
   ) {
     library.addIconPacks(fas);
@@ -202,6 +204,19 @@ export class DashboardComponent implements OnInit {
     this.loadSalaries();
 
     this.loadExpenses();
+
+    this.loadUserCategories();
+  }
+
+  loadUserCategories(): void {
+    this.categoryService.getUserCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => {
+        console.error('Error al cargar las categorías:', error);
+      },
+    });
   }
 
   loadExpenses(): void {
@@ -209,7 +224,9 @@ export class DashboardComponent implements OnInit {
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
         this.financeItems = expenses;
-        console.log(expenses);
+
+        this.updateExpensesStatus();
+
         console.log(this.financeItems);
         this.isLoadingData = false;
       },
@@ -249,6 +266,44 @@ export class DashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error al cargar los sueldos desde Firebase:', error);
       },
+    });
+  }
+
+  parseDateForFinance(expenseDate: string): Date {
+    if (expenseDate.includes('-')) {
+      return new Date(expenseDate);
+    }
+
+    const [day, month, year] = expenseDate.split('/');
+    return new Date(+year, +month - 1, +day);
+  }
+
+  updateExpensesStatus(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    this.financeItems.forEach((expense) => {
+      const expenseDate = this.parseDateForFinance(expense.date);
+      expenseDate.setHours(0, 0, 0, 0);
+
+      if (!expense.id) {
+        console.warn(
+          `El gasto ${expense.name} no tiene un ID. No se actualizará.`
+        );
+        return;
+      }
+
+      if (expense.status === 'Por pagar' && expenseDate < today) {
+        expense.status = 'Vencido';
+        this.financeService.updateExpense(expense.id, expense).subscribe({
+          next: () => {
+            console.log(`Gasto ${expense.name} actualizado a 'Vencido'`);
+          },
+          error: (error) => {
+            console.error('Error al actualizar el gasto:', error);
+          },
+        });
+      }
     });
   }
 
@@ -988,12 +1043,6 @@ export class DashboardComponent implements OnInit {
     this.authService.logout().subscribe(() => {
       this.router.navigate(['/login']);
     });
-  }
-
-  addCategory(name: string) {
-    const newCategory: Category = { name, type: 'others' };
-    this.categories.push(newCategory);
-    this.newExpense.category = name;
   }
 
   hasExpensesCurrentMonth(): boolean {

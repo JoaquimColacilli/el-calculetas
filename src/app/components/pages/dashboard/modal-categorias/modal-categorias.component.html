@@ -19,7 +19,7 @@
       <!-- Circulitos de categorías -->
       <div class="grid grid-cols-4 gap-4 relative">
         <div
-          *ngFor="let category of categories"
+          *ngFor="let category of categories; trackBy: trackByCategoryId"
           [ngClass]="getCategoryClasses(category)"
           class="relative rounded-full p-2 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition cursor-pointer"
           (click)="editCategory(category)"

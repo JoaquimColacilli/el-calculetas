@@ -87,3 +87,15 @@
   justify-content: center;
   z-index: 50;
 }
+
+.ng-select-custom {
+  min-width: 200px;
+}
+
+.ng-select-custom .ng-select-container {
+  height: 38px;
+}
+
+.ng-select-custom .ng-select-container .ng-placeholder {
+  line-height: 38px;
+}

@@ -826,7 +826,7 @@
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-6 py-4">
                 <ng-select
                   [items]="categories"
                   bindLabel="name"
@@ -836,10 +836,8 @@
                       !currentExpense.category && isSaveAttempted
                   }"
                   placeholder="Seleccione una categoría"
-                  [addTag]="true"
-                  addTagText="Agregar categoría"
-                  (add)="addCategory($event)"
                   class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  appendTo="body"
                 ></ng-select>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
