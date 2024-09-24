@@ -107,6 +107,7 @@ export class AuthService {
             }
 
             this.currentUserSig.set({
+              uid: response.user.uid || '',
               email: response.user.email || '',
               username: response.user.displayName || username,
             });
@@ -134,6 +135,7 @@ export class AuthService {
       password
     ).then((response) => {
       this.currentUserSig.set({
+        uid: response.user.uid || '',
         email: response.user.email || '',
         username: response.user.displayName || '',
       });
@@ -178,6 +180,7 @@ export class AuthService {
         }
 
         this.currentUserSig.set({
+          uid: response.user.uid || '',
           email: response.user.email || '',
           username: response.user.displayName || '',
           profilePicture: response.user.photoURL || '',

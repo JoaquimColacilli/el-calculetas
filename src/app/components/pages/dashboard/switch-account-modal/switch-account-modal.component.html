@@ -1,0 +1,53 @@
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6 relative">
+    <!-- Contenedor con flex para alinear el botón de cerrar y el título -->
+    <div class="flex justify-between items-center mb-4">
+      <!-- Título del modal, centrado -->
+      <h2 class="text-2xl font-bold text-gray-800 text-center flex-grow">
+        Cambiar Cuenta
+      </h2>
+      <!-- Botón de cerrar modal, alineado a la derecha -->
+      <button
+        class="text-gray-500 hover:text-gray-700 focus:outline-none ml-4"
+        (click)="close()"
+      >
+        <fa-icon [icon]="['fas', 'times']" class="text-xl"></fa-icon>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Lista de cuentas clicables -->
+      <div
+        *ngFor="let account of accounts"
+        class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+        (click)="switchAccount(account)"
+      >
+        <div class="flex items-center space-x-4">
+          <img
+            [src]="account.profilePicture || 'profile_default.png'"
+            alt="Profile Picture"
+            class="w-10 h-10 rounded-full object-cover"
+          />
+          <span class="text-gray-700 font-medium">{{ account.username }}</span>
+        </div>
+        <fa-icon
+          [icon]="['fas', 'exchange-alt']"
+          class="text-blue-600"
+        ></fa-icon>
+        <!-- Icono solamente, sin click -->
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-center">
+      <button
+        class="flex items-center justify-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        (click)="addNewAccount()"
+      >
+        <fa-icon [icon]="['fas', 'plus']" class="mr-2"></fa-icon> Agregar nueva
+        cuenta
+      </button>
+    </div>
+  </div>
+</div>

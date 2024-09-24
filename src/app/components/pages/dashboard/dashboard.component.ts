@@ -60,6 +60,7 @@ import {
   setDoc,
 } from '@angular/fire/firestore';
 import { SueldoService } from '../../../services/sueldo.service';
+import { SwitchAccountModalComponent } from './switch-account-modal/switch-account-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -1171,6 +1172,12 @@ export class DashboardComponent implements OnInit {
     });
 
     return this.filterByDate(filteredItems);
+  }
+
+  openSwitchAccountModal(): void {
+    this.dialog.open(SwitchAccountModalComponent, {
+      width: '400px',
+    });
   }
 
   filterByDate(items: FinanceInterface[]): FinanceInterface[] {

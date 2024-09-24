@@ -1,27 +1,18 @@
 <div class="flex h-screen bg-gray-100">
   <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r shadow-md">
+  <aside class="w-32 bg-white border-r shadow-md">
     <div class="p-4 border-b">
       <h2 class="text-lg font-bold text-gray-800">Finanzas</h2>
     </div>
     <nav class="p-4 space-y-4">
-      <a
-        href="#"
-        class="flex items-center text-gray-600 hover:text-blue-600 transition"
-      >
+      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
         <fa-icon [icon]="['fas', 'home']" class="mr-2"></fa-icon> Inicio
       </a>
-      <a
-        href="#"
-        class="flex items-center text-gray-600 hover:text-blue-600 transition"
-      >
+      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
         <fa-icon [icon]="['fas', 'chart-bar']" class="mr-2"></fa-icon>
         Estadísticas
       </a>
-      <a
-        href="#"
-        class="flex items-center text-gray-600 hover:text-blue-600 transition"
-      >
+      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
         <fa-icon [icon]="['fas', 'wallet']" class="mr-2"></fa-icon> Finanzas
       </a>
     </nav>
@@ -71,7 +62,7 @@
 
           <div
             *ngIf="isUserMenuOpen || isClosing"
-            class="absolute mt-6 w-48 bg-white border rounded-lg shadow-lg py-2 transition-transform duration-300 ease-out origin-top-right scale-95 user-menu"
+            class="absolute mt-6 w-48 bg-white border rounded-lg shadow-lg py-2 transition-transform duration-300 ease-out origin-top-right scale-95 user-menu z-10"
             [ngClass]="{
               'animate-fadeIn': isUserMenuOpen && !isClosing,
               'animate-fadeOut': isClosing
@@ -107,6 +98,16 @@
                 class="mr-2 text-gray-500"
               ></fa-icon>
               Administrar Cuenta
+            </button>
+            <button
+              class="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              (click)="openSwitchAccountModal()"
+            >
+              <fa-icon
+                [icon]="['fas', 'exchange-alt']"
+                class="mr-2 text-gray-500"
+              ></fa-icon>
+              Cambiar Cuenta
             </button>
             <button
               class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition-colors duration-200"
@@ -460,12 +461,13 @@
       </div>
 
       <div
-        class="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between mt-6"
+        class="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 mt-6"
       >
-        <div class="flex items-center space-x-4">
+        <div
+          class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4"
+        >
           <div
-            class="flex items-center bg-gray-100 p-2 rounded-lg space-x-2"
-            style="width: 15rem; height: 3rem; justify-content: space-between"
+            class="flex items-center bg-gray-100 p-2 rounded-lg space-x-2 w-full md:w-auto justify-between"
           >
             <button
               class="text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -474,11 +476,9 @@
             >
               <fa-icon [icon]="['fas', 'chevron-left']"></fa-icon>
             </button>
-
-            <span class="text-gray-600 font-medium flex-1 text-center">
-              {{ options[currentIndex] }}
-            </span>
-
+            <span class="text-gray-600 font-medium flex-1 text-center">{{
+              options[currentIndex]
+            }}</span>
             <button
               class="text-gray-500 hover:text-gray-700 focus:outline-none"
               (click)="nextOption()"
@@ -487,13 +487,11 @@
               <fa-icon [icon]="['fas', 'chevron-right']"></fa-icon>
             </button>
           </div>
-
-          <div class="relative">
+          <div class="relative w-full md:w-auto">
             <input
               type="text"
               placeholder="Nombre, proveedor o obs..."
-              class="border border-gray-300 p-2 pr-10 rounded focus:outline-none"
-              style="height: 3rem; width: 100%"
+              class="border border-gray-300 p-2 pr-10 rounded focus:outline-none w-full"
               [(ngModel)]="searchQuery"
             />
             <fa-icon
@@ -501,25 +499,25 @@
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             ></fa-icon>
           </div>
-
           <ng-select
             [items]="categories"
             bindLabel="name"
             [(ngModel)]="selectedCategory"
             placeholder="Seleccione una categoría"
-            class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 custom-height"
+            class="ng-select-custom w-full md:w-auto bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="width: 250px"
             [notFoundText]="'Categoría no encontrada'"
+          ></ng-select>
+          <button
+            class="flex items-center space-x-2 text-gray-700 hover:text-gray-800"
           >
-          </ng-select>
-
-          <button class="" style="height: 3rem">
             <fa-icon [icon]="['fas', 'filter']"></fa-icon>
             <span class="ml-1">Filtro</span>
           </button>
         </div>
-
-        <div class="flex space-x-2">
+        <div
+          class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-2"
+        >
           <button
             class="bg-red-400 text-white py-2 px-4 rounded-lg hover:bg-red-500 transition flex items-center space-x-2"
             (click)="openModalCategorias()"
@@ -537,7 +535,6 @@
             <fa-icon [icon]="['fas', 'wallet']"></fa-icon>
             <span>Ingresar sueldo</span>
           </button>
-
           <button
             class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center space-x-2 relative group disabled:bg-gray-400 disabled:cursor-not-allowed"
             (click)="addExpense()"

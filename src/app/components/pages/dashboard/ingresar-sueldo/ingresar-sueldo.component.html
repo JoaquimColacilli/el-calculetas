@@ -74,16 +74,6 @@
                 <fa-icon [icon]="['fas', 'times']"></fa-icon>
               </button>
             </div>
-
-            <!-- Checkbox "Válido mes siguiente" debajo de la selección de moneda -->
-            <div class="flex items-center space-x-2 mt-1 justify-center">
-              <span class=""> Válido para mes siguiente</span>
-              <input
-                type="checkbox"
-                [(ngModel)]="validForNextMonth[i]"
-                class="form-checkbox h-4 w-4 text-blue-600"
-              />
-            </div>
           </div>
 
           <div *ngIf="!isCurrencySelected[i]" class="flex space-x-4">
