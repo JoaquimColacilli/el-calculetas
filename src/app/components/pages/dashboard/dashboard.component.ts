@@ -181,11 +181,32 @@ export class DashboardComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.loadUserData();
+    // Suscribirse al estado del usuario
+    this.authService.user$.subscribe({
+      next: (user: any) => {
+        if (user) {
+          // Solo carga los datos cuando hay un usuario autenticado
+          this.loadUserData();
+          this.loadInitialData();
+        } else {
+          // Redirigir al login si no hay usuario
+          this.router.navigate(['/login']);
+        }
+      },
+      error: (error: any) => {
+        console.error('Error verificando la autenticación del usuario:', error);
+        this.router.navigate(['/login']);
+      },
+    });
+  }
+
+  // Mover la carga de datos iniciales a un método separado
+  loadInitialData(): void {
     this.calculateTotals();
     this.calculateCounts();
-    this.getWeatherData();
     this.calculateDayOrNight();
+
+    this.getWeatherData();
     this.loadDollarRates();
 
     this.updateDateTime();
@@ -199,7 +220,6 @@ export class DashboardComponent implements OnInit {
     this.setTodayDate();
 
     this.sortFinanceItems();
-
     this.updateGroupedExpenses();
 
     this.loadSalaries();
@@ -207,6 +227,20 @@ export class DashboardComponent implements OnInit {
     this.loadExpenses();
 
     this.loadUserCategories();
+
+    this.resetSalariesIfNeeded();
+  }
+
+  private async resetSalariesIfNeeded(): Promise<void> {
+    try {
+      const isFirstDay = new Date().getDate() === 1;
+      if (isFirstDay) {
+        await this.sueldoService.resetSalariesAtStartOfMonth();
+        console.log('Sueldos reiniciados para el nuevo mes.');
+      }
+    } catch (error) {
+      console.error('Error al restablecer sueldos:', error);
+    }
   }
 
   loadUserCategories(): void {
@@ -1032,9 +1066,11 @@ export class DashboardComponent implements OnInit {
     this.authService.getUserData().subscribe({
       next: (data: any) => {
         this.userData = data;
+        console.log(data);
       },
       error: (error: any) => {
         console.error(error);
+        console.log(this.userData);
         this.router.navigate(['/login']);
       },
     });

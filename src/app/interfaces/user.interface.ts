@@ -3,7 +3,5 @@ export interface UserInterface {
   username: string;
   email: string;
   profilePicture?: string;
-  provider?: string;
-  idToken?: string;
-  password?: string;
+  providerId?: string;
 }

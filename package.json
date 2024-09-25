@@ -27,6 +27,7 @@
     "@ngx-env/builder": "^18.0.1",
     "@popperjs/core": "^2.11.8",
     "@preline/tooltip": "^2.4.1",
+    "axios": "^1.7.7",
     "chart.js": "^4.4.4",
     "firebase": "^10.13.1",
     "flowbite": "^2.5.1",

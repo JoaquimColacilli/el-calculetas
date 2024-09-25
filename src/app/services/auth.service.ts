@@ -10,6 +10,8 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   Persistence,
+  signInWithCredential,
+  UserCredential,
   browserLocalPersistence,
 } from '@angular/fire/auth';
 import { Observable, from, catchError, throwError, switchMap } from 'rxjs';
@@ -29,6 +31,13 @@ import {
 import { User } from '@angular/fire/auth';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { DefaultCategories } from '../interfaces/category.interface';
+import { User as FirebaseUser } from 'firebase/auth';
+
+import firebase from 'firebase/app';
+import 'firebase/auth';
+
+import axios from 'axios';
+import { environment } from '../environments/environment';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'El formato del correo electrónico es inválido.',
@@ -72,29 +81,9 @@ export class AuthService {
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
   constructor(private firestore: Firestore, private auth: Auth) {
-    this.firebaseAuth.setPersistence(browserLocalPersistence);
-  }
-
-  private saveAccountToLocalStorage(
-    account: UserInterface,
-    idToken: string
-  ): void {
-    const accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
-    const existingAccountIndex = accounts.findIndex(
-      (acc: UserInterface) => acc.uid === account.uid
-    );
-
-    if (existingAccountIndex === -1) {
-      accounts.push({ ...account, idToken });
-    } else {
-      accounts[existingAccountIndex] = { ...account, idToken };
-    }
-    localStorage.setItem('accounts', JSON.stringify(accounts));
-  }
-
-  // AuthService
-  getAccountsFromLocalStorage(): UserInterface[] {
-    return JSON.parse(localStorage.getItem('accounts') || '[]');
+    this.auth.setPersistence(browserLocalPersistence).catch((error) => {
+      console.error('Error al configurar la persistencia:', error);
+    });
   }
 
   register(
@@ -110,27 +99,22 @@ export class AuthService {
       .then((response) => {
         return updateProfile(response.user, { displayName: username }).then(
           async () => {
-            const userRef = doc(this.firestore, `users/${response.user.uid}`);
-
-            // Crear el documento del usuario
+            const userRef = doc(this.firestore, `users/${response.user.uid}`); // Crear el documento del usuario
             await setDoc(userRef, {
               uid: response.user.uid,
               email: response.user.email,
               username: response.user.displayName || username,
               profilePicture: '',
             });
-
             // Crear la colección de categorías por defecto para el usuario
             const categoriesCollection = collection(
               this.firestore,
               `users/${response.user.uid}/categories`
             );
-
             // Añadir categorías por defecto
             for (const category of DefaultCategories) {
               await addDoc(categoriesCollection, category);
             }
-
             this.currentUserSig.set({
               uid: response.user.uid || '',
               email: response.user.email || '',
@@ -158,22 +142,19 @@ export class AuthService {
       this.firebaseAuth,
       email,
       password
-    ).then(async (response) => {
-      const user = {
-        uid: response.user.uid,
+    ).then((response) => {
+      this.currentUserSig.set({
+        uid: response.user.uid || '',
         email: response.user.email || '',
         username: response.user.displayName || '',
-        provider: 'password',
-        profilePicture: '', // Si tienes la foto del perfil, la agregas aquí
-      };
-      const idToken = await response.user.getIdToken(); // Obtener el idToken
-      this.currentUserSig.set(user);
-      this.saveAccountToLocalStorage(user, idToken);
+      });
     });
 
     return from(promise).pipe(
       catchError((error) => {
         const customMessage = getErrorMessage(error);
+        console.log(customMessage);
+
         return throwError(() => new Error(customMessage));
       })
     );
@@ -183,18 +164,40 @@ export class AuthService {
     const provider = new GoogleAuthProvider();
     const promise = signInWithPopup(this.firebaseAuth, provider)
       .then(async (response) => {
-        const user = {
-          uid: response.user.uid,
+        const userRef = doc(this.firestore, `users/${response.user.uid}`);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          // El usuario es nuevo, agregar los datos básicos y las categorías predeterminadas
+          await setDoc(userRef, {
+            uid: response.user.uid,
+            email: response.user.email,
+            username: response.user.displayName || '',
+            profilePicture: response.user.photoURL || '',
+          });
+          // Crear la colección de categorías por defecto para el usuario
+          const categoriesCollection = collection(
+            this.firestore,
+            `users/${response.user.uid}/categories`
+          );
+          // Añadir categorías por defecto
+          for (const category of DefaultCategories) {
+            await addDoc(categoriesCollection, category);
+          }
+        }
+
+        this.currentUserSig.set({
+          uid: response.user.uid || '',
           email: response.user.email || '',
           username: response.user.displayName || '',
-          provider: 'google',
           profilePicture: response.user.photoURL || '',
-        };
-        const idToken = await response.user.getIdToken(); // Obtener el idToken
-        this.currentUserSig.set(user);
-        this.saveAccountToLocalStorage(user, idToken);
+        });
       })
       .catch((error) => {
+        if (error.code === 'auth/popup-closed-by-user') {
+          console.log('El usuario cerró el popup sin completar el login.');
+        }
+
         const customMessage = getErrorMessage(error);
         return Promise.reject(new Error(customMessage));
       });
@@ -202,22 +205,6 @@ export class AuthService {
     return from(promise).pipe(
       catchError((error) => {
         return throwError(() => new Error(error.message));
-      })
-    );
-  }
-
-  switchAccount(account: UserInterface): Observable<void> {
-    const promise = signInWithPopup(
-      this.firebaseAuth,
-      new GoogleAuthProvider()
-    ).then(() => {
-      this.currentUserSig.set(account);
-    });
-
-    return from(promise).pipe(
-      catchError((error) => {
-        const customMessage = getErrorMessage(error);
-        return throwError(() => new Error(customMessage));
       })
     );
   }
@@ -289,5 +276,83 @@ export class AuthService {
 
     console.log(currentUser.uid);
     return currentUser.uid;
+  }
+
+  // switch account
+
+  async refreshIdToken(refreshToken: string): Promise<string> {
+    const apiKey = 'YOUR_API_KEY'; // Usa la API Key de tu proyecto Firebase
+    const url = `https://securetoken.googleapis.com/v1/token?key=${environment.apiKey}`;
+
+    const response = await axios.post(url, {
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    });
+
+    return response.data.id_token; // Retorna el nuevo idToken
+  }
+
+  addNewAccount(): Promise<FirebaseUser> {
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(this.auth, provider).then(
+      (result: UserCredential) => {
+        return result.user?.getIdTokenResult().then((tokenResult) => {
+          let accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+          accounts.push({
+            uid: result.user?.uid,
+            email: result.user?.email,
+            displayName: result.user?.displayName,
+            accessToken: tokenResult.token,
+            idToken: tokenResult.token,
+            refreshToken: result.user?.refreshToken,
+          });
+          localStorage.setItem('accounts', JSON.stringify(accounts));
+          return result.user as FirebaseUser;
+        });
+      }
+    );
+  }
+
+  // Cambiar la cuenta utilizando las credenciales almacenadas
+  async switchAccount(account: any): Promise<void> {
+    if (!account.refreshToken) {
+      console.error('El refreshToken de la cuenta no está disponible.');
+      return Promise.reject(
+        new Error('El refreshToken de la cuenta no está disponible.')
+      );
+    }
+
+    try {
+      const idToken = await this.refreshIdToken(account.refreshToken);
+
+      const credential = GoogleAuthProvider.credential(idToken);
+
+      await signOut(this.auth);
+      await signInWithCredential(this.auth, credential);
+
+      account.idToken = idToken;
+      localStorage.setItem('activeAccount', JSON.stringify(account));
+      console.log(`Cuenta cambiada a: ${account.displayName || account.email}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error al cambiar de cuenta:', error.message);
+      } else {
+        console.error('Error desconocido al cambiar de cuenta:', error);
+      }
+    }
+  }
+
+  // Obtener todas las cuentas guardadas
+  getAccounts(): FirebaseUser[] {
+    return JSON.parse(localStorage.getItem('accounts') || '[]');
+  }
+
+  signInWithPopup(provider: GoogleAuthProvider): Promise<UserCredential> {
+    return signInWithPopup(this.auth, provider);
+  }
+
+  // Iniciar sesión con credenciales (usado para cambiar cuentas sin popup)
+  signInWithCredential(credential: any): Promise<UserCredential> {
+    return signInWithCredential(this.auth, credential);
   }
 }

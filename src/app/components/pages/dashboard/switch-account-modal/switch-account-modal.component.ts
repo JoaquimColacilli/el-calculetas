@@ -8,7 +8,8 @@ import {
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserInterface } from '../../../../interfaces/user.interface';
+import { User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-switch-account-modal',
@@ -18,7 +19,7 @@ import { UserInterface } from '../../../../interfaces/user.interface';
   imports: [CommonModule, FontAwesomeModule, FormsModule],
 })
 export class SwitchAccountModalComponent implements OnInit {
-  accounts: any[] = [];
+  accounts: FirebaseUser[] = [];
 
   constructor(
     private dialogRef: MatDialogRef<SwitchAccountModalComponent>,
@@ -33,20 +34,48 @@ export class SwitchAccountModalComponent implements OnInit {
   }
 
   loadAccounts(): void {
-    this.accounts = this.authService.getAccountsFromLocalStorage();
+    this.accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
   }
 
-  switchAccount(account: UserInterface): void {
-    this.authService.switchAccount(account).subscribe({
-      next: () => {
+  switchAccount(account: any): void {
+    this.authService
+      .switchAccount(account)
+      .then(() => {
+        console.log(
+          `Cuenta cambiada a: ${account.displayName || account.email}`
+        );
+        console.log(account);
         this.dialogRef.close();
-      },
-      error: (err) => console.error('Error al cambiar de cuenta:', err.message),
-    });
+      })
+      .catch((err) => {
+        console.error('Error al cambiar de cuenta:', err.message);
+      });
   }
 
+  // Añadir nueva cuenta utilizando el popup de Google
   addNewAccount(): void {
-    console.log('Agregar nueva cuenta');
+    const provider = new GoogleAuthProvider();
+    this.authService
+      .signInWithPopup(provider)
+      .then((result) => {
+        result.user?.getIdTokenResult().then((tokenResult) => {
+          let accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+          accounts.push({
+            uid: result.user?.uid,
+            email: result.user?.email,
+            displayName: result.user?.displayName,
+            accessToken: tokenResult.token,
+            idToken: tokenResult.token,
+            refreshToken: result.user?.refreshToken,
+          });
+          localStorage.setItem('accounts', JSON.stringify(accounts));
+          this.loadAccounts();
+          this.dialogRef.close();
+        });
+      })
+      .catch((err) => {
+        console.error('Error al agregar nueva cuenta:', err.message);
+      });
   }
 
   close(): void {

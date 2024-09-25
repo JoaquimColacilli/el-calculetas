@@ -2,13 +2,11 @@
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
 >
   <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6 relative">
-    <!-- Contenedor con flex para alinear el botón de cerrar y el título -->
+    <!-- Título del modal, centrado -->
     <div class="flex justify-between items-center mb-4">
-      <!-- Título del modal, centrado -->
       <h2 class="text-2xl font-bold text-gray-800 text-center flex-grow">
         Cambiar Cuenta
       </h2>
-      <!-- Botón de cerrar modal, alineado a la derecha -->
       <button
         class="text-gray-500 hover:text-gray-700 focus:outline-none ml-4"
         (click)="close()"
@@ -26,17 +24,18 @@
       >
         <div class="flex items-center space-x-4">
           <img
-            [src]="account.profilePicture || 'profile_default.png'"
+            [src]="account.photoURL || 'profile_default.png'"
             alt="Profile Picture"
             class="w-10 h-10 rounded-full object-cover"
           />
-          <span class="text-gray-700 font-medium">{{ account.username }}</span>
+          <span class="text-gray-700 font-medium">{{
+            account.displayName || account.email
+          }}</span>
         </div>
         <fa-icon
           [icon]="['fas', 'exchange-alt']"
           class="text-blue-600"
         ></fa-icon>
-        <!-- Icono solamente, sin click -->
       </div>
     </div>
 
