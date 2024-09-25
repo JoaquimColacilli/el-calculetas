@@ -10,6 +10,7 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   Persistence,
+  browserLocalPersistence,
 } from '@angular/fire/auth';
 import { Observable, from, catchError, throwError, switchMap } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
@@ -70,7 +71,31 @@ export class AuthService {
   private firebaseAuth = inject(Auth);
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
-  constructor(private firestore: Firestore, private auth: Auth) {}
+  constructor(private firestore: Firestore, private auth: Auth) {
+    this.firebaseAuth.setPersistence(browserLocalPersistence);
+  }
+
+  private saveAccountToLocalStorage(
+    account: UserInterface,
+    idToken: string
+  ): void {
+    const accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+    const existingAccountIndex = accounts.findIndex(
+      (acc: UserInterface) => acc.uid === account.uid
+    );
+
+    if (existingAccountIndex === -1) {
+      accounts.push({ ...account, idToken });
+    } else {
+      accounts[existingAccountIndex] = { ...account, idToken };
+    }
+    localStorage.setItem('accounts', JSON.stringify(accounts));
+  }
+
+  // AuthService
+  getAccountsFromLocalStorage(): UserInterface[] {
+    return JSON.parse(localStorage.getItem('accounts') || '[]');
+  }
 
   register(
     email: string,
@@ -133,19 +158,22 @@ export class AuthService {
       this.firebaseAuth,
       email,
       password
-    ).then((response) => {
-      this.currentUserSig.set({
-        uid: response.user.uid || '',
+    ).then(async (response) => {
+      const user = {
+        uid: response.user.uid,
         email: response.user.email || '',
         username: response.user.displayName || '',
-      });
+        provider: 'password',
+        profilePicture: '', // Si tienes la foto del perfil, la agregas aquí
+      };
+      const idToken = await response.user.getIdToken(); // Obtener el idToken
+      this.currentUserSig.set(user);
+      this.saveAccountToLocalStorage(user, idToken);
     });
 
     return from(promise).pipe(
       catchError((error) => {
         const customMessage = getErrorMessage(error);
-        console.log(customMessage);
-
         return throwError(() => new Error(customMessage));
       })
     );
@@ -155,42 +183,18 @@ export class AuthService {
     const provider = new GoogleAuthProvider();
     const promise = signInWithPopup(this.firebaseAuth, provider)
       .then(async (response) => {
-        const userRef = doc(this.firestore, `users/${response.user.uid}`);
-        const userDoc = await getDoc(userRef);
-
-        if (!userDoc.exists()) {
-          // El usuario es nuevo, agregar los datos básicos y las categorías predeterminadas
-          await setDoc(userRef, {
-            uid: response.user.uid,
-            email: response.user.email,
-            username: response.user.displayName || '',
-            profilePicture: response.user.photoURL || '',
-          });
-
-          // Crear la colección de categorías por defecto para el usuario
-          const categoriesCollection = collection(
-            this.firestore,
-            `users/${response.user.uid}/categories`
-          );
-
-          // Añadir categorías por defecto
-          for (const category of DefaultCategories) {
-            await addDoc(categoriesCollection, category);
-          }
-        }
-
-        this.currentUserSig.set({
-          uid: response.user.uid || '',
+        const user = {
+          uid: response.user.uid,
           email: response.user.email || '',
           username: response.user.displayName || '',
+          provider: 'google',
           profilePicture: response.user.photoURL || '',
-        });
+        };
+        const idToken = await response.user.getIdToken(); // Obtener el idToken
+        this.currentUserSig.set(user);
+        this.saveAccountToLocalStorage(user, idToken);
       })
       .catch((error) => {
-        if (error.code === 'auth/popup-closed-by-user') {
-          console.log('El usuario cerró el popup sin completar el login.');
-        }
-
         const customMessage = getErrorMessage(error);
         return Promise.reject(new Error(customMessage));
       });
@@ -198,6 +202,22 @@ export class AuthService {
     return from(promise).pipe(
       catchError((error) => {
         return throwError(() => new Error(error.message));
+      })
+    );
+  }
+
+  switchAccount(account: UserInterface): Observable<void> {
+    const promise = signInWithPopup(
+      this.firebaseAuth,
+      new GoogleAuthProvider()
+    ).then(() => {
+      this.currentUserSig.set(account);
+    });
+
+    return from(promise).pipe(
+      catchError((error) => {
+        const customMessage = getErrorMessage(error);
+        return throwError(() => new Error(customMessage));
       })
     );
   }

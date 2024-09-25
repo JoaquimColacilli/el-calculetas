@@ -8,6 +8,7 @@ import {
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { UserInterface } from '../../../../interfaces/user.interface';
 
 @Component({
   selector: 'app-switch-account-modal',
@@ -28,24 +29,23 @@ export class SwitchAccountModalComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAccountsFromLocalStorage();
+    this.loadAccounts();
   }
 
-  loadAccountsFromLocalStorage(): void {
-    // this.accounts = this.authService.getStoredAccounts();
+  loadAccounts(): void {
+    this.accounts = this.authService.getAccountsFromLocalStorage();
   }
 
-  async switchAccount(account: any): Promise<void> {
-    // try {
-    //   await this.authService.switchAccount(account);
-    //   this.close(); // Cierra el modal después de cambiar la cuenta
-    // } catch (error) {
-    //   console.error('Error al cambiar de cuenta:', error);
-    // }
+  switchAccount(account: UserInterface): void {
+    this.authService.switchAccount(account).subscribe({
+      next: () => {
+        this.dialogRef.close();
+      },
+      error: (err) => console.error('Error al cambiar de cuenta:', err.message),
+    });
   }
 
   addNewAccount(): void {
-    // Aquí puedes abrir el modal de login para agregar una nueva cuenta
     console.log('Agregar nueva cuenta');
   }
 
