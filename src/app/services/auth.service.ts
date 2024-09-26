@@ -278,81 +278,27 @@ export class AuthService {
     return currentUser.uid;
   }
 
-  // switch account
-
-  async refreshIdToken(refreshToken: string): Promise<string> {
-    const apiKey = 'YOUR_API_KEY'; // Usa la API Key de tu proyecto Firebase
-    const url = `https://securetoken.googleapis.com/v1/token?key=${environment.apiKey}`;
-
-    const response = await axios.post(url, {
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-    });
-
-    return response.data.id_token; // Retorna el nuevo idToken
-  }
-
-  addNewAccount(): Promise<FirebaseUser> {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(this.auth, provider).then(
-      (result: UserCredential) => {
-        return result.user?.getIdTokenResult().then((tokenResult) => {
-          let accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
-          accounts.push({
-            uid: result.user?.uid,
-            email: result.user?.email,
-            displayName: result.user?.displayName,
-            accessToken: tokenResult.token,
-            idToken: tokenResult.token,
-            refreshToken: result.user?.refreshToken,
-          });
-          localStorage.setItem('accounts', JSON.stringify(accounts));
-          return result.user as FirebaseUser;
-        });
-      }
-    );
-  }
-
-  // Cambiar la cuenta utilizando las credenciales almacenadas
-  async switchAccount(account: any): Promise<void> {
-    if (!account.refreshToken) {
-      console.error('El refreshToken de la cuenta no está disponible.');
-      return Promise.reject(
-        new Error('El refreshToken de la cuenta no está disponible.')
-      );
-    }
-
-    try {
-      const idToken = await this.refreshIdToken(account.refreshToken);
-
-      const credential = GoogleAuthProvider.credential(idToken);
-
-      await signOut(this.auth);
-      await signInWithCredential(this.auth, credential);
-
-      account.idToken = idToken;
-      localStorage.setItem('activeAccount', JSON.stringify(account));
-      console.log(`Cuenta cambiada a: ${account.displayName || account.email}`);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error al cambiar de cuenta:', error.message);
-      } else {
-        console.error('Error desconocido al cambiar de cuenta:', error);
-      }
-    }
-  }
-
-  // Obtener todas las cuentas guardadas
-  getAccounts(): FirebaseUser[] {
-    return JSON.parse(localStorage.getItem('accounts') || '[]');
-  }
-
   signInWithPopup(provider: GoogleAuthProvider): Promise<UserCredential> {
     return signInWithPopup(this.auth, provider);
   }
 
-  // Iniciar sesión con credenciales (usado para cambiar cuentas sin popup)
-  signInWithCredential(credential: any): Promise<UserCredential> {
-    return signInWithCredential(this.auth, credential);
+  async refreshAccessToken(refreshToken: string): Promise<string> {
+    const response = await fetch(
+      `https://securetoken.googleapis.com/v1/token?key=${environment.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `grant_type=refresh_token&refresh_token=${refreshToken}`,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al obtener un nuevo accessToken');
+    }
+
+    const data = await response.json();
+    return data.access_token;
   }
 }
