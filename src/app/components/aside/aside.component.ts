@@ -6,6 +6,7 @@ import {
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-aside',
@@ -15,7 +16,11 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
   styleUrl: './aside.component.css',
 })
 export class AsideComponent {
-  constructor(library: FaIconLibrary) {
+  constructor(library: FaIconLibrary, private router: Router) {
     library.addIconPacks(fas);
+  }
+
+  redirectToDashboard() {
+    this.router.navigate(['/dashboard']);
   }
 }

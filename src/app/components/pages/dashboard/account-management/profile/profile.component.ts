@@ -23,6 +23,8 @@ import { AsideComponent } from '../../../../aside/aside.component';
   styleUrl: './profile.component.css',
 })
 export class ProfileComponent {
+  userSelectedColor: string = '';
+
   constructor(library: FaIconLibrary) {
     library.addIconPacks(fas);
   }

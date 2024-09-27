@@ -5,93 +5,96 @@
     <app-navbar></app-navbar>
 
     <div class="flex-1 flex items-center justify-center py-8 px-4">
-      <div class="max-w-4xl w-full bg-gray-50 rounded-lg shadow-lg p-8">
-        <!-- Foto de perfil y nombre -->
-        <div class="flex items-center space-x-6">
-          <div class="relative">
-            <img
-              class="h-32 w-32 rounded-full border-4 border-gray-300"
-              src="https://pbs.twimg.com/media/F4PS7vqXsAA-t61?format=jpg&name=small"
-              alt="Foto de perfil"
-            />
-            <button
-              class="absolute bottom-0 right-0 bg-gray-600 text-white rounded-full p-2 w-8 h-8 flex items-center justify-center hover:bg-gray-700 border-2 border-white"
-            >
-              <fa-icon [icon]="['fas', 'camera']" class="text-xs"></fa-icon>
-            </button>
-          </div>
-          <div>
-            <h2 class="text-3xl font-bold text-gray-800">Nombre Usuario</h2>
-            <p class="text-gray-500">Ubicación del Usuario</p>
+      <div class="max-w-lg w-full bg-gray-50 rounded-lg shadow-lg">
+        <!-- Contenedor superior con fondo personalizable extendido -->
+        <div
+          class="relative bg-blue-500 text-white rounded-t-lg px-6 pt-6 pb-6"
+        >
+          <!-- Botón para cambiar color -->
+          <button
+            class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 rounded-full w-8 h-8 transition"
+            title="Cambiar color"
+          >
+            <fa-icon [icon]="['fas', 'palette']" class="text-white"></fa-icon>
+          </button>
+
+          <!-- Foto de perfil y nombre -->
+          <div class="flex flex-col items-center space-y-4">
+            <div class="relative">
+              <img
+                class="h-32 w-32 rounded-full border-4 border-white"
+                src="https://pbs.twimg.com/media/F4PS7vqXsAA-t61?format=jpg&name=small"
+                alt="Foto de perfil"
+              />
+              <button
+                class="absolute bottom-0 right-0 bg-gray-600 text-white rounded-full p-2 w-8 h-8 flex items-center justify-center hover:bg-gray-700 border-2 border-white"
+              >
+                <fa-icon [icon]="['fas', 'camera']" class="text-xs"></fa-icon>
+              </button>
+            </div>
+            <div class="text-center">
+              <h2 class="text-3xl font-bold">Nombre Usuario</h2>
+              <p>Ubicación del Usuario</p>
+            </div>
           </div>
         </div>
 
-        <!-- Información personal y seguridad -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <!-- Información personal -->
-          <div>
-            <div class="flex items-center space-x-2 mb-4">
-              <fa-icon [icon]="['fas', 'user']" class="text-gray-600"></fa-icon>
-              <h4 class="text-lg font-semibold text-gray-700">
-                Información Personal
-              </h4>
-            </div>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-gray-600">Nombre</label>
-                <input
-                  type="text"
-                  class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  placeholder="Nuevo nombre"
-                />
-              </div>
-              <div>
-                <label class="block text-gray-600">Email</label>
-                <input
-                  type="email"
-                  class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  placeholder="Nuevo email"
-                />
-              </div>
-            </div>
+        <!-- Información personal -->
+        <div class="px-8 py-6 space-y-6">
+          <div class="flex flex-col items-center space-y-2">
+            <label class="block text-gray-600 text-center">Nombre</label>
+            <input
+              type="text"
+              class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Nuevo nombre"
+            />
           </div>
+          <div class="flex flex-col items-center space-y-2">
+            <label class="block text-gray-600 text-center">Email</label>
+            <input
+              type="email"
+              class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Nuevo email"
+            />
+          </div>
+        </div>
 
-          <!-- Seguridad -->
-          <div>
-            <div class="flex items-center space-x-2 mb-4">
-              <fa-icon [icon]="['fas', 'lock']" class="text-gray-600"></fa-icon>
-              <h4 class="text-lg font-semibold text-gray-700">Seguridad</h4>
-            </div>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-gray-600">Contraseña Actual</label>
-                <input
-                  type="password"
-                  class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  placeholder="Contraseña actual"
-                />
-              </div>
-              <div>
-                <label class="block text-gray-600">Nueva Contraseña</label>
-                <input
-                  type="password"
-                  class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  placeholder="Nueva contraseña"
-                />
-              </div>
-            </div>
+        <!-- Espacio entre secciones -->
+        <div class="h-8"></div>
+
+        <!-- Seguridad -->
+        <div class="px-8 pb-6 space-y-6">
+          <div class="flex flex-col items-center space-y-2">
+            <label class="block text-gray-600 text-center"
+              >Contraseña Actual</label
+            >
+            <input
+              type="password"
+              class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Contraseña actual"
+            />
+          </div>
+          <div class="flex flex-col items-center space-y-2">
+            <label class="block text-gray-600 text-center"
+              >Nueva Contraseña</label
+            >
+            <input
+              type="password"
+              class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Nueva contraseña"
+            />
           </div>
         </div>
 
         <!-- Botones de acción -->
-        <div class="flex justify-end space-x-4 mt-8">
+        <div class="flex justify-end space-x-4 px-8 pb-6">
           <button
-            class="dark:bg-gray-500 text-white px-4 py-2 rounded hover:dark:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+            class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-700"
           >
             Cancelar
           </button>
           <button
-            class="dark:bg-gray-500 text-white px-4 py-2 rounded hover:dark:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+            class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 dark:bg-gray-800 dark:hover:bg-gray-900"
           >
             Guardar Cambios
           </button>
