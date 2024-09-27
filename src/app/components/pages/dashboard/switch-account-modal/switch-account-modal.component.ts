@@ -154,6 +154,7 @@ export class SwitchAccountModalComponent implements OnInit {
         });
 
         this.dialogRef.close();
+        window.location.reload();
       })
       .catch((err) => {
         console.error('Error al agregar nueva cuenta:', err.message);

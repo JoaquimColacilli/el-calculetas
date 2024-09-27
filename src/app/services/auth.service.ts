@@ -168,19 +168,16 @@ export class AuthService {
         const userDoc = await getDoc(userRef);
 
         if (!userDoc.exists()) {
-          // El usuario es nuevo, agregar los datos básicos y las categorías predeterminadas
           await setDoc(userRef, {
             uid: response.user.uid,
             email: response.user.email,
             username: response.user.displayName || '',
             profilePicture: response.user.photoURL || '',
           });
-          // Crear la colección de categorías por defecto para el usuario
           const categoriesCollection = collection(
             this.firestore,
             `users/${response.user.uid}/categories`
           );
-          // Añadir categorías por defecto
           for (const category of DefaultCategories) {
             await addDoc(categoriesCollection, category);
           }

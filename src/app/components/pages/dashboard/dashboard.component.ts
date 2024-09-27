@@ -1071,7 +1071,7 @@ export class DashboardComponent implements OnInit {
       error: (error: any) => {
         console.error(error);
         console.log(this.userData);
-        this.router.navigate(['/login']);
+        // this.router.navigate(['/login']);
       },
     });
   }

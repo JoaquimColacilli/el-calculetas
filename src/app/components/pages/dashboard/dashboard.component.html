@@ -38,7 +38,11 @@
 
       <div class="flex items-center space-x-3 relative px-4">
         <img
-          [src]="userData?.profilePicture || 'profile_default.png'"
+          [src]="
+            userData?.profilePicture ||
+            userData?.photoURL ||
+            'profile_default.png'
+          "
           alt="Profile Picture"
           class="w-10 h-10 rounded-full object-cover"
         />
@@ -46,7 +50,7 @@
         <div class="flex flex-col leading-tight relative">
           <div class="flex items-center justify-between">
             <span class="text-gray-800 font-medium">{{
-              userData?.username
+              userData?.username || userData?.displayName
             }}</span>
 
             <fa-icon
