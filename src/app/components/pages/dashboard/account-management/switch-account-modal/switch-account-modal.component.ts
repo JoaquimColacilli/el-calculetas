@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { AuthService } from '../../../../services/auth.service';
+import { AuthService } from '../../../../../services/auth.service';
 import {
   FaIconLibrary,
   FontAwesomeModule,
@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 import {
   addDoc,
   setDoc,
@@ -19,7 +19,7 @@ import {
   collection,
   Firestore,
 } from '@angular/fire/firestore';
-import { DefaultCategories } from '../../../../interfaces/category.interface';
+import { DefaultCategories } from '../../../../../interfaces/category.interface';
 
 @Component({
   selector: 'app-switch-account-modal',

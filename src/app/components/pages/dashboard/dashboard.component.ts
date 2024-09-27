@@ -60,7 +60,10 @@ import {
   setDoc,
 } from '@angular/fire/firestore';
 import { SueldoService } from '../../../services/sueldo.service';
-import { SwitchAccountModalComponent } from './switch-account-modal/switch-account-modal.component';
+import { SwitchAccountModalComponent } from './account-management/switch-account-modal/switch-account-modal.component';
+
+import { NavbarComponent } from '../../navbar/navbar.component';
+import { AsideComponent } from '../../aside/aside.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -73,6 +76,8 @@ import { SwitchAccountModalComponent } from './switch-account-modal/switch-accou
     NgSelectModule,
     MatTooltipModule,
     NumberFormatPipe,
+    NavbarComponent,
+    AsideComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
@@ -1087,7 +1092,9 @@ export class DashboardComponent implements OnInit {
     return Object.keys(expenses).length > 0;
   }
 
-  viewProfile(): void {}
+  viewProfile(): void {
+    this.router.navigate(['/profile']);
+  }
 
   editProfile(): void {}
 
