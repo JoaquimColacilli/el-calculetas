@@ -8,33 +8,44 @@
       <div class="max-w-lg w-full bg-gray-50 rounded-lg shadow-lg">
         <!-- Contenedor superior con fondo personalizable extendido -->
         <div
-          class="relative bg-blue-500 text-white rounded-t-lg px-6 pt-6 pb-6"
+          class="relative rounded-t-lg px-6 pt-6 pb-6 text-white"
+          [ngStyle]="{ 'background-color': backgroundColor }"
         >
           <!-- Botón para cambiar color -->
           <button
             class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 rounded-full w-8 h-8 transition"
             title="Cambiar color"
+            (click)="openColorPicker()"
           >
             <fa-icon [icon]="['fas', 'palette']" class="text-white"></fa-icon>
           </button>
+
+          <!-- Dialog Modal para seleccionar color -->
+          <dialog #colorPickerDialog class="rounded-lg shadow-lg">
+            <app-color-picker
+              [initialColor]="backgroundColor"
+              (colorSelected)="changeColor($event)"
+            ></app-color-picker>
+          </dialog>
 
           <!-- Foto de perfil y nombre -->
           <div class="flex flex-col items-center space-y-4">
             <div class="relative">
               <img
                 class="h-32 w-32 rounded-full border-4 border-white"
-                src="https://pbs.twimg.com/media/F4PS7vqXsAA-t61?format=jpg&name=small"
+                [src]="userPhoto"
                 alt="Foto de perfil"
               />
               <button
                 class="absolute bottom-0 right-0 bg-gray-600 text-white rounded-full p-2 w-8 h-8 flex items-center justify-center hover:bg-gray-700 border-2 border-white"
+                (click)="openPhotoEditor()"
               >
                 <fa-icon [icon]="['fas', 'camera']" class="text-xs"></fa-icon>
               </button>
             </div>
             <div class="text-center">
-              <h2 class="text-3xl font-bold">Nombre Usuario</h2>
-              <p>Ubicación del Usuario</p>
+              <h2 class="text-3xl font-bold">{{ userName }}</h2>
+              <p>{{ userLocation }}</p>
             </div>
           </div>
         </div>
@@ -46,6 +57,7 @@
             <input
               type="text"
               class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              [value]="userName"
               placeholder="Nuevo nombre"
             />
           </div>
@@ -54,6 +66,7 @@
             <input
               type="email"
               class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              [value]="userEmail"
               placeholder="Nuevo email"
             />
           </div>
@@ -89,12 +102,24 @@
         <!-- Botones de acción -->
         <div class="flex justify-end space-x-4 px-8 pb-6">
           <button
-            class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-700"
+            class="text-white px-4 py-2 rounded transition"
+            [ngStyle]="{
+              'background-color': cancelButtonColor,
+              'border-color': cancelButtonColor
+            }"
+            (mouseover)="cancelButtonColor = cancelButtonHoverColor"
+            (mouseleave)="cancelButtonColor = lightenColor(backgroundColor, 10)"
           >
             Cancelar
           </button>
           <button
-            class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 dark:bg-gray-800 dark:hover:bg-gray-900"
+            class="text-white px-4 py-2 rounded transition"
+            [ngStyle]="{
+              'background-color': saveButtonColor,
+              'border-color': saveButtonColor
+            }"
+            (mouseover)="saveButtonColor = saveButtonHoverColor"
+            (mouseleave)="saveButtonColor = lightenColor(backgroundColor, 10)"
           >
             Guardar Cambios
           </button>
@@ -103,3 +128,15 @@
     </div>
   </div>
 </div>
+
+<!-- Modal para el editor de foto -->
+<dialog
+  #photoEditorDialog
+  class="rounded-lg shadow-lg p-6 bg-white max-w-xl mx-auto"
+>
+  <app-photo-editor
+    [imageUrl]="userPhoto"
+    (imageCropped)="onImageCropped($event)"
+    (closeEditor)="closePhotoEditor()"
+  ></app-photo-editor>
+</dialog>
