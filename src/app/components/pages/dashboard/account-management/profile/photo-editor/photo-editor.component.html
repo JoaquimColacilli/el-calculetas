@@ -1,5 +1,5 @@
 <div class="modal">
-  <div class="modal-content">
+  <div class="modal-content" [ngStyle]="modalStyle">
     <div class="modal-header">
       <h2 class="modal-title">Editar imagen</h2>
       <button class="close-button" (click)="close()">✕</button>
@@ -15,10 +15,9 @@
         (change)="onImageUpload($event)"
       />
       <div class="upload-area" (click)="openFileInput()">
-        <!-- Llama al método del componente -->
         <fa-icon
           [icon]="['fas', 'cloud-upload-alt']"
-          class="upload-icon flex justify-center items-center align-middle"
+          class="upload-icon"
         ></fa-icon>
         <p class="upload-text">Haz clic para subir una imagen</p>
       </div>
@@ -29,11 +28,11 @@
       <div class="border border-gray-300 rounded-lg overflow-hidden mb-4">
         <img #imageElement class="max-w-full" />
       </div>
+    </div>
 
-      <div class="modal-footer">
-        <button (click)="cancelCrop()" class="btn-cancel">Cancelar</button>
-        <button (click)="cropImage()" class="btn-confirm">Aplicar</button>
-      </div>
+    <div class="modal-footer">
+      <button (click)="cancelCrop()" class="btn-cancel">Cancelar</button>
+      <button (click)="cropImage()" class="btn-confirm">Aplicar</button>
     </div>
   </div>
 </div>

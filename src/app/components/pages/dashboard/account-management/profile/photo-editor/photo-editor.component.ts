@@ -8,6 +8,7 @@ import {
   AfterViewInit,
   OnChanges,
   SimpleChanges,
+  ChangeDetectorRef,
 } from '@angular/core';
 import Cropper from 'cropperjs';
 import { CommonModule } from '@angular/common';
@@ -17,6 +18,7 @@ import {
 } from '@fortawesome/angular-fontawesome';
 import { FormsModule } from '@angular/forms';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+import 'cropperjs/dist/cropper.css';
 
 @Component({
   selector: 'app-photo-editor',
@@ -36,33 +38,31 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
   imageLoaded = false;
   private imageToLoad: string | null = null;
 
-  constructor(library: FaIconLibrary) {
+  modalStyle: { width: string; height: string } = {
+    width: '400px',
+    height: '300px',
+  };
+  constructor(library: FaIconLibrary, private cd: ChangeDetectorRef) {
     library.addIconPacks(fas);
   }
 
   ngAfterViewInit(): void {
     if (this.imageToLoad) {
       this.loadImage(this.imageToLoad);
+      this.imageToLoad = null;
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['imageUrl'] && this.imageUrl) {
-      // Guardar la imagen temporalmente hasta que el view esté listo
-      if (this.imageElement) {
-        this.loadImage(this.imageUrl);
-      } else {
-        this.imageToLoad = this.imageUrl;
-      }
+      this.loadImage(this.imageUrl);
     }
   }
 
-  // Método para abrir el input de archivo desde el componente
   openFileInput() {
     this.fileInput.nativeElement.click();
   }
 
-  // Método para manejar la carga de la imagen desde el input
   onImageUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -70,57 +70,101 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
       const reader = new FileReader();
 
       reader.onload = () => {
-        this.loadImage(reader.result as string);
+        this.imageToLoad = reader.result as string;
+        if (this.imageElement && this.imageElement.nativeElement) {
+          this.loadImage(this.imageToLoad);
+          this.imageToLoad = null;
+        }
       };
 
       reader.readAsDataURL(file);
     }
+
+    this.imageLoaded = true;
   }
 
-  // Método para cargar la imagen en el Cropper
   loadImage(imageSrc: string): void {
-    if (!this.imageElement) {
-      this.imageToLoad = imageSrc; // Almacenar temporalmente si el view no está listo
-      return;
-    }
-
     const image = this.imageElement.nativeElement;
+
+    image.onload = () => {
+      if (this.cropper) {
+        this.cropper.destroy();
+      }
+      this.cropper = new Cropper(image, {
+        aspectRatio: 1, // Relación de aspecto para mantener cuadrado
+        viewMode: 1, // Evita que la imagen se salga del contenedor
+        autoCropArea: 0.8, // Área de recorte inicial
+        responsive: true,
+        center: true, // Asegura que la imagen esté siempre centrada
+        zoomable: true, // Permitir zoom
+        zoomOnWheel: true, // Permitir zoom con la rueda del mouse
+        dragMode: 'move', // Habilitar movimiento al arrastrar
+        toggleDragModeOnDblclick: false,
+        minContainerWidth: 500, // Tamaño mínimo del contenedor
+        minContainerHeight: 500,
+        minCanvasWidth: 500, // Asegura que la imagen no se haga más pequeña que el contenedor
+        minCanvasHeight: 500, // Asegura que la imagen no se haga más pequeña que el contenedor
+        initialAspectRatio: 1, // Relación de aspecto inicial para mantener cuadrado
+        cropBoxMovable: false, // Evita que se mueva el área de recorte
+        cropBoxResizable: true, // Permite cambiar el tamaño del área de recorte
+        background: false, // No mostrar el fondo de líneas por defecto de Cropper.js
+        ready: () => {
+          // Redimensiona el modal una vez que la imagen se ha cargado
+          this.resizeModal(true);
+          // Asegura que la imagen se ajuste a los bordes del contenedor
+        },
+      });
+
+      this.imageLoaded = true;
+      this.cd.detectChanges();
+    };
+
     image.src = imageSrc;
-
-    if (this.cropper) {
-      this.cropper.destroy(); // Destruir el Cropper anterior si existe
-    }
-
-    this.cropper = new Cropper(image, {
-      aspectRatio: 1,
-      viewMode: 1,
-      autoCropArea: 0.8,
-      responsive: true,
-    });
-
-    this.imageLoaded = true; // Se ha cargado una imagen
-    this.imageToLoad = null; // Limpiar la imagen temporal
   }
 
-  // Método para obtener la imagen recortada
+  // Método para cambiar el tamaño del modal
+  resizeModal(imageLoaded: boolean): void {
+    if (imageLoaded) {
+      // Cambia el tamaño del modal cuando la imagen está cargada, limitando el tamaño
+      this.modalStyle = {
+        width: '600px', // Ancho deseado para el modal
+        height: '600px',
+      };
+    } else {
+      // Tamaño inicial del modal
+      this.modalStyle = {
+        width: '400px',
+        height: '300px',
+      };
+    }
+  }
+
   cropImage(): void {
     if (this.cropper) {
       const canvas = this.cropper.getCroppedCanvas();
-      const croppedImageData = canvas.toDataURL('image/png');
-      this.imageCropped.emit(croppedImageData); // Emitir la imagen recortada
+      const croppedImageData = canvas.toDataURL('image/jpeg');
+      this.imageCropped.emit(croppedImageData);
     }
   }
 
-  // Método para cancelar el recorte y regresar a la vista de carga
   cancelCrop(): void {
+    if (this.cropper) {
+      this.cropper.destroy(); // Destruye la instancia existente
+    }
     this.imageLoaded = false;
-    this.cropper?.destroy();
     this.imageToLoad = null;
+    this.modalStyle = {
+      width: '400px',
+      height: '300px',
+    };
   }
 
-  // Método para cerrar el editor
   close(): void {
     this.cancelCrop();
     this.closeEditor.emit();
+    this.modalStyle = {
+      width: '400px',
+      height: '300px',
+    };
   }
 }
