@@ -1,1 +1,39 @@
-<p>photo-editor works!</p>
+<div class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Editar imagen</h2>
+      <button class="close-button" (click)="close()">✕</button>
+    </div>
+
+    <!-- Contenedor de carga de imagen -->
+    <div *ngIf="!imageLoaded" class="upload-container">
+      <input
+        type="file"
+        accept="image/*"
+        #fileInput
+        class="hidden"
+        (change)="onImageUpload($event)"
+      />
+      <div class="upload-area" (click)="openFileInput()">
+        <!-- Llama al método del componente -->
+        <fa-icon
+          [icon]="['fas', 'cloud-upload-alt']"
+          class="upload-icon flex justify-center items-center align-middle"
+        ></fa-icon>
+        <p class="upload-text">Haz clic para subir una imagen</p>
+      </div>
+    </div>
+
+    <!-- Contenedor de recorte de imagen -->
+    <div *ngIf="imageLoaded" class="crop-container">
+      <div class="border border-gray-300 rounded-lg overflow-hidden mb-4">
+        <img #imageElement class="max-w-full" />
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="cancelCrop()" class="btn-cancel">Cancelar</button>
+        <button (click)="cropImage()" class="btn-confirm">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>

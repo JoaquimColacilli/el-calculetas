@@ -33,6 +33,7 @@ export class ProfileComponent implements OnInit {
   colorPickerDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('photoEditorDialog')
   photoEditorDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   backgroundColor = '#3498db';
   buttonColor = this.lightenColor(this.backgroundColor, 10);
@@ -50,6 +51,8 @@ export class ProfileComponent implements OnInit {
   userEmail: string = '';
   userPhoto: string = '';
   userLocation: string = '';
+
+  croppedImage!: string | null;
 
   constructor(library: FaIconLibrary, private authService: AuthService) {
     library.addIconPacks(fas);
@@ -88,6 +91,25 @@ export class ProfileComponent implements OnInit {
     this.backgroundColor = color;
     this.updateButtonColors();
     this.colorPickerDialog.nativeElement.close();
+  }
+
+  openFileSelector() {
+    this.fileInput.nativeElement.click();
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        this.userPhoto = reader.result as string;
+        this.openPhotoEditor();
+      };
+
+      reader.readAsDataURL(file);
+    }
   }
 
   openPhotoEditor() {

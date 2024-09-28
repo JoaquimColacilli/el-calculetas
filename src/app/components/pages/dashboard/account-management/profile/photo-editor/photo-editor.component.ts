@@ -5,221 +5,122 @@ import {
   EventEmitter,
   Output,
   Input,
+  AfterViewInit,
+  OnChanges,
+  SimpleChanges,
 } from '@angular/core';
 import Cropper from 'cropperjs';
+import { CommonModule } from '@angular/common';
 import {
   FaIconLibrary,
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
+import { FormsModule } from '@angular/forms';
 import { fas } from '@fortawesome/free-solid-svg-icons';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-photo-editor',
   standalone: true,
-  template: `
-    <div class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title">Editar imagen</h2>
-          <button class="close-button" (click)="cancelCrop()">✕</button>
-        </div>
-        <div class="upload-container">
-          <input
-            type="file"
-            accept="image/*"
-            #fileInput
-            class="hidden"
-            (change)="onImageUpload($event)"
-          />
-          <div class="upload-area " (click)="fileInput.click()">
-            <fa-icon
-              [icon]="['fas', 'cloud-upload-alt']"
-              class="upload-icon flex justify-center items-center align-middle"
-            ></fa-icon>
-            <p class="upload-text">Haz clic para subir una imagen</p>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button (click)="cancelCrop()" class="btn-cancel">Cancelar</button>
-          <button (click)="cropImage()" class="btn-confirm">Aplicar</button>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [
-    `
-      .modal {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1000;
-      }
-
-      .modal-content {
-        background: #2f3136;
-        padding: 20px;
-        border-radius: 10px;
-        max-width: 500px;
-        width: 100%;
-        color: #ffffff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
-
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-      }
-
-      .modal-title {
-        font-size: 18px;
-        font-weight: 600;
-      }
-
-      .close-button {
-        background: transparent;
-        border: none;
-        font-size: 20px;
-        color: #b9bbbe;
-        cursor: pointer;
-      }
-
-      .upload-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 250px;
-        background: #202225;
-        border: 2px dashed #4f545c;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-
-      .upload-icon {
-        font-size: 48px;
-        color: #b9bbbe;
-        margin-bottom: 10px;
-      }
-
-      .upload-text {
-        font-size: 14px;
-        color: #b9bbbe;
-      }
-
-      .crop-container {
-        width: 100%;
-        height: 300px;
-        overflow: hidden;
-        margin-bottom: 15px;
-      }
-
-      img {
-        max-width: 100%;
-      }
-
-      .modal-footer {
-        display: flex;
-        justify-content: right;
-        margin-top: 1rem;
-      }
-
-      .btn-confirm,
-      .btn-cancel {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background 0.3s;
-      }
-
-      .btn-confirm {
-        background: #7289da;
-        color: white;
-      }
-
-      .btn-confirm:hover {
-        background: #5b6eae;
-      }
-
-      .btn-cancel {
-        background: #f04747;
-        color: white;
-        margin-right: 1rem;
-      }
-
-      .btn-cancel:hover {
-        background: #c03c3c;
-      }
-
-      .hidden {
-        display: none;
-      }
-    `,
-  ],
-  imports: [FontAwesomeModule, CommonModule],
+  templateUrl: './photo-editor.component.html',
+  styleUrls: ['./photo-editor.component.css'],
+  imports: [CommonModule, FontAwesomeModule, FormsModule],
 })
-export class PhotoEditorComponent {
-  @ViewChild('image', { static: false }) imageElement!: ElementRef;
-  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef;
-  @Output() imageCropped = new EventEmitter<string>();
+export class PhotoEditorComponent implements AfterViewInit, OnChanges {
+  @ViewChild('imageElement') imageElement!: ElementRef<HTMLImageElement>;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @Input() imageUrl!: string;
-  private cropper!: Cropper;
+  @Output() imageCropped = new EventEmitter<string>();
+  @Output() closeEditor = new EventEmitter<void>();
 
-  ngAfterViewInit() {
-    if (this.imageUrl) {
-      this.initializeCropper();
+  cropper!: Cropper;
+  imageLoaded = false;
+  private imageToLoad: string | null = null;
+
+  constructor(library: FaIconLibrary) {
+    library.addIconPacks(fas);
+  }
+
+  ngAfterViewInit(): void {
+    if (this.imageToLoad) {
+      this.loadImage(this.imageToLoad);
     }
   }
 
-  initializeCropper() {
-    this.cropper = new Cropper(this.imageElement.nativeElement, {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['imageUrl'] && this.imageUrl) {
+      // Guardar la imagen temporalmente hasta que el view esté listo
+      if (this.imageElement) {
+        this.loadImage(this.imageUrl);
+      } else {
+        this.imageToLoad = this.imageUrl;
+      }
+    }
+  }
+
+  // Método para abrir el input de archivo desde el componente
+  openFileInput() {
+    this.fileInput.nativeElement.click();
+  }
+
+  // Método para manejar la carga de la imagen desde el input
+  onImageUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        this.loadImage(reader.result as string);
+      };
+
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Método para cargar la imagen en el Cropper
+  loadImage(imageSrc: string): void {
+    if (!this.imageElement) {
+      this.imageToLoad = imageSrc; // Almacenar temporalmente si el view no está listo
+      return;
+    }
+
+    const image = this.imageElement.nativeElement;
+    image.src = imageSrc;
+
+    if (this.cropper) {
+      this.cropper.destroy(); // Destruir el Cropper anterior si existe
+    }
+
+    this.cropper = new Cropper(image, {
       aspectRatio: 1,
       viewMode: 1,
-      background: false,
-      movable: true,
-      zoomable: true,
-      scalable: true,
-      rotatable: true,
+      autoCropArea: 0.8,
       responsive: true,
-      checkOrientation: false,
     });
+
+    this.imageLoaded = true; // Se ha cargado una imagen
+    this.imageToLoad = null; // Limpiar la imagen temporal
   }
 
-  onImageUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.imageUrl = e.target.result;
-        this.initializeCropper();
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
-  }
-
-  cropImage() {
+  // Método para obtener la imagen recortada
+  cropImage(): void {
     if (this.cropper) {
-      const canvas = this.cropper.getCroppedCanvas({
-        width: 300,
-        height: 300,
-      });
-      const croppedImageUrl = canvas.toDataURL('image/png');
-      this.imageCropped.emit(croppedImageUrl);
+      const canvas = this.cropper.getCroppedCanvas();
+      const croppedImageData = canvas.toDataURL('image/png');
+      this.imageCropped.emit(croppedImageData); // Emitir la imagen recortada
     }
   }
 
-  cancelCrop() {
+  // Método para cancelar el recorte y regresar a la vista de carga
+  cancelCrop(): void {
+    this.imageLoaded = false;
     this.cropper?.destroy();
-    this.imageUrl = '';
-    this.fileInput.nativeElement.value = '';
+    this.imageToLoad = null;
+  }
+
+  // Método para cerrar el editor
+  close(): void {
+    this.cancelCrop();
+    this.closeEditor.emit();
   }
 }

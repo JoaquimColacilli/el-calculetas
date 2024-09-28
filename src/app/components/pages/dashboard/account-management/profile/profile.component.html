@@ -42,6 +42,13 @@
               >
                 <fa-icon [icon]="['fas', 'camera']" class="text-xs"></fa-icon>
               </button>
+              <input
+                #fileInput
+                type="file"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                class="hidden"
+              />
             </div>
             <div class="text-center">
               <h2 class="text-3xl font-bold">{{ userName }}</h2>
