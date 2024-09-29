@@ -42,13 +42,6 @@
               >
                 <fa-icon [icon]="['fas', 'camera']" class="text-xs"></fa-icon>
               </button>
-              <input
-                #fileInput
-                type="file"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                class="hidden"
-              />
             </div>
             <div class="text-center">
               <h2 class="text-3xl font-bold">{{ userName }}</h2>
@@ -72,9 +65,10 @@
             <label class="block text-gray-600 text-center">Email</label>
             <input
               type="email"
-              class="mt-1 p-2 w-full border rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              class="mt-1 p-2 w-full border rounded bg-gray-100 text-gray-500 opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-not-allowed"
               [value]="userEmail"
               placeholder="Nuevo email"
+              readonly
             />
           </div>
         </div>
@@ -143,6 +137,7 @@
 >
   <app-photo-editor
     [imageUrl]="userPhoto"
+    [reset]="resetEditor"
     (imageCropped)="onImageCropped($event)"
     (closeEditor)="closePhotoEditor()"
   ></app-photo-editor>

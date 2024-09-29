@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../services/auth.service';
@@ -20,6 +20,8 @@ import { SwitchAccountModalComponent } from '../pages/dashboard/account-manageme
   styleUrl: './navbar.component.css',
 })
 export class NavbarComponent implements OnInit {
+  @Input() navbarBackgroundColor: string = '#ffffff';
+
   currentDateTime: string = '';
   intervalId: any;
 

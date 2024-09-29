@@ -54,6 +54,8 @@ export class ProfileComponent implements OnInit {
 
   croppedImage!: string | null;
 
+  resetEditor = false;
+
   constructor(library: FaIconLibrary, private authService: AuthService) {
     library.addIconPacks(fas);
   }
@@ -113,6 +115,10 @@ export class ProfileComponent implements OnInit {
   }
 
   openPhotoEditor() {
+    this.resetEditor = true;
+    setTimeout(() => {
+      this.resetEditor = false;
+    }, 0);
     this.isPhotoEditorOpen = true;
     this.photoEditorDialog.nativeElement.showModal();
   }

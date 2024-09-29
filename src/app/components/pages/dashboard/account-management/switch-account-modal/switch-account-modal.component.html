@@ -32,10 +32,18 @@
             account.displayName || account.email
           }}</span>
         </div>
-        <fa-icon
-          [icon]="['fas', 'exchange-alt']"
-          class="text-blue-600"
-        ></fa-icon>
+        <div class="flex items-center space-x-2">
+          <fa-icon
+            [icon]="['fas', 'exchange-alt']"
+            class="text-blue-600 cursor-pointer"
+          ></fa-icon>
+          <!-- Ícono para eliminar la cuenta -->
+          <fa-icon
+            [icon]="['fas', 'times']"
+            class="text-gray-500 hover:text-gray-700 cursor-pointer"
+            (click)="deleteAccount(account, $event)"
+          ></fa-icon>
+        </div>
       </div>
     </div>
 

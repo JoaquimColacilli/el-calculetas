@@ -161,6 +161,23 @@ export class SwitchAccountModalComponent implements OnInit {
       });
   }
 
+  deleteAccount(account: any, event: Event): void {
+    event.stopPropagation();
+
+    const confirmation = confirm(
+      `¿Eliminar la cuenta ${account.displayName || account.email}?`
+    );
+    if (!confirmation) {
+      return;
+    }
+
+    this.accounts = this.accounts.filter((acc) => acc.uid !== account.uid);
+
+    localStorage.setItem('accounts', JSON.stringify(this.accounts));
+
+    console.log(`Cuenta eliminada: ${account.displayName || account.email}`);
+  }
+
   close(): void {
     this.dialogRef.close();
   }

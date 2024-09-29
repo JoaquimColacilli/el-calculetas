@@ -37,7 +37,7 @@
           </span>
 
           <!-- Mostrar los valores solo si no son cero -->
-          <ng-container *ngIf="!dineroEnCuentaEsCero()">
+          <ng-container>
             <span
               class="text-xl font-bold mt-2"
               style="overflow-wrap: break-word; word-wrap: break-word"
@@ -55,7 +55,7 @@
           </ng-container>
 
           <!-- Mensaje cuando no hay dinero en cuenta -->
-          <div
+          <!-- <div
             *ngIf="dineroEnCuentaEsCero()"
             class="flex items-center space-x-2 mt-2"
           >
@@ -66,7 +66,7 @@
             <span class="text-black text-sm font-medium">
               No hay gastos pagos {{ options[currentIndex].toLowerCase() }}
             </span>
-          </div>
+          </div> -->
         </div>
 
         <!-- Card Total de Ingresos -->

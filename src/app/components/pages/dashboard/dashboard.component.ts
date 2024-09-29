@@ -168,6 +168,7 @@ export class DashboardComponent implements OnInit {
   showSelectButton: boolean = false;
 
   haySeleccionados = false;
+  backgroundColor = '#3498db';
 
   constructor(
     private router: Router,

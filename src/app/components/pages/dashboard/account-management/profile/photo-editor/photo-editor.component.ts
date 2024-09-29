@@ -31,6 +31,7 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
   @ViewChild('imageElement') imageElement!: ElementRef<HTMLImageElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @Input() imageUrl!: string;
+  @Input() reset: boolean = false;
   @Output() imageCropped = new EventEmitter<string>();
   @Output() closeEditor = new EventEmitter<void>();
 
@@ -54,9 +55,24 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['reset'] && changes['reset'].currentValue) {
+      this.imageLoaded = false;
+      this.resetCropper();
+    }
     if (changes['imageUrl'] && this.imageUrl) {
       this.loadImage(this.imageUrl);
     }
+  }
+
+  resetCropper(): void {
+    if (this.cropper) {
+      this.cropper.destroy();
+    }
+    this.imageLoaded = false;
+    this.modalStyle = {
+      width: '400px',
+      height: '300px',
+    };
   }
 
   openFileInput() {
@@ -91,27 +107,25 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
         this.cropper.destroy();
       }
       this.cropper = new Cropper(image, {
-        aspectRatio: 1, // Relación de aspecto para mantener cuadrado
-        viewMode: 1, // Evita que la imagen se salga del contenedor
-        autoCropArea: 0.8, // Área de recorte inicial
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 0.8,
         responsive: true,
-        center: true, // Asegura que la imagen esté siempre centrada
-        zoomable: true, // Permitir zoom
-        zoomOnWheel: true, // Permitir zoom con la rueda del mouse
-        dragMode: 'move', // Habilitar movimiento al arrastrar
+        center: true,
+        zoomable: true,
+        zoomOnWheel: true,
+        dragMode: 'move',
         toggleDragModeOnDblclick: false,
-        minContainerWidth: 500, // Tamaño mínimo del contenedor
+        minContainerWidth: 500,
         minContainerHeight: 500,
-        minCanvasWidth: 500, // Asegura que la imagen no se haga más pequeña que el contenedor
-        minCanvasHeight: 500, // Asegura que la imagen no se haga más pequeña que el contenedor
-        initialAspectRatio: 1, // Relación de aspecto inicial para mantener cuadrado
-        cropBoxMovable: false, // Evita que se mueva el área de recorte
-        cropBoxResizable: true, // Permite cambiar el tamaño del área de recorte
-        background: false, // No mostrar el fondo de líneas por defecto de Cropper.js
+        minCanvasWidth: 500,
+        minCanvasHeight: 500,
+        initialAspectRatio: 1,
+        cropBoxMovable: false,
+        cropBoxResizable: true,
+        background: false,
         ready: () => {
-          // Redimensiona el modal una vez que la imagen se ha cargado
           this.resizeModal(true);
-          // Asegura que la imagen se ajuste a los bordes del contenedor
         },
       });
 
