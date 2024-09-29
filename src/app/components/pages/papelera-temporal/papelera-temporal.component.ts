@@ -20,6 +20,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-papelera-temporal',
@@ -197,6 +198,7 @@ export class PapeleraTemporalComponent implements OnInit {
       });
 
       await this.deleteFromTrash(expense);
+      this.showRestoreExpenseNotification(expense.name);
     } catch (error) {
       console.error('Error al restaurar el gasto:', error);
     }
@@ -213,6 +215,7 @@ export class PapeleraTemporalComponent implements OnInit {
       );
       await deleteDoc(trashDoc);
       this.closeDeleteItemModal();
+      this.showDeleteItemNotification(expense.name);
     } catch (error) {
       console.error('Error al eliminar el gasto:', error);
     }
@@ -253,6 +256,7 @@ export class PapeleraTemporalComponent implements OnInit {
 
       await batch.commit();
       this.closeClearTrashModal();
+      this.showClearTrashNotification();
     } catch (error) {
       console.error('Error al vaciar la papelera:', error);
     }
@@ -266,5 +270,47 @@ export class PapeleraTemporalComponent implements OnInit {
   closeDeleteItemModal(): void {
     this.selectedItem = null;
     this.isDeleteItemModalOpen = false;
+  }
+
+  showDeleteItemNotification(deletedItemName: string) {
+    Swal.fire({
+      position: 'top',
+      icon: 'success',
+      title: `El gasto "${deletedItemName}" ha sido eliminado de la papelera temporal.`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
+  }
+
+  showClearTrashNotification() {
+    Swal.fire({
+      position: 'top',
+      icon: 'success',
+      title: 'Se han eliminado todos los gastos de la papelera temporal.',
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
+  }
+
+  showRestoreExpenseNotification(restoredItemName: string) {
+    Swal.fire({
+      position: 'top',
+      icon: 'info',
+      title: `El gasto "${restoredItemName}" ha sido restaurado a tu dashboard.`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
   }
 }
