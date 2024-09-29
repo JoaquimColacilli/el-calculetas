@@ -6,6 +6,8 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  getDocs,
+  writeBatch,
 } from '@angular/fire/firestore';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth'; // Importa onAuthStateChanged
 import { Subscription } from 'rxjs';
@@ -44,6 +46,10 @@ export class PapeleraTemporalComponent implements OnInit {
   currentPage: number = 1;
   totalPages: number = 1;
 
+  isDeleteItemModalOpen: boolean = false;
+  selectedItem: any = null;
+  isClearTrashModalOpen: boolean = false;
+
   private trashDataSubscription: Subscription | null = null;
 
   constructor(
@@ -71,11 +77,11 @@ export class PapeleraTemporalComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString); // Convierte la fecha de UTC a local
-    const day = String(date.getUTCDate()).padStart(2, '0'); // Día en UTC
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Mes en UTC
-    const year = date.getUTCFullYear(); // Año en UTC
-    return `${day}/${month}/${year}`; // Devuelve en formato dd/MM/yyyy
+    const date = new Date(dateString);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   }
   getDaysUntilDeletion(deletedAt: string): number {
     const [day, month, year] = deletedAt.split('/');
@@ -144,16 +150,13 @@ export class PapeleraTemporalComponent implements OnInit {
     this.updatePagination();
   }
 
-  // Compara la fecha en formato dd/MM/yyyy con el valor del input date (yyyy-MM-dd)
   compareDates(deletedAt: string, filterDate: string): boolean {
-    // Convierte la fecha almacenada (dd/MM/yyyy) a (yyyy-MM-dd) para compararla con el input de tipo date.
     const [day, month, year] = deletedAt.split('/');
     const formattedDeletedAt = `${year}-${month.padStart(
       2,
       '0'
-    )}-${day.padStart(2, '0')}`; // Formato yyyy-MM-dd
+    )}-${day.padStart(2, '0')}`;
 
-    // Compara con la fecha seleccionada en el input de tipo date (ya en formato yyyy-MM-dd).
     return formattedDeletedAt === filterDate;
   }
 
@@ -209,8 +212,59 @@ export class PapeleraTemporalComponent implements OnInit {
         `users/${uid}/papeleraTemporal/${expense.id}`
       );
       await deleteDoc(trashDoc);
+      this.closeDeleteItemModal();
     } catch (error) {
-      console.error('Error al eliminar definitivamente el gasto:', error);
+      console.error('Error al eliminar el gasto:', error);
     }
+  }
+  formatValue(value: any): string {
+    const numericValue = Number(value);
+
+    if (isNaN(numericValue)) {
+      return value;
+    }
+
+    return numericValue.toLocaleString('es-ES');
+  }
+  openClearTrashModal(): void {
+    this.isClearTrashModalOpen = true;
+  }
+
+  closeClearTrashModal(): void {
+    this.isClearTrashModalOpen = false;
+  }
+
+  async clearAllTrash(): Promise<void> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) return;
+
+    try {
+      const trashCollection = collection(
+        this.firestore,
+        `users/${uid}/papeleraTemporal`
+      );
+
+      const itemsSnapshot = await getDocs(trashCollection);
+      const batch = writeBatch(this.firestore);
+
+      itemsSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      this.closeClearTrashModal();
+    } catch (error) {
+      console.error('Error al vaciar la papelera:', error);
+    }
+  }
+
+  openDeleteItemModal(item: any): void {
+    this.selectedItem = item;
+    this.isDeleteItemModalOpen = true;
+  }
+
+  closeDeleteItemModal(): void {
+    this.selectedItem = null;
+    this.isDeleteItemModalOpen = false;
   }
 }
