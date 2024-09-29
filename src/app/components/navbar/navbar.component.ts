@@ -70,7 +70,9 @@ export class NavbarComponent implements OnInit {
     if (url.includes('/dashboard')) {
       this.pageTitle = 'Dashboard';
     } else if (url.includes('/profile')) {
-      this.pageTitle = 'Profile';
+      this.pageTitle = 'Perfil';
+    } else if (url.includes('/papelera-temporal')) {
+      this.pageTitle = 'Papelera Temporal';
     } else {
       this.pageTitle = 'Unknown';
     }

@@ -1,0 +1,81 @@
+<div class="flex h-screen bg-gray-100">
+  <app-aside></app-aside>
+
+  <div class="flex-1 flex flex-col">
+    <app-navbar></app-navbar>
+
+    <!-- Papelera Temporal Container -->
+    <div class="container mx-auto p-8">
+      <!-- Advertencia -->
+      <div
+        class="bg-yellow-100 text-yellow-800 border-l-4 border-yellow-600 p-4 rounded-lg shadow-md my-6"
+      >
+        <p class="text-md font-medium">
+          <fa-icon
+            [icon]="['fas', 'exclamation-triangle']"
+            class="mr-2"
+          ></fa-icon>
+          <span>
+            Atención: Los elementos eliminados no podrán ser recuperados y se
+            borrarán automáticamente después de 10 días.
+          </span>
+        </p>
+      </div>
+
+      <!-- Header Papelera -->
+      <div
+        class="bg-gray-50 border-b border-gray-200 rounded-t-lg shadow-sm p-6 flex justify-between items-center"
+      >
+        <h2 class="text-2xl font-semibold text-gray-800">Papelera Temporal</h2>
+        <button
+          class="flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md"
+        >
+          <fa-icon [icon]="['fas', 'trash-alt']" class="mr-2"></fa-icon>
+          Vaciar Papelera
+        </button>
+      </div>
+
+      <!-- Contenido de la Papelera -->
+      <div class="bg-white rounded-b-lg shadow-md p-6">
+        <!-- Lista de Items en la Papelera -->
+        <div class="space-y-6">
+          <!-- Iteración sobre el array items -->
+          <div
+            *ngFor="let item of items"
+            class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-lg transition duration-200 ease-in-out"
+          >
+            <div>
+              <h3 class="text-lg font-medium text-gray-700">
+                Gasto: {{ item.name }}
+              </h3>
+              <p class="text-sm text-gray-500">
+                Eliminado el: {{ item.deletedAt }}
+              </p>
+              <p class="text-sm text-red-500">
+                {{ getDaysUntilDeletion(item.deletedAt) }} días restantes para
+                eliminación
+              </p>
+            </div>
+            <div class="flex space-x-3">
+              <button
+                class="bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-full px-3 py-2 transition ease-in-out duration-200"
+              >
+                <fa-icon [icon]="['fas', 'undo-alt']"></fa-icon>
+              </button>
+              <button
+                class="bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-full px-3 py-2 transition ease-in-out duration-200"
+              >
+                <fa-icon [icon]="['fas', 'times-circle']"></fa-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje de no items -->
+        <div class="mt-6 text-center text-gray-500" *ngIf="!items.length">
+          <p>No hay elementos en la papelera temporal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

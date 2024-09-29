@@ -1,23 +1,49 @@
-<div class="flex h-screen bg-gray-100">
-  <aside class="w-32 bg-white border-r shadow-md">
-    <div class="p-4 border-b">
-      <h2
-        class="text-lg font-bold text-gray-800 cursor-pointer"
+<div class="flex h-screen bg-gray-800">
+  <aside class="w-34 bg-gray-800 text-white border-r">
+    <nav class="py-6 space-y-2">
+      <a
         (click)="redirectToDashboard()"
+        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 mb-2 mr-2 ml-2"
       >
-        Finanzas
-      </h2>
-    </div>
-    <nav class="p-4 space-y-4">
-      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
-        <fa-icon [icon]="['fas', 'home']" class="mr-2"></fa-icon> Inicio
+        <fa-icon
+          [icon]="['fas', 'home']"
+          class="mb-2 group-hover:text-blue-500"
+        ></fa-icon>
+        <span>Inicio</span>
       </a>
-      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
-        <fa-icon [icon]="['fas', 'chart-bar']" class="mr-2"></fa-icon>
-        Estadísticas
+
+      <!-- Estadísticas -->
+      <a
+        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+      >
+        <fa-icon
+          [icon]="['fas', 'chart-bar']"
+          class="mb-2 group-hover:text-blue-500"
+        ></fa-icon>
+        <span>Estadísticas</span>
       </a>
-      <a class="flex items-center text-gray-600 hover:text-blue-600 transition">
-        <fa-icon [icon]="['fas', 'wallet']" class="mr-2"></fa-icon> Finanzas
+
+      <!-- Finanzas -->
+      <a
+        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+      >
+        <fa-icon
+          [icon]="['fas', 'wallet']"
+          class="mb-2 group-hover:text-blue-500"
+        ></fa-icon>
+        <span>Finanzas</span>
+      </a>
+
+      <!-- Papelera Temporal -->
+      <a
+        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        (click)="redirectToPapelera()"
+      >
+        <fa-icon
+          [icon]="['fas', 'trash-alt']"
+          class="mb-2 group-hover:text-blue-500"
+        ></fa-icon>
+        <span>Papelera</span>
       </a>
     </nav>
   </aside>

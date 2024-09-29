@@ -23,4 +23,8 @@ export class AsideComponent {
   redirectToDashboard() {
     this.router.navigate(['/dashboard']);
   }
+
+  redirectToPapelera() {
+    this.router.navigate(['/papelera-temporal']);
+  }
 }
