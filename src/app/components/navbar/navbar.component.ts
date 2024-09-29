@@ -5,6 +5,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../services/auth.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import * as packageInfo from '../../../../package.json';
 
 import {
   FaIconLibrary,
@@ -21,6 +22,8 @@ import { SwitchAccountModalComponent } from '../pages/dashboard/account-manageme
 })
 export class NavbarComponent implements OnInit {
   @Input() navbarBackgroundColor: string = '#ffffff';
+
+  version: string = packageInfo.version;
 
   currentDateTime: string = '';
   intervalId: any;

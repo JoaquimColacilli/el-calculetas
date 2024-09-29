@@ -4,8 +4,11 @@
   <div class="flex-1 flex flex-col">
     <app-navbar></app-navbar>
 
-    <!-- Papelera Temporal Container -->
-    <div class="container mx-auto p-8">
+    <main class="p-6 flex-1 overflow-y-auto">
+      <div *ngIf="isLoadingData" class="overlay">
+        <div class="spinner"></div>
+      </div>
+
       <!-- Advertencia -->
       <div
         class="bg-yellow-100 text-yellow-800 border-l-4 border-yellow-600 p-4 rounded-lg shadow-md my-6"
@@ -22,16 +25,62 @@
         </p>
       </div>
 
+      <!-- Filtros de búsqueda (Alineados uno al lado del otro) -->
+      <div
+        class="bg-gray-50 border-b border-gray-200 p-6 rounded-lg shadow-sm mb-6"
+      >
+        <form class="flex space-x-4">
+          <!-- Filtro por nombre -->
+          <div class="flex items-center space-x-2">
+            <label for="name" class="text-gray-700 font-semibold"
+              >Buscar por nombre:</label
+            >
+            <input
+              type="text"
+              id="name"
+              [(ngModel)]="filterName"
+              (ngModelChange)="applyFilters()"
+              name="name"
+              class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <!-- Filtro por fecha -->
+          <div class="flex items-center space-x-2">
+            <label for="date" class="text-gray-700 font-semibold"
+              >Filtrar por fecha:</label
+            >
+            <input
+              type="date"
+              id="date"
+              [(ngModel)]="filterDate"
+              (ngModelChange)="applyFilters()"
+              name="date"
+              class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <!-- Botón para limpiar filtros -->
+          <button
+            type="button"
+            class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition"
+            (click)="clearFilters()"
+          >
+            Limpiar filtros
+          </button>
+        </form>
+      </div>
+
       <!-- Header Papelera -->
       <div
         class="bg-gray-50 border-b border-gray-200 rounded-t-lg shadow-sm p-6 flex justify-between items-center"
       >
-        <h2 class="text-2xl font-semibold text-gray-800">Papelera Temporal</h2>
+        <h2 class="text-2xl font-semibold text-gray-800">Gastos en papelera</h2>
         <button
           class="flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md"
         >
-          <fa-icon [icon]="['fas', 'trash-alt']" class="mr-2"></fa-icon>
-          Vaciar Papelera
+          <fa-icon [icon]="['fas', 'trash-alt']" class="mr-2"></fa-icon> Vaciar
+          Papelera
         </button>
       </div>
 
@@ -39,9 +88,8 @@
       <div class="bg-white rounded-b-lg shadow-md p-6">
         <!-- Lista de Items en la Papelera -->
         <div class="space-y-6">
-          <!-- Iteración sobre el array items -->
           <div
-            *ngFor="let item of items"
+            *ngFor="let item of paginatedItems"
             class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-lg transition duration-200 ease-in-out"
           >
             <div>
@@ -49,7 +97,13 @@
                 Gasto: {{ item.name }}
               </h3>
               <p class="text-sm text-gray-500">
-                Eliminado el: {{ item.deletedAt }}
+                Proveedor: {{ item.provider }}
+              </p>
+              <p class="text-sm text-gray-500">
+                Valor: {{ item.value }} {{ item.currency }}
+              </p>
+              <p class="text-sm text-gray-500">
+                Envíado aquí el: {{ item.deletedAt }}
               </p>
               <p class="text-sm text-red-500">
                 {{ getDaysUntilDeletion(item.deletedAt) }} días restantes para
@@ -59,11 +113,13 @@
             <div class="flex space-x-3">
               <button
                 class="bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-full px-3 py-2 transition ease-in-out duration-200"
+                (click)="restoreExpense(item)"
               >
                 <fa-icon [icon]="['fas', 'undo-alt']"></fa-icon>
               </button>
               <button
                 class="bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-full px-3 py-2 transition ease-in-out duration-200"
+                (click)="deleteFromTrash(item)"
               >
                 <fa-icon [icon]="['fas', 'times-circle']"></fa-icon>
               </button>
@@ -71,11 +127,34 @@
           </div>
         </div>
 
-        <!-- Mensaje de no items -->
-        <div class="mt-6 text-center text-gray-500" *ngIf="!items.length">
+        <!-- Paginador -->
+        <div *ngIf="totalPages > 1" class="mt-6 flex justify-center space-x-4">
+          <button
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            (click)="previousPage()"
+            [disabled]="currentPage === 1"
+          >
+            Anterior
+          </button>
+          <span class="px-4 py-2"
+            >Página {{ currentPage }} de {{ totalPages }}</span
+          >
+          <button
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages"
+          >
+            Siguiente
+          </button>
+        </div>
+
+        <div
+          class="mt-6 text-center text-gray-500"
+          *ngIf="!filteredItems.length"
+        >
           <p>No hay elementos en la papelera temporal.</p>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </div>

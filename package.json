@@ -1,6 +1,6 @@
 {
   "name": "el-calculetas",
-  "version": "0.0.0",
+  "version": "v1.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

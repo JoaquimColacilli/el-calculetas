@@ -15,6 +15,13 @@
         ></fa-icon>
         <span class="font-medium">{{ currentDateTime }}</span>
       </div>
+
+      <div
+        class="flex items-center space-x-3 text-gray-700 text-md border-l pl-4"
+      >
+        <fa-icon [icon]="['fas', 'code']" class="text-blue-500"></fa-icon>
+        <span class="font-semibold">Versión: {{ version }}</span>
+      </div>
     </div>
 
     <div class="flex items-center space-x-3 relative px-4">

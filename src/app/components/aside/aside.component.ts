@@ -7,24 +7,18 @@ import {
 } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-aside',
   standalone: true,
-  imports: [CommonModule, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, RouterModule],
   templateUrl: './aside.component.html',
   styleUrl: './aside.component.css',
 })
 export class AsideComponent {
-  constructor(library: FaIconLibrary, private router: Router) {
+  constructor(library: FaIconLibrary) {
     library.addIconPacks(fas);
-  }
-
-  redirectToDashboard() {
-    this.router.navigate(['/dashboard']);
-  }
-
-  redirectToPapelera() {
-    this.router.navigate(['/papelera-temporal']);
   }
 }

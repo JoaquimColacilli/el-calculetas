@@ -1,8 +1,10 @@
 <div class="flex h-screen bg-gray-800">
   <aside class="w-34 bg-gray-800 text-white border-r">
     <nav class="py-6 space-y-2">
+      <!-- Inicio -->
       <a
-        (click)="redirectToDashboard()"
+        [routerLink]="'/dashboard'"
+        routerLinkActive="active"
         class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 mb-2 mr-2 ml-2"
       >
         <fa-icon
@@ -14,6 +16,8 @@
 
       <!-- Estadísticas -->
       <a
+        [routerLink]="'/estadisticas'"
+        routerLinkActive="active"
         class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
       >
         <fa-icon
@@ -25,6 +29,8 @@
 
       <!-- Finanzas -->
       <a
+        [routerLink]="'/finanzas'"
+        routerLinkActive="active"
         class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
       >
         <fa-icon
@@ -36,8 +42,9 @@
 
       <!-- Papelera Temporal -->
       <a
+        [routerLink]="'/papelera-temporal'"
+        routerLinkActive="active"
         class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
-        (click)="redirectToPapelera()"
       >
         <fa-icon
           [icon]="['fas', 'trash-alt']"

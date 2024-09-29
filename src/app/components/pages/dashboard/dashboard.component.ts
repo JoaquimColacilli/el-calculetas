@@ -557,13 +557,26 @@ export class DashboardComponent implements OnInit {
     if (!uid || !expense.id) return;
 
     try {
+      const deletedAt = this.getTodayDate();
+
+      const trashDoc = doc(
+        this.firestore,
+        `users/${uid}/papeleraTemporal/${expense.id}`
+      );
+
+      await setDoc(trashDoc, {
+        ...expense,
+        deletedAt: deletedAt,
+      });
+
       const expenseDoc = doc(
         this.firestore,
         `users/${uid}/gastos/${expense.id}`
       );
       await deleteDoc(expenseDoc);
-      this.getExpenses(); // Refresca los gastos tras eliminar uno
-      this.showDeleteNotification(expense.name); // Muestra notificación
+
+      this.getExpenses();
+      this.showDeleteNotification(expense.name);
     } catch (error) {
       console.error('Error al eliminar el gasto:', error);
     }
