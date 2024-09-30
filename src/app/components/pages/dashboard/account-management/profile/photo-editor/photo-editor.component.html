@@ -6,7 +6,11 @@
     </div>
 
     <!-- Contenedor de carga de imagen -->
-    <div *ngIf="!imageLoaded" class="upload-container">
+    <div
+      *ngIf="!imageLoaded"
+      class="upload-container"
+      (click)="openFileInput()"
+    >
       <input
         type="file"
         accept="image/*"
@@ -14,7 +18,7 @@
         class="hidden"
         (change)="onImageUpload($event)"
       />
-      <div class="upload-area" (click)="openFileInput()">
+      <div class="upload-area">
         <fa-icon
           [icon]="['fas', 'cloud-upload-alt']"
           class="upload-icon"
@@ -30,7 +34,8 @@
       </div>
     </div>
 
-    <div class="modal-footer">
+    <!-- Footer de botones -->
+    <div *ngIf="imageLoaded" class="modal-footer">
       <button (click)="cancelCrop()" class="btn-cancel">Cancelar</button>
       <button (click)="cropImage()" class="btn-confirm">Aplicar</button>
     </div>

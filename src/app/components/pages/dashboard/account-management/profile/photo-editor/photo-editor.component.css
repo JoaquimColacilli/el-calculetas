@@ -79,24 +79,27 @@
 
 .crop-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #202225; /* Fondo oscuro para contrastar con la imagen */
-  overflow: hidden; /* Ocultar desbordamiento */
-  width: 100%; /* Ajustar el contenedor al ancho del modal */
-  height: 100%; /* Ajustar el contenedor al alto del modal */
+  flex-direction: column;
+  justify-content: center; /* Mantiene centrado verticalmente el contenido */
+  align-items: center; /* Centra horizontalmente */
+  background-color: #202225; /* Fondo oscuro */
+  overflow: hidden;
+  width: 100%;
+  height: auto; /* Ajusta la altura al contenido */
 }
 
 .crop-container img {
   max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; /* Mantener la proporción de la imagen */
+  max-height: 100%; /* Ajusta la altura de la imagen */
+  object-fit: contain;
   display: block;
 }
+
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px; /* Espaciado entre los botones */
-  margin-top: auto; /* Empujar los botones al fondo del modal */
-  padding-top: 10px;
+  justify-content: flex-end; /* Alinea los botones a la derecha */
+  width: 100%; /* Para que ocupe todo el ancho */
+  gap: 10px;
+  padding: 10px; /* Ajusta el espacio interno para mayor separación */
+  margin-bottom: 10px; /* Añade el margen inferior */
 }

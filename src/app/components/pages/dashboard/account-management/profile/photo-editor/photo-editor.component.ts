@@ -136,16 +136,13 @@ export class PhotoEditorComponent implements AfterViewInit, OnChanges {
     image.src = imageSrc;
   }
 
-  // Método para cambiar el tamaño del modal
   resizeModal(imageLoaded: boolean): void {
     if (imageLoaded) {
-      // Cambia el tamaño del modal cuando la imagen está cargada, limitando el tamaño
       this.modalStyle = {
-        width: '600px', // Ancho deseado para el modal
+        width: '600px',
         height: '600px',
       };
     } else {
-      // Tamaño inicial del modal
       this.modalStyle = {
         width: '400px',
         height: '300px',

@@ -398,29 +398,37 @@
         <div
           class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-2"
         >
+          <!-- Botón de Categorías -->
           <button
-            class="bg-red-400 text-white py-2 px-4 rounded-lg hover:bg-red-500 transition flex items-center space-x-2"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 shadow-lg transition flex items-center space-x-4"
             (click)="openModalCategorias()"
           >
             <fa-icon
               [icon]="['fas', 'pencil-alt']"
-              class="text-white"
+              class="text-blue-500"
             ></fa-icon>
-            <span>Editar categorías</span>
+            <div class="h-6 w-px bg-gray-400"></div>
+            <span>Categorías</span>
           </button>
+
+          <!-- Botón de Sueldo -->
           <button
-            class="bg-blue-400 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition flex items-center space-x-2"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 shadow-lg transition flex items-center space-x-4"
             (click)="openModalIngresarSueldo()"
           >
-            <fa-icon [icon]="['fas', 'wallet']"></fa-icon>
-            <span>Ingresar sueldo</span>
+            <fa-icon [icon]="['fas', 'wallet']" class="text-blue-500"></fa-icon>
+            <div class="h-6 w-px bg-gray-400"></div>
+            <span>Sueldo</span>
           </button>
+
+          <!-- Botón de Gasto -->
           <button
-            class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center space-x-2 relative group disabled:bg-gray-400 disabled:cursor-not-allowed"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 shadow-lg transition flex items-center space-x-4 disabled:opacity-50 disabled:cursor-not-allowed"
             (click)="addExpense()"
             [disabled]="editingIndex !== null"
           >
-            <fa-icon [icon]="['fas', 'plus']"></fa-icon>
+            <fa-icon [icon]="['fas', 'plus']" class="text-blue-500"></fa-icon>
+            <div class="h-6 w-px bg-gray-400"></div>
             <span>Gasto</span>
           </button>
         </div>
@@ -728,13 +736,13 @@
                 class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
               >
                 <button
-                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                  class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition flex items-center"
                   (click)="cancelAddingExpense()"
                 >
                   <fa-icon [icon]="['fas', 'times']"></fa-icon>
                 </button>
                 <button
-                  class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition flex items-center"
+                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
                   (click)="saveExpense()"
                 >
                   <fa-icon [icon]="['fas', 'check']"></fa-icon>
@@ -877,7 +885,7 @@
                     <fa-icon [icon]="['fas', 'edit']"></fa-icon>
                   </button>
                   <button
-                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center"
+                    class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition flex items-center"
                     (click)="deleteExpense(item)"
                   >
                     <fa-icon [icon]="['fas', 'trash']"></fa-icon>

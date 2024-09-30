@@ -76,6 +76,10 @@ export class NavbarComponent implements OnInit {
       this.pageTitle = 'Perfil';
     } else if (url.includes('/papelera-temporal')) {
       this.pageTitle = 'Papelera Temporal';
+    } else if (url.includes('/ahorros')) {
+      this.pageTitle = 'Ahorros';
+    } else if (url.includes('/estadisticas')) {
+      this.pageTitle = 'Estadísticas';
     } else {
       this.pageTitle = 'Unknown';
     }
