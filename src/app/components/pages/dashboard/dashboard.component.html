@@ -232,16 +232,22 @@
             >Clima Actual</span
           >
           <span
+            *ngIf="weatherData"
             class="text-3xl font-bold mt-2"
             [ngStyle]="{ color: isNight ? '#FFFFFF' : '#000000' }"
           >
             {{ weatherData?.main?.temp | number : "1.1-1" }}°C
           </span>
           <span
+            *ngIf="weatherData"
             class="text-sm"
             [ngStyle]="{ color: isNight ? '#D1D5DB' : '#4B5563' }"
           >
             {{ weatherData?.weather[0]?.description | titlecase }}
+          </span>
+
+          <span *ngIf="!weatherData" class="text-gray-500 mt-2 text-sm">
+            No se ha configurado ubicación. Configúrala en el perfil.
           </span>
         </div>
         <div

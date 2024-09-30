@@ -14,7 +14,15 @@ import {
   UserCredential,
   browserLocalPersistence,
 } from '@angular/fire/auth';
-import { Observable, from, catchError, throwError, switchMap } from 'rxjs';
+import {
+  Observable,
+  from,
+  catchError,
+  throwError,
+  switchMap,
+  BehaviorSubject,
+  map,
+} from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
 import {
   Firestore,
@@ -26,6 +34,7 @@ import {
   where,
   getDocs,
   addDoc,
+  updateDoc,
 } from '@angular/fire/firestore';
 
 import { User } from '@angular/fire/auth';
@@ -80,6 +89,10 @@ export class AuthService {
   private firebaseAuth = inject(Auth);
   user$ = user(this.firebaseAuth);
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
+
+  private userDataSubject = new BehaviorSubject<UserInterface | null>(null);
+  userData$ = this.userDataSubject.asObservable();
+
   constructor(private firestore: Firestore, private auth: Auth) {
     this.auth.setPersistence(browserLocalPersistence).catch((error) => {
       console.error('Error al configurar la persistencia:', error);
@@ -231,7 +244,14 @@ export class AuthService {
     );
   }
 
-  getUserData(): Observable<any> {
+  getUserData(): Observable<UserInterface | null> {
+    // Si ya tenemos datos en el BehaviorSubject, los retornamos como observable
+    const currentUser = this.userDataSubject.getValue();
+    if (currentUser) {
+      return this.userDataSubject.asObservable(); // Retorna los datos existentes
+    }
+
+    // Si no tenemos datos, los obtenemos de Firestore
     return this.user$.pipe(
       switchMap((authUser: User | null) => {
         if (!authUser || !authUser.uid) {
@@ -243,7 +263,12 @@ export class AuthService {
             if (!docSnapshot.exists()) {
               throw new Error('Usuario no encontrado en la base de datos');
             }
-            return [docSnapshot.data()];
+
+            // Emitir el valor obtenido a través de userDataSubject para que quede sincronizado
+            const userData = docSnapshot.data() as UserInterface;
+            this.userDataSubject.next(userData);
+
+            return this.userDataSubject.asObservable(); // Retornar los datos como observable
           })
         );
       })
@@ -297,5 +322,41 @@ export class AuthService {
 
     const data = await response.json();
     return data.access_token;
+  }
+
+  updateUserProfile(uid: string, data: Partial<UserInterface>): Promise<void> {
+    const userDocRef = doc(this.firestore, `users/${uid}`);
+
+    return updateDoc(userDocRef, data).then(() => {
+      // Obtener los datos actuales del usuario
+      const currentUser = this.userDataSubject.getValue();
+
+      // Crear un objeto actualizado sin undefined
+      const updatedUserData: UserInterface = {
+        uid: currentUser?.uid || '', // Asegúrate de que uid no sea undefined
+        username: data.username || currentUser?.username || '',
+        email: currentUser?.email || '',
+        profilePicture:
+          data.profilePicture || currentUser?.profilePicture || '',
+        providerId: currentUser?.providerId || '',
+        ubicacion: data.ubicacion || currentUser?.ubicacion || '',
+      };
+
+      // Emitir el nuevo valor
+      this.userDataSubject.next(updatedUserData);
+    });
+  }
+
+  getUserByUid(uid: string): Observable<any> {
+    const userRef = doc(this.firestore, `users/${uid}`);
+    return from(getDoc(userRef)).pipe(
+      map((docSnapshot) => {
+        if (docSnapshot.exists()) {
+          return docSnapshot.data();
+        } else {
+          throw new Error('Usuario no encontrado en Firestore');
+        }
+      })
+    );
   }
 }

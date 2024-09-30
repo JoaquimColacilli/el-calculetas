@@ -50,7 +50,15 @@ export class NavbarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadUserData();
+    this.authService.userData$.subscribe(
+      (userData) => {
+        this.userData = userData;
+      },
+      (error) => {
+        console.error('Error cargando datos del usuario:', error);
+      }
+    );
+
     this.updateDateTime();
     this.intervalId = setInterval(() => this.updateDateTime(), 1000);
     this.setPageTitle(this.router.url);

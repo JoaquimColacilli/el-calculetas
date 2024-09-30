@@ -170,6 +170,8 @@ export class DashboardComponent implements OnInit {
   haySeleccionados = false;
   backgroundColor = '#3498db';
 
+  userLocation: string | null = null;
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -194,6 +196,25 @@ export class DashboardComponent implements OnInit {
           // Solo carga los datos cuando hay un usuario autenticado
           this.loadUserData();
           this.loadInitialData();
+
+          const userUid = user.uid;
+
+          this.authService.getUserByUid(userUid).subscribe({
+            next: (userData: any) => {
+              if (userData && userData.ubicacion) {
+                this.userLocation = userData.ubicacion;
+                this.getWeatherData();
+              } else {
+                console.log('Ubicación no configurada en el perfil');
+              }
+            },
+            error: (error: any) => {
+              console.error(
+                'Error obteniendo datos del usuario desde Firestore:',
+                error
+              );
+            },
+          });
         } else {
           // Redirigir al login si no hay usuario
           this.router.navigate(['/login']);
@@ -212,7 +233,6 @@ export class DashboardComponent implements OnInit {
     this.calculateCounts();
     this.calculateDayOrNight();
 
-    this.getWeatherData();
     this.loadDollarRates();
 
     this.updateDateTime();
@@ -863,15 +883,22 @@ export class DashboardComponent implements OnInit {
   }
 
   getWeatherData() {
-    this.weatherService.getWeather('Buenos Aires', 'AR').subscribe({
-      next: (data) => {
-        this.weatherData = data;
-        this.calculateDayOrNight();
-      },
-      error: (error) => {
-        console.error('Error obteniendo los datos del clima:', error);
-      },
-    });
+    if (this.userLocation) {
+      const [city, countryCode] = this.userLocation
+        .split(',')
+        .map((s) => s.trim());
+      this.weatherService.getWeather(city, countryCode).subscribe({
+        next: (data) => {
+          this.weatherData = data;
+          this.calculateDayOrNight();
+        },
+        error: (error) => {
+          console.error('Error obteniendo los datos del clima:', error);
+        },
+      });
+    } else {
+      console.log('No hay ubicación configurada.');
+    }
   }
 
   calculateDayOrNight(): void {

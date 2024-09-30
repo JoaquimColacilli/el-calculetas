@@ -14,6 +14,9 @@ import { PhotoEditorComponent } from './photo-editor/photo-editor.component';
 import { WeatherService } from '../../../../../services/weather.service';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { City, CityList } from '../../../../../interfaces/cities.interface';
+import { UserInterface } from '../../../../../interfaces/user.interface';
+import Swal from 'sweetalert2';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
@@ -27,6 +30,7 @@ import { City, CityList } from '../../../../../interfaces/cities.interface';
     ColorPickerComponent,
     PhotoEditorComponent,
     NgSelectModule,
+    RouterLink,
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css'],
@@ -64,6 +68,8 @@ export class ProfileComponent implements OnInit {
   selectedCity: City | null = null;
   userLocation: string | null = null;
 
+  isSavingChanges: boolean = false;
+
   constructor(
     library: FaIconLibrary,
     private authService: AuthService,
@@ -75,14 +81,14 @@ export class ProfileComponent implements OnInit {
   ngOnInit() {
     this.authService.getUserData().subscribe(
       (userData) => {
-        console.log(userData);
-        this.userName = userData.username || '';
-        this.userEmail = userData.email || '';
-        this.userPhoto = userData.profilePicture || '';
-        this.userLocation = userData.location || '';
-        this.backgroundColor =
-          userData.profileBackgroundColor || this.backgroundColor;
-        this.updateButtonColors();
+        if (userData) {
+          console.log(userData);
+          this.userName = userData?.username || '';
+          this.userEmail = userData?.email || '';
+          this.userPhoto = userData?.profilePicture || '';
+          this.userLocation = userData?.ubicacion || '';
+          this.updateButtonColors();
+        }
       },
       (error) => {
         console.error('Error obteniendo datos del usuario:', error);
@@ -200,17 +206,56 @@ export class ProfileComponent implements OnInit {
   }
 
   selectCity(city: City): void {
-    this.selectedCity = city; // Marca la ciudad seleccionada
+    this.selectedCity = city;
   }
 
   saveLocation(): void {
     if (this.selectedCity) {
       this.userLocation = `${this.selectedCity.name}, ${this.selectedCity.countryCode}`;
-      this.closeModal(); // Cierra el modal después de guardar
+      this.closeLocationModal();
     }
   }
 
-  closeModal(): void {
-    // Lógica para cerrar el modal
+  saveChanges(): void {
+    this.isSavingChanges = true;
+
+    const updatedData: Partial<UserInterface> = {
+      username: this.userName,
+      profilePicture: this.userPhoto,
+      ubicacion: this.userLocation || '',
+    };
+
+    const currentUser = this.authService.currentUserSig();
+    if (currentUser && currentUser.uid) {
+      this.authService
+        .updateUserProfile(currentUser.uid, updatedData)
+        .then(() => {
+          console.log('Perfil actualizado exitosamente');
+          this.showUpdateNotificaction();
+        })
+        .catch((error) => {
+          console.error('Error actualizando el perfil:', error);
+        })
+        .finally(() => {
+          this.isSavingChanges = false;
+        });
+    } else {
+      console.error('No hay usuario autenticado');
+      this.isSavingChanges = false;
+    }
+  }
+
+  showUpdateNotificaction() {
+    Swal.fire({
+      position: 'top',
+      icon: 'success',
+      title: `El perfil fue actualizado correctamente`,
+      showConfirmButton: false,
+      timer: 3000,
+      toast: true,
+      customClass: {
+        popup: 'swal-custom-popup',
+      },
+    });
   }
 }
