@@ -215,7 +215,7 @@ export class PapeleraTemporalComponent implements OnInit {
       );
       await deleteDoc(trashDoc);
       this.closeDeleteItemModal();
-      this.showDeleteItemNotification(expense.name);
+      await this.showDeleteItemNotification(expense.name);
     } catch (error) {
       console.error('Error al eliminar el gasto:', error);
     }
