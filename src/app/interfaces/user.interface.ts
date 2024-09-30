@@ -4,4 +4,5 @@ export interface UserInterface {
   email: string;
   profilePicture?: string;
   providerId?: string;
+  ubicacion?: string;
 }

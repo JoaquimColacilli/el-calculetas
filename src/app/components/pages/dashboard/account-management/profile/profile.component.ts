@@ -11,6 +11,9 @@ import { AsideComponent } from '../../../../aside/aside.component';
 import { ColorPickerComponent } from './color-picker/color-picker.component';
 import { AuthService } from '../../../../../services/auth.service';
 import { PhotoEditorComponent } from './photo-editor/photo-editor.component';
+import { WeatherService } from '../../../../../services/weather.service';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { City, CityList } from '../../../../../interfaces/cities.interface';
 
 @Component({
   selector: 'app-profile',
@@ -23,6 +26,7 @@ import { PhotoEditorComponent } from './photo-editor/photo-editor.component';
     AsideComponent,
     ColorPickerComponent,
     PhotoEditorComponent,
+    NgSelectModule,
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css'],
@@ -34,6 +38,7 @@ export class ProfileComponent implements OnInit {
   @ViewChild('photoEditorDialog')
   photoEditorDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('locationModal') locationModal: any;
 
   backgroundColor = '#3498db';
   buttonColor = this.lightenColor(this.backgroundColor, 10);
@@ -50,13 +55,20 @@ export class ProfileComponent implements OnInit {
   userName: string = '';
   userEmail: string = '';
   userPhoto: string = '';
-  userLocation: string = '';
-
   croppedImage!: string | null;
 
   resetEditor = false;
 
-  constructor(library: FaIconLibrary, private authService: AuthService) {
+  cityList = CityList;
+  filteredCityList = CityList;
+  selectedCity: City | null = null;
+  userLocation: string | null = null;
+
+  constructor(
+    library: FaIconLibrary,
+    private authService: AuthService,
+    private weatherService: WeatherService
+  ) {
     library.addIconPacks(fas);
   }
 
@@ -165,5 +177,40 @@ export class ProfileComponent implements OnInit {
     )
       .toString(16)
       .slice(1)}`;
+  }
+
+  openLocationModal() {
+    this.locationModal.nativeElement.showModal();
+  }
+
+  closeLocationModal() {
+    this.locationModal.nativeElement.close();
+  }
+
+  onCityInput(event: Event): void {
+    const inputElement = event.target as HTMLInputElement;
+    const searchTerm = inputElement?.value || '';
+    this.filterCities(searchTerm);
+  }
+
+  filterCities(searchTerm: string): void {
+    this.filteredCityList = this.cityList.filter((city) =>
+      city.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  selectCity(city: City): void {
+    this.selectedCity = city; // Marca la ciudad seleccionada
+  }
+
+  saveLocation(): void {
+    if (this.selectedCity) {
+      this.userLocation = `${this.selectedCity.name}, ${this.selectedCity.countryCode}`;
+      this.closeModal(); // Cierra el modal después de guardar
+    }
+  }
+
+  closeModal(): void {
+    // Lógica para cerrar el modal
   }
 }
