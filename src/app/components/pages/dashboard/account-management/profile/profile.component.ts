@@ -231,6 +231,25 @@ export class ProfileComponent implements OnInit {
         .updateUserProfile(currentUser.uid, updatedData)
         .then(() => {
           console.log('Perfil actualizado exitosamente');
+
+          // Actualiza el localStorage
+          let storedUsers = JSON.parse(
+            localStorage.getItem('accounts') || '[]'
+          );
+
+          storedUsers = storedUsers.map((user: any) => {
+            if (user.uid === currentUser.uid) {
+              return {
+                ...user,
+                displayName: this.userName,
+                photoURL: this.userPhoto,
+              };
+            }
+            return user;
+          });
+
+          localStorage.setItem('accounts', JSON.stringify(storedUsers));
+
           this.showUpdateNotificaction();
         })
         .catch((error) => {
