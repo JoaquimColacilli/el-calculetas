@@ -7,15 +7,29 @@ import { ProfileComponent } from './components/pages/dashboard/account-managemen
 import { PapeleraTemporalComponent } from './components/pages/papelera-temporal/papelera-temporal.component';
 import { AhorrosComponent } from './components/pages/ahorros/ahorros.component';
 import { EstadisticasComponent } from './components/pages/estadisticas/estadisticas.component';
+import { AuthGuard } from './guard/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LoginComponent },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'dashboard', component: DashboardComponent },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [AuthGuard],
+  },
   { path: 'reset-password', component: ResetPasswordComponent },
-  { path: 'profile', component: ProfileComponent },
-  { path: 'papelera-temporal', component: PapeleraTemporalComponent },
-  { path: 'ahorros', component: AhorrosComponent },
-  { path: 'estadisticas', component: EstadisticasComponent },
+  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  {
+    path: 'papelera-temporal',
+    component: PapeleraTemporalComponent,
+    canActivate: [AuthGuard],
+  },
+  { path: 'ahorros', component: AhorrosComponent, canActivate: [AuthGuard] },
+  {
+    path: 'estadisticas',
+    component: EstadisticasComponent,
+    canActivate: [AuthGuard],
+  },
+  { path: '**', redirectTo: 'login' },
 ];
