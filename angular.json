@@ -29,7 +29,8 @@
             "styles": [
               "src/styles.css",
               "./node_modules/@ng-select/ng-select/themes/default.theme.css",
-              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "node_modules/cropperjs/dist/cropper.css"
             ],
             "scripts": []
           },
@@ -38,13 +39,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "5MB",
+                  "maximumError": "7MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kB",
-                  "maximumError": "4kB"
+                  "maximumWarning": "5MB",
+                  "maximumError": "7MB"
                 }
               ],
               "outputHashing": "all"

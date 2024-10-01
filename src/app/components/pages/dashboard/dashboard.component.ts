@@ -261,7 +261,7 @@ export class DashboardComponent implements OnInit {
     try {
       const isFirstDay = new Date().getDate() === 1;
       if (isFirstDay) {
-        await this.sueldoService.resetSalariesAtStartOfMonth();
+        await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
         console.log('Sueldos reiniciados para el nuevo mes.');
       }
     } catch (error) {

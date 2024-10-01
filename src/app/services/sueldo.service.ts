@@ -9,6 +9,7 @@ import {
   docData,
   Timestamp,
   getDoc,
+  arrayUnion,
 } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -73,6 +74,7 @@ export class SueldoService {
           throw new Error('Usuario no autenticado');
         }
 
+        // Reference the 'currentSalaries' document
         const currentSalariesDocRef = doc(
           this.firestore,
           `users/${uid}/salaries/currentSalaries`
@@ -83,6 +85,21 @@ export class SueldoService {
           return;
         }
 
+        // Check for the reset
+        const lastResetDate = snapshot.data()?.['lastResetDate'];
+        const currentDate = new Date();
+        const firstDayOfMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
+
+        if (lastResetDate && lastResetDate.toDate() >= firstDayOfMonth) {
+          console.log('Ya se realizó el reset este mes.');
+          return;
+        }
+
+        // Get current salaries
         const currentSalaries = snapshot.data()?.['salaries'] || [];
 
         const totalARS = currentSalaries
@@ -93,20 +110,28 @@ export class SueldoService {
           .filter((s: any) => s.currency === 'USD')
           .reduce((acc: number, salary: any) => acc + salary.amount, 0);
 
-        // Guardar el historial de sueldos
-        const historyDocRef = doc(
-          this.firestore,
-          `users/${uid}/salaries/history/${new Date().toISOString()}`
+        // Save history
+        const historyCollectionRef = collection(
+          currentSalariesDocRef,
+          'history'
         );
-        await setDoc(historyDocRef, {
+
+        await addDoc(historyCollectionRef, {
           totalARS,
           totalUSD,
           details: currentSalaries,
           timestamp: Timestamp.fromDate(new Date()),
         });
 
-        // Restablecer los sueldos actuales
-        await setDoc(currentSalariesDocRef, { salaries: [] }, { merge: true });
+        // Reset current salaries and update lastResetDate
+        await setDoc(
+          currentSalariesDocRef,
+          {
+            salaries: [],
+            lastResetDate: Timestamp.fromDate(new Date()),
+          },
+          { merge: true }
+        );
       }),
       catchError((error) => {
         console.error('Error al restablecer los sueldos:', error);
