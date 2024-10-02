@@ -43,14 +43,15 @@
               style="overflow-wrap: break-word; word-wrap: break-word"
               [ngClass]="getTextColor()"
             >
-              {{ calculateDineroRestante() | currency }} ARS
+              {{ calculateDineroRestante() | numberFormat }} ARS
             </span>
+
             <span
               class="text-xl font-bold mt-1"
               style="overflow-wrap: break-word; word-wrap: break-word"
               [ngClass]="getTextColor()"
             >
-              {{ calculateDineroRestanteUsd() | currency }} USD
+              {{ calculateDineroRestanteUsd() | numberFormat }} USD
             </span>
           </ng-container>
 
@@ -87,14 +88,14 @@
             class="text-xl font-bold text-blue-700 mt-2"
             style="overflow-wrap: break-word; word-wrap: break-word"
           >
-            {{ totalIngresos | currency }} ARS
+            {{ totalIngresos | numberFormat }} ARS
           </span>
           <span
             *ngIf="totalIngresos !== 0 || totalIngresosUSD !== 0"
             class="text-xl font-bold text-blue-500 mt-1"
             style="overflow-wrap: break-word; word-wrap: break-word"
           >
-            {{ totalIngresosUSD | currency }} USD
+            {{ totalIngresosUSD | numberFormat }} USD
           </span>
 
           <div
@@ -139,10 +140,10 @@
                   >
                     <ng-container [ngSwitch]="currency.key">
                       <ng-container *ngSwitchCase="'ARS'">
-                        ${{ currency.value | number : "1.0-2" }} ARS
+                        ${{ currency.value | numberFormat }} ARS
                       </ng-container>
                       <ng-container *ngSwitchCase="'USD'">
-                        ${{ currency.value | number : "1.0-2" }} USD
+                        ${{ currency.value | numberFormat }} USD
                       </ng-container>
                     </ng-container>
                   </span>
@@ -514,8 +515,7 @@
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getTotalByStatusAndCurrency("Por pagar", "ARS")
-                  | currency : "" : "symbol" : "1.0-0"
+                getTotalByStatusAndCurrency("Por pagar", "ARS") | numberFormat
               }}
               ARS
             </span>
@@ -675,12 +675,12 @@
               >
                 <input
                   type="text"
-                  [(ngModel)]="currentExpense.value"
-                  (ngModelChange)="handleValueChange($event)"
+                  [value]="currentExpense.valueFormatted"
+                  (input)="handleInput($event)"
                   [ngClass]="{
                     'border-red-500': !currentExpense.value && isSaveAttempted
                   }"
-                  placeholder="0.00"
+                  placeholder="0,00"
                   class="border border-gray-300 rounded px-3 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
@@ -863,9 +863,9 @@
                       >EUR</span
                     >
                   </ng-container>
-                  <span class="text-sm font-semibold">{{
-                    item.value | number : "1.0"
-                  }}</span>
+                  <span class="text-sm font-semibold"
+                    >{{ item.value | numberFormat }}
+                  </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>

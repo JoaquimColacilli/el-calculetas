@@ -285,11 +285,21 @@ export class DashboardComponent implements OnInit {
     this.isLoadingData = true;
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
-        this.financeItems = expenses;
+        this.financeItems = expenses.map((expense) => {
+          // Convertir expense.value a número y luego a string para mantener la consistencia
+          const numericValue = parseFloat(String(expense.value));
+
+          // Formatear el valor numérico a la cadena deseada
+          const formattedValue = this.formatCurrency(numericValue);
+
+          return {
+            ...expense,
+            value: String(numericValue), // Mantener value como string
+            valueFormatted: formattedValue, // Usar el valor formateado para mostrar
+          };
+        });
 
         this.updateExpensesStatus();
-
-        console.log(this.financeItems);
         this.isLoadingData = false;
       },
       error: (error) => {
@@ -297,6 +307,18 @@ export class DashboardComponent implements OnInit {
         this.isLoadingData = false;
       },
     });
+  }
+
+  formatCurrency(value: number): string {
+    // Convertir el valor en string y separar parte entera de decimal
+    let [integerPart, decimalPart] = value.toFixed(2).split('.');
+
+    // Formatear la parte entera con puntos para los miles
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    console.log(integerPart);
+    console.log(decimalPart);
+    return `${integerPart},${decimalPart}`;
   }
 
   loadSalaries(): void {
@@ -424,10 +446,18 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    console.log(this.currentExpense.value);
+
     // Convertir el valor a número, quitar puntos y luego volver a string
     this.currentExpense.value = this.currentExpense.value
-      ? parseFloat(this.currentExpense.value.replace(/\./g, '')).toString()
-      : '0'; // Asegura que se guarde como string
+      ? parseFloat(
+          this.currentExpense.value
+            .replace(/\./g, '') // Quitar puntos de miles
+            .replace(',', '.') // Reemplazar coma por punto para decimales
+        ).toFixed(2) // Asegurar que el valor siempre tenga dos decimales
+      : '0'; // Asegurar que se guarde como string
+
+    console.log(this.currentExpense.value);
 
     this.showAddExpense(this.currentExpense.name);
 
@@ -761,15 +791,35 @@ export class DashboardComponent implements OnInit {
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
   }
 
-  handleValueChange(value: string): void {
-    // Remover todo lo que no sea número y los puntos anteriores
-    let numericValue = value.replace(/\D/g, '');
+  handleInput(event: any): void {
+    let value = event.target.value;
 
-    // Aplicar el formato de miles usando puntos
-    const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Eliminar los puntos y luego manejar el valor normalmente
+    let numericValue = value.replace(/\./g, '');
 
-    // Asignar el valor formateado al modelo
-    this.currentExpense.value = formattedValue;
+    // Permitir solo números y coma
+    numericValue = numericValue.replace(/[^\d,]/g, '');
+
+    // Si existe una coma, separar la parte entera de la decimal
+    if (value.includes(',')) {
+      let [integerPart, decimalPart] = numericValue.split(',');
+
+      // Limitar la parte decimal a solo dos dígitos
+      decimalPart = decimalPart.slice(0, 2);
+
+      // Formatear la parte entera con puntos para miles
+      integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+      // Combinar la parte entera y decimal
+      numericValue = `${integerPart},${decimalPart}`;
+    } else {
+      // Si no hay coma, formatear solo la parte entera
+      numericValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // Actualizar el valor del input
+    event.target.value = numericValue;
+    this.currentExpense.value = numericValue;
   }
 
   getCurrentMonthItems(): FinanceInterface[] {

@@ -2,14 +2,19 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'numberFormat',
-  standalone: true, // Asegúrate de que esta línea esté presente
+  standalone: true,
 })
 export class NumberFormatPipe implements PipeTransform {
   transform(value: number | string): string {
     if (!value) return '';
-    return Number(value).toLocaleString('es-ES', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
+
+    // Convertir el valor a número si viene como string
+    let numberValue = typeof value === 'string' ? parseFloat(value) : value;
+
+    // Usar toLocaleString con configuraciones específicas
+    return numberValue.toLocaleString('es-ES', {
+      minimumFractionDigits: 2, // Asegura que siempre haya 2 decimales
+      maximumFractionDigits: 2, // Limita a 2 decimales
     });
   }
 }

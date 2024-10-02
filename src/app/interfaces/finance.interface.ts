@@ -6,6 +6,7 @@ export interface FinanceInterface {
   status: string;
   date: string;
   value: string;
+  valueFormatted?: string;
   currency: string;
   name: string;
   provider: string;
