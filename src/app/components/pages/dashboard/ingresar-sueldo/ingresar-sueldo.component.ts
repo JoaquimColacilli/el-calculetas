@@ -61,36 +61,41 @@ export class IngresarSueldoComponent implements OnInit {
       Array.isArray(this.data.salaryDetails) &&
       this.data.salaryDetails.length > 0
     ) {
-      // Si hay sueldos ingresados anteriormente
       this.salaries = [];
       this.selectedCurrencies = [];
       this.isCurrencySelected = [];
       this.validForNextMonth = [];
 
       this.data.salaryDetails.forEach((detail) => {
-        // Evitar sueldos con amount 0
         if (detail.amount > 0) {
-          this.salaries.push(`$${detail.amount}`);
+          const formattedAmount = this.formatSalary(detail.amount);
+          this.salaries.push(`$${formattedAmount}`);
           this.selectedCurrencies.push(detail.currency);
           this.isCurrencySelected.push(true);
-          this.validForNextMonth.push(detail.validForNextMonth ?? true); // Inicializar con true por defecto
+          this.validForNextMonth.push(detail.validForNextMonth ?? true);
         }
       });
 
-      // Si todos los sueldos tienen amount 0, mostrar un input vacío para ingresar un nuevo sueldo
       if (this.salaries.length === 0) {
         this.salaries.push('');
         this.selectedCurrencies.push('');
         this.isCurrencySelected.push(false);
-        this.validForNextMonth.push(true); // Inicializar con true
+        this.validForNextMonth.push(true);
       }
     } else {
-      // Si no hay sueldos anteriores, inicializar con un input vacío
       this.salaries = [''];
       this.selectedCurrencies = [''];
       this.isCurrencySelected = [false];
       this.validForNextMonth = [true];
     }
+    console.log(this.salaries);
+  }
+
+  // Nueva función para formatear el salario
+  formatSalary(amount: number): string {
+    const integerPart = Math.floor(amount).toLocaleString('es-ES'); // Formatea los miles
+    const decimalPart = (amount % 1).toFixed(2).substring(2); // Asegura dos dígitos decimales
+    return `${integerPart},${decimalPart}`;
   }
 
   closeModal(): void {
@@ -111,16 +116,61 @@ export class IngresarSueldoComponent implements OnInit {
 
   updateSalaries(index: number, event: Event): void {
     const inputElement = event.target as HTMLInputElement;
-    const value = inputElement.value.replace(/[^0-9]/g, '');
 
+    // Guardar la posición actual del cursor
+    let cursorPosition = inputElement.selectionStart || 0;
+
+    // Obtener el valor del input y limpiar caracteres no permitidos
+    let value = inputElement.value.replace(/[^0-9,]/g, '');
+
+    // Si el valor está vacío, inicializar con "0,00"
     if (value === '') {
-      inputElement.placeholder = '$0';
-      this.salaries[index] = '';
-    } else {
-      this.salaries[index] = `$${value.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+      this.salaries[index] = '$0,00';
+      return;
     }
 
+    // Separar parte entera y decimal
+    let [integerPart, decimalPart = '00'] = value.split(',');
+
+    // Limitar la parte decimal a solo dos dígitos
+    decimalPart = decimalPart.substring(0, 2).padEnd(2, '0');
+
+    // Eliminar puntos de miles y formatear nuevamente
+    integerPart = parseInt(integerPart.replace(/\./g, ''), 10).toLocaleString(
+      'es-ES'
+    );
+
+    // Recombinar parte entera y decimal
+    const formattedValue = `$${integerPart},${decimalPart}`;
+
+    // Establecer el nuevo valor formateado
+    this.salaries[index] = formattedValue;
+
+    // Actualizar el valor en el input
+    inputElement.value = formattedValue;
+
+    // Si el cursor estaba antes de la coma, moverlo justo después del número ingresado
+    if (cursorPosition < inputElement.value.indexOf(',')) {
+      cursorPosition += 1;
+    }
+
+    // Restaurar la posición del cursor al final del número ingresado
+    inputElement.setSelectionRange(cursorPosition, cursorPosition);
+
+    // Recalcular los salarios totales
     this.calculateTotalSalaries();
+  }
+
+  handleComma(event: KeyboardEvent): void {
+    const inputElement = event.target as HTMLInputElement;
+
+    if (event.key === ',') {
+      event.preventDefault();
+      const position = inputElement.value.indexOf(',');
+      if (position !== -1) {
+        inputElement.setSelectionRange(position + 1, position + 1);
+      }
+    }
   }
 
   preventDollarRemoval(event: Event): void {
@@ -161,10 +211,9 @@ export class IngresarSueldoComponent implements OnInit {
           validForNextMonth,
         };
       })
-      .filter((salary) => salary.amount > 0 && salary.currency); // Filtrar solo sueldos con valores válidos
+      .filter((salary) => salary.amount > 0 && salary.currency);
 
     console.log(salaryDetails);
-    // Devolver el array de sueldos válidos
     this.dialogRef.close(salaryDetails);
   }
 

@@ -40,6 +40,18 @@
         <span>Ahorros</span>
       </a>
 
+      <a
+        [routerLink]="'/novedades'"
+        routerLinkActive="active"
+        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+      >
+        <fa-icon
+          [icon]="['fas', 'bell']"
+          class="mb-2 group-hover:text-blue-500"
+        ></fa-icon>
+        <span>Novedades</span>
+      </a>
+
       <!-- Papelera Temporal -->
       <a
         [routerLink]="'/papelera-temporal'"

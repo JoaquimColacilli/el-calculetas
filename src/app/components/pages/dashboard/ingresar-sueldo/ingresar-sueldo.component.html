@@ -35,13 +35,11 @@
               [(ngModel)]="salaries[i]"
               name="salary{{ i }}"
               class="bg-transparent border-none outline-none text-center w-full max-w-sm h-12 appearance-none"
-              placeholder="$0"
-              inputmode="numeric"
-              pattern="[0-9]*"
+              placeholder="$0,00"
+              inputmode="decimal"
               maxlength="14"
               (input)="updateSalaries(i, $event); preventDollarRemoval($event)"
               aria-label="Ingresar sueldo"
-              style="-moz-appearance: textfield; margin-bottom: 8px"
             />
           </div>
 

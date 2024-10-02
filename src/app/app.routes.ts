@@ -8,6 +8,7 @@ import { PapeleraTemporalComponent } from './components/pages/papelera-temporal/
 import { AhorrosComponent } from './components/pages/ahorros/ahorros.component';
 import { EstadisticasComponent } from './components/pages/estadisticas/estadisticas.component';
 import { AuthGuard } from './guard/auth.guard';
+import { NovedadesComponent } from './components/pages/novedades/novedades.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -29,6 +30,11 @@ export const routes: Routes = [
   {
     path: 'estadisticas',
     component: EstadisticasComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'novedades',
+    component: NovedadesComponent,
     canActivate: [AuthGuard],
   },
   { path: '**', redirectTo: 'login' },
