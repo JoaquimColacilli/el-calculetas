@@ -25,6 +25,8 @@ export class IngresarSueldoComponent implements OnInit {
   isCurrencySelected: boolean[] = [false];
   validForNextMonth: boolean[] = [true];
 
+  lastModified: (Date | null)[] = [];
+
   totalSalaryInDollarsArray: number[] = [];
   totalSalaryInArsArray: number[] = [];
   totalCombinedSalaryInArs: number = 0;
@@ -47,6 +49,7 @@ export class IngresarSueldoComponent implements OnInit {
         amount: number;
         currency: string;
         validForNextMonth: boolean;
+        lastModified?: Date | null;
       }>;
     },
     library: FaIconLibrary
@@ -65,6 +68,7 @@ export class IngresarSueldoComponent implements OnInit {
       this.selectedCurrencies = [];
       this.isCurrencySelected = [];
       this.validForNextMonth = [];
+      this.lastModified = [];
 
       this.data.salaryDetails.forEach((detail) => {
         if (detail.amount > 0) {
@@ -73,6 +77,11 @@ export class IngresarSueldoComponent implements OnInit {
           this.selectedCurrencies.push(detail.currency);
           this.isCurrencySelected.push(true);
           this.validForNextMonth.push(detail.validForNextMonth ?? true);
+          this.lastModified.push(
+            detail.lastModified ? new Date(detail.lastModified) : null
+          );
+
+          console.log(this.lastModified);
         }
       });
 
@@ -81,14 +90,15 @@ export class IngresarSueldoComponent implements OnInit {
         this.selectedCurrencies.push('');
         this.isCurrencySelected.push(false);
         this.validForNextMonth.push(true);
+        this.lastModified.push(null);
       }
     } else {
       this.salaries = [''];
       this.selectedCurrencies = [''];
       this.isCurrencySelected = [false];
       this.validForNextMonth = [true];
+      this.lastModified = [null];
     }
-    console.log(this.salaries);
   }
 
   // Nueva función para formatear el salario
@@ -109,6 +119,7 @@ export class IngresarSueldoComponent implements OnInit {
       this.selectedCurrencies.push('');
       this.isCurrencySelected.push(false);
       this.validForNextMonth.push(true); // Inicializar con true
+      this.lastModified.push(new Date()); // Añadir fecha de modificación actual
     } else {
       console.warn('Complete el sueldo anterior antes de agregar uno nuevo.');
     }
@@ -117,47 +128,43 @@ export class IngresarSueldoComponent implements OnInit {
   updateSalaries(index: number, event: Event): void {
     const inputElement = event.target as HTMLInputElement;
 
-    // Guardar la posición actual del cursor
+    const previousValue = this.salaries[index];
+
     let cursorPosition = inputElement.selectionStart || 0;
 
-    // Obtener el valor del input y limpiar caracteres no permitidos
     let value = inputElement.value.replace(/[^0-9,]/g, '');
 
-    // Si el valor está vacío, inicializar con "0,00"
     if (value === '') {
       this.salaries[index] = '$0,00';
       return;
     }
 
-    // Separar parte entera y decimal
     let [integerPart, decimalPart = '00'] = value.split(',');
 
-    // Limitar la parte decimal a solo dos dígitos
     decimalPart = decimalPart.substring(0, 2).padEnd(2, '0');
 
-    // Eliminar puntos de miles y formatear nuevamente
     integerPart = parseInt(integerPart.replace(/\./g, ''), 10).toLocaleString(
       'es-ES'
     );
 
-    // Recombinar parte entera y decimal
     const formattedValue = `$${integerPart},${decimalPart}`;
 
-    // Establecer el nuevo valor formateado
+    if (previousValue === formattedValue) {
+      return;
+    }
+
     this.salaries[index] = formattedValue;
 
-    // Actualizar el valor en el input
     inputElement.value = formattedValue;
 
-    // Si el cursor estaba antes de la coma, moverlo justo después del número ingresado
     if (cursorPosition < inputElement.value.indexOf(',')) {
       cursorPosition += 1;
     }
 
-    // Restaurar la posición del cursor al final del número ingresado
     inputElement.setSelectionRange(cursorPosition, cursorPosition);
 
-    // Recalcular los salarios totales
+    this.lastModified[index] = new Date();
+
     this.calculateTotalSalaries();
   }
 
@@ -200,15 +207,23 @@ export class IngresarSueldoComponent implements OnInit {
   saveSalary(): void {
     const salaryDetails = this.salaries
       .map((salary, index) => {
+        const previousValue = this.data.salaryDetails?.[index]?.amount || 0;
         const value =
           parseFloat(salary.replace(/[^\d,]/g, '').replace(/,/g, '.')) || 0;
         const currency = this.selectedCurrencies[index];
         const validForNextMonth = this.validForNextMonth[index];
 
+        const lastModified =
+          previousValue !== value
+            ? new Date().toISOString()
+            : this.lastModified[index]?.toISOString() ||
+              new Date().toISOString();
+
         return {
           amount: value,
           currency,
           validForNextMonth,
+          lastModified,
         };
       })
       .filter((salary) => salary.amount > 0 && salary.currency);

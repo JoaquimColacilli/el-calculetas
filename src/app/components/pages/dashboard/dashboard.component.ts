@@ -134,6 +134,7 @@ export class DashboardComponent implements OnInit {
     amount: number;
     currency: string;
     validForNextMonth: boolean;
+    lastModified?: Date;
   }> = [];
 
   sortOrder: 'asc' | 'desc' = 'desc';
@@ -689,8 +690,16 @@ export class DashboardComponent implements OnInit {
     amount: number;
     currency: string;
     validForNextMonth: boolean;
+    lastModified?: Date;
   }> {
-    return this.salaryDetails || [];
+    return this.salaryDetails.map((detail) => ({
+      amount: detail.amount,
+      currency: detail.currency,
+      validForNextMonth: detail.validForNextMonth,
+      lastModified: detail.lastModified
+        ? new Date(detail.lastModified)
+        : new Date(),
+    }));
   }
 
   toggleSortOrder() {
