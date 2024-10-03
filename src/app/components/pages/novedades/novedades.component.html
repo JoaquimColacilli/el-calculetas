@@ -1,134 +1,250 @@
-<!-- Pantalla de Novedades -->
+<!-- Pantalla de Novedades estilo chat -->
 <div class="flex h-screen bg-gray-100">
   <app-aside></app-aside>
 
   <div class="flex-1 flex flex-col">
     <app-navbar></app-navbar>
 
-    <main class="p-6 flex-1 overflow-y-auto">
-      <div class="bg-gray-100 min-h-screen py-4">
+    <main class="p-6 flex-1 overflow-y-hidden flex flex-col">
+      <!-- Contenedor de chat con scroll interno -->
+      <div
+        #scrollContainer
+        class="flex-1 overflow-y-auto bg-gray-200 p-4 rounded-lg shadow-md"
+      >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center">
-            <h1 class="text-5xl font-extrabold text-gray-900">Novedades</h1>
-            <p class="mt-4 text-lg text-gray-500 italic">
-              <fa-icon
-                [icon]="['fas', 'clock']"
-                class="text-blue-500"
-              ></fa-icon>
-              Última actualización: Versión 1.2.0 - 02/10/2024 - 18:58hs
-            </p>
-          </div>
-
-          <div class="mt-10">
-            <div class="bg-white shadow-xl rounded-lg p-8 md:p-12">
-              <div class="flex items-center mb-6">
-                <fa-icon
-                  [icon]="['fas', 'check-circle']"
-                  class="text-green-500 mr-4 text-2xl"
-                ></fa-icon>
-                <h2 class="text-3xl font-bold text-gray-700">
-                  v1.2.0 - Update
-                </h2>
+          <div
+            class="flex items-start mb-6"
+            [attr.data-message-id]="messageId_1"
+          >
+            <img
+              [src]="userProfilePicture"
+              alt="Foto del Admin"
+              class="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+            <div class="bg-white shadow-lg rounded-lg p-4 flex-1 relative">
+              <div class="flex justify-between items-center">
+                <span class="text-blue-500 font-semibold">Joaquim 😊</span>
               </div>
-
-              <ul class="list-disc list-inside text-gray-600 space-y-4">
-                <li class="flex items-start">
+              <p class="mt-2 text-gray-500 text-sm italic">
+                <fa-icon [icon]="['fas', 'clock']" class="mr-2"></fa-icon>
+                Última actualización: v1.2.0 - 02/10/2024 - 18:58hs
+              </p>
+              <div class="mt-4">
+                <div class="flex items-center mb-2">
                   <fa-icon
-                    [icon]="['fas', 'bug']"
-                    class="text-red-500 mr-3"
+                    [icon]="['fas', 'check-circle']"
+                    class="text-green-500 mr-2"
                   ></fa-icon>
-                  <span class="text-lg">
+                  <h3 class="text-xl font-semibold text-gray-700">
+                    v1.2.0 - Actualización
+                  </h3>
+                </div>
+                <ul class="list-disc list-inside text-gray-600 space-y-4">
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
                     Corrección de bugs al cambiar estado de un pago en una
                     pantalla que no sea "Este mes".
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'bug']"
-                    class="text-red-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
                     Corrección de bug de estado en gasto (pagado/por
                     pagar/vencido) cuando se edita un pago.
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'coins']"
-                    class="text-yellow-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'coins']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
                     Se agrega funcionalidad para agregar centavos a sueldo.
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'calendar-alt']"
-                    class="text-blue-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'calendar-alt']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
                     Se agrega fecha de modificación al ingresar un sueldo.
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'calculator']"
-                    class="text-purple-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'calculator']"
+                      class="text-purple-500 mr-3"
+                    ></fa-icon>
                     Se pueden agregar decimales a gastos.
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'file-invoice-dollar']"
-                    class="text-blue-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'file-invoice-dollar']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
                     Se arregla formateo de números para mostrarlo en formato
                     es-AR.
-                  </span>
-                </li>
-                <li class="flex items-start">
-                  <fa-icon
-                    [icon]="['fas', 'desktop']"
-                    class="text-green-500 mr-3"
-                  ></fa-icon>
-                  <span class="text-lg">
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'desktop']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
                     Se agrega la nueva pantalla de "Novedades".
-                  </span>
-                </li>
-              </ul>
-
-              <div class="mt-10 border-t border-gray-200 pt-6">
-                <h3 class="text-2xl font-semibold text-blue-500 mb-4">
-                  <fa-icon
-                    [icon]="['fas', 'chart-line']"
-                    class="text-blue-500 mr-2"
-                  ></fa-icon>
-                  Mejoras visuales y rendimiento:
-                </h3>
-                <p class="text-lg text-gray-600">
-                  Se optimizó la experiencia de usuario con mejoras en la
-                  interfaz y tiempos de carga más rápidos.
-                </p>
+                  </li>
+                </ul>
               </div>
 
-              <div class="mt-10 border-t border-gray-200 pt-6">
-                <h3 class="text-2xl font-semibold text-blue-500 mb-4">
-                  <fa-icon
-                    [icon]="['fas', 'tools']"
-                    class="text-blue-500 mr-2"
-                  ></fa-icon>
-                  Próximas actualizaciones:
-                </h3>
-                <p class="text-lg text-gray-600">
-                  Trabajando en nuevas funcionalidades para mejorar la
-                  experiencia. ¡Mantente atento para más novedades! 😊
-                </p>
+              <hr class="styled-hr mt-4" />
+
+              <div class="flex items-center mt-4 justify-start">
+                <fa-icon
+                  [icon]="['fas', 'smile']"
+                  class="text-gray-500 cursor-pointer"
+                  (click)="toggleReactionMenu('message_1')"
+                ></fa-icon>
+              </div>
+
+              <div
+                *ngIf="showReactionMenu_1"
+                class="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 flex space-x-4"
+              >
+                <span
+                  *ngFor="let reaction of reactions"
+                  class="reaction-emoji"
+                  (click)="addReaction(reaction, messageId_1)"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+
+              <!-- Mostrando las reacciones actuales -->
+              <div
+                *ngIf="selectedReactions_1.length > 0"
+                class="flex space-x-2 mt-4"
+              >
+                <span
+                  *ngFor="let reaction of selectedReactions_1"
+                  class="reaction-container"
+                >
+                  <!-- Aquí aplicas los estilos para las reacciones -->
+                  <div
+                    class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                  >
+                    {{ reaction.emoji }} {{ reaction.username }}
+                  </div>
+                </span>
               </div>
             </div>
           </div>
+
+          <!-- Mensaje del admin para v1.2.1 -->
+          <div
+            class="flex items-start mb-6"
+            [attr.data-message-id]="messageId_2"
+          >
+            <img
+              [src]="userProfilePicture"
+              alt="Foto del Admin"
+              class="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+            <div class="bg-white shadow-lg rounded-lg p-4 flex-1 relative">
+              <div class="flex justify-between items-center">
+                <span class="text-blue-500 font-semibold">Joaquim 😊</span>
+              </div>
+              <p class="mt-2 text-gray-500 text-sm italic">
+                <fa-icon [icon]="['fas', 'clock']" class="mr-2"></fa-icon>
+                Última actualización: v1.2.1 - 03/10/2024 - 00:30hs
+              </p>
+              <div class="mt-4">
+                <div class="flex items-center mb-2">
+                  <fa-icon
+                    [icon]="['fas', 'check-circle']"
+                    class="text-green-500 mr-2"
+                  ></fa-icon>
+                  <h3 class="text-xl font-semibold text-gray-700">
+                    v1.2.1 - Actualización
+                  </h3>
+                </div>
+                <ul class="list-disc list-inside text-gray-600 space-y-4">
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
+                    Se arregla bug que causaba que un gasto del día 01 no se
+                    mostrara en "Este mes".
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
+                    Se arregla bug en los valores de gastos (antes se mostraba
+                    "1000,00" en lugar de "1.000,00").
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
+                    Se arregla bug que mostraba "undefined" en el campo de valor
+                    al agregar un gasto nuevo.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'smile']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Se agrega reacciones a mensajes de Novedades
+                  </li>
+                </ul>
+              </div>
+
+              <hr class="styled-hr mt-4" />
+
+              <div class="flex items-center mt-4 justify-start">
+                <fa-icon
+                  [icon]="['fas', 'smile']"
+                  class="text-gray-500 cursor-pointer"
+                  (click)="toggleReactionMenu('message_2')"
+                ></fa-icon>
+              </div>
+
+              <div
+                *ngIf="showReactionMenu_2"
+                class="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 flex space-x-4"
+              >
+                <span
+                  *ngFor="let reaction of reactions"
+                  class="reaction-emoji"
+                  (click)="addReaction(reaction, messageId_2)"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+
+              <!-- Mostrando las reacciones actuales -->
+              <div
+                *ngIf="selectedReactions_2.length > 0"
+                class="flex space-x-2 mt-4"
+              >
+                <span
+                  *ngFor="let reaction of selectedReactions_2"
+                  class="reaction-container"
+                >
+                  <!-- Aquí aplicas los estilos para las reacciones -->
+                  <div
+                    class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                  >
+                    {{ reaction.emoji }} {{ reaction.username }}
+                  </div>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensaje del admin para v1.2.0 -->
         </div>
       </div>
     </main>

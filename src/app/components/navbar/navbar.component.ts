@@ -50,14 +50,12 @@ export class NavbarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.authService.userData$.subscribe(
-      (userData) => {
-        this.userData = userData;
-      },
-      (error) => {
-        console.error('Error cargando datos del usuario:', error);
-      }
-    );
+    // Verificar si hay un usuario autenticado antes de cargar los datos
+    const currentUser = this.authService.currentUserSig();
+
+    if (currentUser && currentUser.uid) {
+      this.loadUserData();
+    }
 
     this.updateDateTime();
     this.intervalId = setInterval(() => this.updateDateTime(), 1000);

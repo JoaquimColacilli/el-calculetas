@@ -286,16 +286,14 @@ export class DashboardComponent implements OnInit {
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
         this.financeItems = expenses.map((expense) => {
-          // Convertir expense.value a número y luego a string para mantener la consistencia
           const numericValue = parseFloat(String(expense.value));
 
-          // Formatear el valor numérico a la cadena deseada
           const formattedValue = this.formatCurrency(numericValue);
 
           return {
             ...expense,
-            value: String(numericValue), // Mantener value como string
-            valueFormatted: formattedValue, // Usar el valor formateado para mostrar
+            value: String(numericValue),
+            valueFormatted: formattedValue,
           };
         });
 
@@ -364,11 +362,11 @@ export class DashboardComponent implements OnInit {
 
   updateExpensesStatus(): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Normalizar "today" a medianoche
 
     this.financeItems.forEach((expense) => {
       const expenseDate = this.parseDateForFinance(expense.date);
-      expenseDate.setHours(0, 0, 0, 0);
+      expenseDate.setHours(0, 0, 0, 0); // Normalizar la fecha del gasto a medianoche
 
       if (!expense.id) {
         console.warn(
@@ -473,6 +471,7 @@ export class DashboardComponent implements OnInit {
 
     this.addingExpense = false;
 
+    console.log(this.currentExpense.date);
     // Verificar si isPaid es true, entonces no cambiar status
     if (this.currentExpense.isPaid) {
       this.currentExpense.status = 'Pagado';
@@ -831,6 +830,7 @@ export class DashboardComponent implements OnInit {
       case 'Este mes':
         return this.financeItems.filter((item) => {
           const itemDate = this.parseDate(item.date);
+          // console.log('ESTA mes', itemDate, item.name);
           return (
             itemDate.getFullYear() === currentYear &&
             itemDate.getMonth() === currentMonth
@@ -840,6 +840,7 @@ export class DashboardComponent implements OnInit {
       case 'Este año':
         return this.financeItems.filter((item) => {
           const itemDate = this.parseDate(item.date);
+          // console.log('ESTA año');
           return itemDate.getFullYear() === currentYear;
         });
 
@@ -848,6 +849,7 @@ export class DashboardComponent implements OnInit {
         const endOfWeek = this.getEndOfWeek(now);
         return this.financeItems.filter((item) => {
           const itemDate = this.parseDate(item.date);
+          // console.log('ESTA SEMNA');
           return itemDate >= startOfWeek && itemDate <= endOfWeek;
         });
 
@@ -856,25 +858,110 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  parseDateForComparison(dateString: string): Date {
+    if (dateString.includes('-')) {
+      const dateParts = dateString.split('-');
+      // Esto asegura que al crear la fecha, se haga a medianoche para evitar problemas con horas.
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Los meses en JS son de 0 a 11
+      const day = parseInt(dateParts[2], 10);
+      return new Date(year, month, day, 0, 0, 0, 0); // Fecha con la hora 00:00
+    } else if (dateString.includes('/')) {
+      const dateParts = dateString.split('/');
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Los meses en JS son de 0 a 11
+      const year = parseInt(dateParts[2], 10);
+      return new Date(year, month, day, 0, 0, 0, 0); // Fecha con la hora 00:00
+    }
+
+    return new Date('Invalid Date'); // Si el formato no es reconocido
+  }
+
+  getExpensesForThisMonth(): FinanceInterface[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 es enero, 11 es diciembre
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDateForComparison(item.date); // Usar la nueva función para asegurar que la fecha se compare correctamente
+      return (
+        itemDate.getFullYear() === currentYear &&
+        itemDate.getMonth() === currentMonth
+      );
+    });
+  }
+
+  getExpensesForThisWeek(): FinanceInterface[] {
+    const now = new Date();
+    const startOfWeek = this.getStartOfWeek(now);
+    const endOfWeek = this.getEndOfWeek(now);
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDate(item.date);
+      return itemDate >= startOfWeek && itemDate <= endOfWeek;
+    });
+  }
+
   getStartOfWeek(date: Date): Date {
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que el inicio de la semana sea el lunes
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que el lunes sea el inicio
     const startOfWeek = new Date(date.setDate(diff));
-    startOfWeek.setHours(0, 0, 0, 0); // Asegura que el tiempo sea a la medianoche
+    startOfWeek.setHours(0, 0, 0, 0); // Normaliza a medianoche
     return startOfWeek;
   }
 
   getEndOfWeek(date: Date): Date {
     const startOfWeek = this.getStartOfWeek(date);
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Ajusta para que el fin de la semana sea el domingo
-    endOfWeek.setHours(23, 59, 59, 999); // Asegura que el tiempo sea al final del día
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Fin de semana (domingo)
+    endOfWeek.setHours(23, 59, 59, 999);
     return endOfWeek;
   }
 
+  getExpensesForThisYear(): FinanceInterface[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDate(item.date);
+      return itemDate.getFullYear() === currentYear;
+    });
+  }
+
+  getFilteredExpenses(): FinanceInterface[] {
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        return this.getExpensesForThisMonth();
+      case 'Esta semana':
+        return this.getExpensesForThisWeek();
+      case 'Este año':
+        return this.getExpensesForThisYear();
+      default:
+        return this.financeItems;
+    }
+  }
+
   // Método para calcular los gastos del mes agrupados por moneda
-  getGroupedExpensesCurrentMonth(): { [key: string]: number } {
-    const grouped = this.getCurrentMonthItems().reduce((acc, item) => {
+  getGroupedExpenses(): { [key: string]: number } {
+    let filteredItems: FinanceInterface[];
+
+    // Filtrar los gastos según la vista seleccionada
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        filteredItems = this.getExpensesForThisMonth();
+        break;
+      case 'Esta semana':
+        filteredItems = this.getExpensesForThisWeek();
+        break;
+      case 'Este año':
+        filteredItems = this.getExpensesForThisYear();
+        break;
+      default:
+        filteredItems = this.financeItems;
+    }
+
+    // Agrupar los gastos por moneda
+    const grouped = filteredItems.reduce((acc, item) => {
       const value = parseFloat(String(item.value));
       if (!acc[item.currency]) {
         acc[item.currency] = 0;
@@ -883,7 +970,6 @@ export class DashboardComponent implements OnInit {
       return acc;
     }, {} as { [key: string]: number });
 
-    //console.log('Grouped Expenses:', grouped); // Verifica aquí si los ARS están incluidos
     return grouped;
   }
 
@@ -1152,9 +1238,9 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  hasExpensesCurrentMonth(): boolean {
-    const expenses = this.getGroupedExpensesCurrentMonth();
-    return Object.keys(expenses).length > 0;
+  hasExpenses(): boolean {
+    const groupedExpenses = this.getGroupedExpenses();
+    return Object.keys(groupedExpenses).length > 0;
   }
 
   viewProfile(): void {
@@ -1291,18 +1377,26 @@ export class DashboardComponent implements OnInit {
   filterByDate(items: FinanceInterface[]): FinanceInterface[] {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+    const currentMonth = now.getMonth(); // Mes actual de 0 (enero) a 11 (diciembre)
+
+    // Normaliza la fecha de "now" a medianoche para evitar problemas de horas
+    now.setHours(0, 0, 0, 0);
 
     switch (this.options[this.currentIndex]) {
       case 'Este mes':
         return items.filter((item) => {
           const itemDate = this.parseDate(item.date);
+
+          // Normaliza también la fecha del gasto a medianoche
+          itemDate.setHours(0, 0, 0, 0);
+
           return (
             itemDate.getFullYear() === currentYear &&
             itemDate.getMonth() === currentMonth
           );
         });
 
+      // Resto de los casos sin cambios
       case 'Esta semana':
         const currentWeekStart = this.getStartOfWeek(now);
         const currentWeekEnd = this.getEndOfWeek(now);
@@ -1318,19 +1412,18 @@ export class DashboardComponent implements OnInit {
         });
 
       default:
-        // Asegúrate de que esta sección devuelva todos los ítems si no hay filtro
         return items;
     }
   }
 
   parseDate(dateString: string): Date {
     if (dateString.includes('-')) {
-      return new Date(dateString);
+      return new Date(dateString); // Manejo de formato ISO
     }
 
     const [day, month, year] = dateString.split('/').map(Number);
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-      return new Date(year, month - 1, day);
+      return new Date(year, month - 1, day); // Mes -1 porque Date maneja los meses de 0 a 11
     }
 
     return new Date('Invalid Date'); // Maneja fechas no válidas

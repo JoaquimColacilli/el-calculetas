@@ -1,13 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ElementRef,
+  ViewChild,
+  AfterViewInit,
+} from '@angular/core';
 import { PantallaEnConstruccionComponent } from '../../pantalla-en-construccion/pantalla-en-construccion.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../../../services/user.service';
+import { collection, collectionData, Firestore } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-novedades',
@@ -21,10 +29,113 @@ import { FormsModule } from '@angular/forms';
     FormsModule,
   ],
   templateUrl: './novedades.component.html',
-  styleUrl: './novedades.component.css',
+  styleUrls: ['./novedades.component.css'],
 })
-export class NovedadesComponent {
-  constructor(library: FaIconLibrary) {
+export class NovedadesComponent implements OnInit, AfterViewInit {
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
+  selectedVersion: string = 'v1.2.1';
+  userProfilePicture: string = '';
+  defaultProfilePicture = 'default_profile_picture.png';
+  showReactionMenu = false;
+
+  messageId_1: string = 'message_1';
+  messageId_2: string = 'message_2';
+
+  showReactionMenu_1 = false;
+  showReactionMenu_2 = false;
+  selectedReactions_1: { emoji: string; count: number; username: string }[] =
+    [];
+  selectedReactions_2: { emoji: string; count: number; username: string }[] =
+    [];
+
+  reactions = [
+    { emoji: '👍', name: 'like' },
+    { emoji: '❤️', name: 'love' },
+    { emoji: '😂', name: 'laugh' },
+    { emoji: '😮', name: 'surprise' },
+    { emoji: '😢', name: 'sad' },
+    { emoji: '🙏', name: 'pray' },
+  ];
+
+  constructor(
+    library: FaIconLibrary,
+    private userService: UserService,
+    private firestore: Firestore
+  ) {
     library.addIconPacks(fas);
+  }
+
+  ngOnInit(): void {
+    this.getReactions('message_1').subscribe((reactions: any[]) => {
+      this.selectedReactions_1 = reactions.map((reaction) => ({
+        emoji: reaction.emoji,
+        count: 1,
+        username: reaction.username || 'Anónimo',
+      }));
+    });
+
+    this.getReactions('message_2').subscribe((reactions: any[]) => {
+      this.selectedReactions_2 = reactions.map((reaction) => ({
+        emoji: reaction.emoji,
+        count: 1,
+        username: reaction.username || 'Anónimo',
+      }));
+    });
+
+    this.userService.getUserProfile('4gWQVe05xMgkVxBu8XeP0ktCjav1').subscribe(
+      (userData: any) => {
+        if (userData) {
+          this.userProfilePicture =
+            userData.profilePicture || this.defaultProfilePicture;
+        }
+      },
+      (error: any) => {
+        console.error('Error al obtener los datos del usuario:', error);
+      }
+    );
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.scrollToBottom();
+    }, 0); // Usamos setTimeout para asegurarnos que el contenido esté renderizado antes de hacer scroll
+  }
+
+  getReactions(messageId: string): Observable<any[]> {
+    const reactionsRef = collection(
+      this.firestore,
+      `messages/${messageId}/reactions`
+    );
+    return collectionData(reactionsRef, { idField: 'userId' });
+  }
+
+  addReaction(reaction: any, messageId: string) {
+    this.userService.addReaction(reaction, messageId).subscribe(() => {
+      console.log(`Reacción guardada para ${messageId}`);
+    });
+
+    if (messageId === 'message_1') {
+      this.showReactionMenu_1 = false;
+    } else if (messageId === 'message_2') {
+      this.showReactionMenu_2 = false;
+    }
+  }
+
+  toggleReactionMenu(messageId: string) {
+    if (messageId === 'message_1') {
+      this.showReactionMenu_1 = !this.showReactionMenu_1;
+      console.log(this.showReactionMenu_1);
+    } else if (messageId === 'message_2') {
+      this.showReactionMenu_2 = !this.showReactionMenu_2;
+    }
+  }
+  private scrollToBottom(): void {
+    try {
+      this.scrollContainer.nativeElement.scrollTop =
+        this.scrollContainer.nativeElement.scrollHeight;
+    } catch (err) {
+      console.error('Error al hacer scroll:', err);
+    }
   }
 }
