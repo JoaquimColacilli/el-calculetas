@@ -9,10 +9,18 @@ import {
   getDocs,
   setDoc,
 } from '@angular/fire/firestore';
-import { Observable, from, throwError, catchError, switchMap } from 'rxjs';
-import { map } from 'rxjs/operators';
+import {
+  Observable,
+  from,
+  throwError,
+  catchError,
+  switchMap,
+  EMPTY,
+} from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { UserInterface } from '../interfaces/user.interface';
+import { deleteDoc } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -73,5 +81,32 @@ export class UserService {
         return throwError(() => new Error('Error al guardar la reacción'));
       })
     );
+  }
+
+  removeReaction(reaction: any, messageId: string) {
+    const currentUser = this.authService.currentUserSig();
+    if (currentUser && currentUser.uid) {
+      const currentUserId = currentUser.uid;
+
+      const reactionDocRef = doc(
+        this.firestore,
+        `messages/${messageId}/reactions/${currentUserId}`
+      );
+
+      return from(deleteDoc(reactionDocRef)).pipe(
+        tap(() => {
+          console.log(
+            `Reacción ${reaction.emoji} eliminada para el usuario ${currentUserId}`
+          );
+        }),
+        catchError((error) => {
+          console.error('Error al eliminar la reacción:', error);
+          return throwError(error);
+        })
+      );
+    } else {
+      console.error('Usuario no autenticado');
+      return EMPTY;
+    }
   }
 }

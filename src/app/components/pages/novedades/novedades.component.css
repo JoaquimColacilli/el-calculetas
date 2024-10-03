@@ -75,3 +75,11 @@
   border-bottom: 10px solid transparent;
   border-right: 10px solid white; /* Color de fondo del contenedor */
 }
+
+.reaction-container {
+  cursor: pointer; /* Cambia el cursor a un puntero cuando haces hover */
+}
+
+.reaction-container:hover {
+  outline: none; /* Asegura que no haya ninguna línea o borde titilante */
+}

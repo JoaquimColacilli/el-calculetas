@@ -114,7 +114,13 @@
                 <span
                   *ngFor="let reaction of reactions"
                   class="reaction-emoji"
-                  (click)="addReaction(reaction, messageId_1)"
+                  (click)="
+                    addOrRemoveReaction(
+                      reaction,
+                      messageId_1,
+                      selectedReactions_1
+                    )
+                  "
                 >
                   {{ reaction.emoji }}
                 </span>
@@ -132,9 +138,20 @@
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
                     [title]="getReactionTitle(reaction)"
+                    (click)="
+                      addOrRemoveReaction(
+                        reaction,
+                        messageId_1,
+                        selectedReactions_1
+                      )
+                    "
+                    [ngClass]="{
+                      'ring-2 ring-blue-500 bg-blue-400 text-white':
+                        isReactionSelectedByUser(reaction),
+                      'ring-0': !isReactionSelectedByUser(reaction)
+                    }"
                   >
                     {{ reaction.emoji }} {{ reaction.count }}
-                    <!-- Muestra el emoji y el contador -->
                   </div>
                 </span>
               </div>
@@ -241,9 +258,20 @@
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
                     [title]="getReactionTitle(reaction)"
+                    (click)="
+                      addOrRemoveReaction(
+                        reaction,
+                        messageId_2,
+                        selectedReactions_2
+                      )
+                    "
+                    [ngClass]="{
+                      'ring-2 ring-blue-500 bg-blue-400 text-white':
+                        isReactionSelectedByUser(reaction),
+                      'ring-0': !isReactionSelectedByUser(reaction)
+                    }"
                   >
                     {{ reaction.emoji }} {{ reaction.count }}
-                    <!-- Muestra el emoji y el contador -->
                   </div>
                 </span>
               </div>
@@ -330,6 +358,18 @@
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
                     [title]="getReactionTitle(reaction)"
+                    (click)="
+                      addOrRemoveReaction(
+                        reaction,
+                        messageId_3,
+                        selectedReactions_3
+                      )
+                    "
+                    [ngClass]="{
+                      'ring-2 ring-blue-500 bg-blue-400 text-white':
+                        isReactionSelectedByUser(reaction),
+                      'ring-0': !isReactionSelectedByUser(reaction)
+                    }"
                   >
                     {{ reaction.emoji }} {{ reaction.count }}
                   </div>

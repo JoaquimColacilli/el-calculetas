@@ -15,7 +15,8 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 import { collection, collectionData, Firestore } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable, tap } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-novedades',
@@ -66,29 +67,13 @@ export class NovedadesComponent implements OnInit {
   constructor(
     library: FaIconLibrary,
     private userService: UserService,
-    private firestore: Firestore
+    private firestore: Firestore,
+    private authService: AuthService
   ) {
     library.addIconPacks(fas);
   }
 
   ngOnInit(): void {
-    // this.getReactions('message_1').subscribe((reactions: any[]) => {
-    //   this.selectedReactions_1 = reactions.map((reaction) => ({
-    //     emoji: reaction.emoji,
-    //     count: 1,
-    //     username: reaction.username || 'Anónimo',
-    //   }));
-    // });
-
-    // this.getReactions('message_2').subscribe((reactions: any[]) => {
-    //   this.selectedReactions_2 = reactions.map((reaction) => ({
-    //     emoji: reaction.emoji,
-    //     count: 1,
-    //     username: reaction.username || 'Anónimo',
-    //   }));
-
-    // });
-
     this.getReactions('message_1').subscribe((reactions: any[]) => {
       this.selectedReactions_1 = this.groupReactionsByEmoji(reactions);
     });
@@ -135,6 +120,75 @@ export class NovedadesComponent implements OnInit {
       const remainingUsers = userCount - 3;
       return `${firstThreeUsers} y ${remainingUsers} personas más han reaccionado con ${reaction.emoji}`;
     }
+  }
+
+  // Función para manejar agregar o eliminar reacciones
+  addOrRemoveReaction(reaction: any, messageId: string, reactionsList: any[]) {
+    const currentUser = this.authService.currentUserSig();
+    console.log(currentUser);
+
+    if (currentUser && currentUser.uid) {
+      const currentUserId = currentUser.uid;
+      const existingReaction = reactionsList.find(
+        (r) =>
+          r.emoji === reaction.emoji && r.users.includes(currentUser.username)
+      );
+
+      console.log(existingReaction);
+      console.log(reactionsList);
+
+      if (existingReaction) {
+        // Eliminar reacción si ya existe
+        return this.userService
+          .removeReaction(reaction, messageId)
+          .subscribe(() => {
+            console.log(`Reacción eliminada para ${messageId}`);
+            existingReaction.users = existingReaction.users.filter(
+              (user: any) => user !== currentUserId
+            );
+            existingReaction.count--;
+
+            // Si no hay usuarios restantes, elimina la reacción
+            if (existingReaction.count === 0) {
+              const index = reactionsList.indexOf(existingReaction);
+              if (index > -1) {
+                reactionsList.splice(index, 1); // Eliminar la reacción de la lista
+              }
+            }
+          });
+      } else {
+        // Agregar reacción si no existe
+        return this.userService
+          .addReaction(reaction, messageId)
+          .subscribe(() => {
+            console.log(`Reacción agregada para ${messageId}`);
+            const foundReaction = reactionsList.find(
+              (r) => r.emoji === reaction.emoji
+            );
+            if (foundReaction) {
+              foundReaction.users.push(currentUserId); // Agregar el userId
+              foundReaction.count++;
+            } else {
+              reactionsList.push({
+                emoji: reaction.emoji,
+                count: 1,
+                users: [currentUserId],
+              });
+            }
+          });
+      }
+    } else {
+      console.error('Usuario no autenticado');
+      return EMPTY;
+    }
+  }
+
+  isReactionSelectedByUser(reaction: any): boolean {
+    const currentUser = this.authService.currentUserSig();
+    if (currentUser && currentUser.uid) {
+      return reaction.users.includes(currentUser.username);
+    }
+    return false;
   }
 
   groupReactionsByEmoji(
