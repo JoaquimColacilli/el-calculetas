@@ -114,13 +114,7 @@
                 <span
                   *ngFor="let reaction of reactions"
                   class="reaction-emoji"
-                  (click)="
-                    addOrRemoveReaction(
-                      reaction,
-                      messageId_1,
-                      selectedReactions_1
-                    )
-                  "
+                  (click)="addReaction(reaction, messageId_1)"
                 >
                   {{ reaction.emoji }}
                 </span>
