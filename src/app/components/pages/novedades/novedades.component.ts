@@ -31,7 +31,7 @@ import { Observable } from 'rxjs';
   templateUrl: './novedades.component.html',
   styleUrls: ['./novedades.component.css'],
 })
-export class NovedadesComponent implements OnInit, AfterViewInit {
+export class NovedadesComponent implements OnInit {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   selectedVersion: string = 'v1.2.1';
@@ -81,6 +81,11 @@ export class NovedadesComponent implements OnInit, AfterViewInit {
         count: 1,
         username: reaction.username || 'Anónimo',
       }));
+
+      // this.scrollToLastMessage();
+
+      // this.scrollToBottom();
+      // this.scrollToLastMessage();
     });
 
     this.userService.getUserProfile('4gWQVe05xMgkVxBu8XeP0ktCjav1').subscribe(
@@ -94,12 +99,6 @@ export class NovedadesComponent implements OnInit, AfterViewInit {
         console.error('Error al obtener los datos del usuario:', error);
       }
     );
-  }
-
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.scrollToBottom();
-    }, 0); // Usamos setTimeout para asegurarnos que el contenido esté renderizado antes de hacer scroll
   }
 
   getReactions(messageId: string): Observable<any[]> {
@@ -130,12 +129,13 @@ export class NovedadesComponent implements OnInit, AfterViewInit {
       this.showReactionMenu_2 = !this.showReactionMenu_2;
     }
   }
+
   private scrollToBottom(): void {
-    try {
-      this.scrollContainer.nativeElement.scrollTop =
-        this.scrollContainer.nativeElement.scrollHeight;
-    } catch (err) {
-      console.error('Error al hacer scroll:', err);
-    }
+    const element = this.scrollContainer.nativeElement;
+    element.scrollTop = element.scrollHeight; // Esto mueve directamente al final
+  }
+
+  ngAfterViewChecked(): void {
+    this.scrollToBottom(); // Llamarlo después de que la vista esté actualizada
   }
 }

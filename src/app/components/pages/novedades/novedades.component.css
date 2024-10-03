@@ -47,22 +47,41 @@
   font-weight: 500;
 }
 
-/* Estilos del scrollbar */
 ::-webkit-scrollbar {
-  width: 10px; /* Ancho del scrollbar */
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #e0e0e0; /* Color de fondo del track del scrollbar */
+  background: #e0e0e0;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #6c7074; /* Color del "pulgar" (thumb) */
+  background-color: #6c7074;
   border-radius: 10px;
-  border: 1px solid #424547; /* Bordes para dar sensación de separación */
+  border: 1px solid #424547;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #6c7074; /* Color al hacer hover sobre el scrollbar */
+  background-color: #6c7074;
+}
+
+.message-container {
+  position: relative;
+  background-color: white;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Sombra */
+}
+
+.message-container::before {
+  content: "";
+  position: absolute;
+  top: 10px; /* Ajusta esto según tu necesidad */
+  left: -10px; /* Esto ajusta el piquito más cerca de la imagen */
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 10px solid white; /* Color de fondo del contenedor */
 }

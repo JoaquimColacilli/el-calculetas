@@ -444,17 +444,17 @@
           <!-- Total registros -->
           <div class="text-left">
             <span class="text-gray-800 text-sm font-semibold">
-              {{ filteredFinanceItems.length }} total
+              {{ getFilteredExpenses().length }} total
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getTotalByCurrency("ARS") | currency : "" : "symbol" : "1.0-0"
+                getGroupedExpenses()["ARS"] | currency : "" : "symbol" : "1.0-0"
               }}
               ARS
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getTotalByCurrency("USD") | currency : "" : "symbol" : "1.0-0"
+                getGroupedExpenses()["USD"] | currency : "" : "symbol" : "1.0-0"
               }}
               USD
             </span>
@@ -514,7 +514,8 @@
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getTotalByStatusAndCurrency("Por pagar", "ARS") | numberFormat
+                getTotalByStatusAndCurrency("Por pagar", "ARS")
+                  | currency : "" : "symbol" : "1.0-0"
               }}
               ARS
             </span>

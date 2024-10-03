@@ -774,7 +774,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getCountByStatus(status: string): number {
-    return this.filteredFinanceItems.filter((item) => item.status === status)
+    return this.getFilteredExpenses().filter((item) => item.status === status)
       .length;
   }
 
@@ -785,9 +785,9 @@ export class DashboardComponent implements OnInit {
   }
 
   getTotalByStatusAndCurrency(status: string, currency: string): number {
-    return this.filteredFinanceItems
+    return this.getFilteredExpenses()
       .filter((item) => item.status === status && item.currency === currency)
-      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+      .reduce((total, item) => total + parseFloat(String(item.value)), 0);
   }
 
   handleInput(event: any): void {
