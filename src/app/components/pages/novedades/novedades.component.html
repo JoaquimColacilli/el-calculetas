@@ -129,11 +129,12 @@
                   *ngFor="let reaction of selectedReactions_1"
                   class="reaction-container"
                 >
-                  <!-- Aquí aplicas los estilos para las reacciones -->
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                    [title]="getReactionTitle(reaction)"
                   >
-                    {{ reaction.emoji }} {{ reaction.username }}
+                    {{ reaction.emoji }} {{ reaction.count }}
+                    <!-- Muestra el emoji y el contador -->
                   </div>
                 </span>
               </div>
@@ -200,7 +201,7 @@
                       [icon]="['fas', 'smile']"
                       class="text-blue-500 mr-3"
                     ></fa-icon>
-                    Se agrega reacciones a mensajes de Novedades
+                    Se agrega reacciones a mensajes de Novedades.
                   </li>
                 </ul>
               </div>
@@ -237,11 +238,12 @@
                   *ngFor="let reaction of selectedReactions_2"
                   class="reaction-container"
                 >
-                  <!-- Aquí aplicas los estilos para las reacciones -->
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                    [title]="getReactionTitle(reaction)"
                   >
-                    {{ reaction.emoji }} {{ reaction.username }}
+                    {{ reaction.emoji }} {{ reaction.count }}
+                    <!-- Muestra el emoji y el contador -->
                   </div>
                 </span>
               </div>
@@ -325,11 +327,11 @@
                   *ngFor="let reaction of selectedReactions_3"
                   class="reaction-container"
                 >
-                  <!-- Aquí aplicas los estilos para las reacciones -->
                   <div
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                    [title]="getReactionTitle(reaction)"
                   >
-                    {{ reaction.emoji }} {{ reaction.username }}
+                    {{ reaction.emoji }} {{ reaction.count }}
                   </div>
                 </span>
               </div>

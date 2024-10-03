@@ -48,12 +48,11 @@ export class NovedadesComponent implements OnInit {
   showReactionMenu_2 = false;
   showReactionMenu_3 = false;
 
-  selectedReactions_1: { emoji: string; count: number; username: string }[] =
-    [];
-  selectedReactions_2: { emoji: string; count: number; username: string }[] =
-    [];
-  selectedReactions_3: { emoji: string; count: number; username: string }[] =
-    [];
+  selectedReactions_1: { emoji: string; count: number; users: string[] }[] = [];
+
+  selectedReactions_2: { emoji: string; count: number; users: string[] }[] = [];
+
+  selectedReactions_3: { emoji: string; count: number; users: string[] }[] = [];
 
   reactions = [
     { emoji: '👍', name: 'like' },
@@ -73,20 +72,33 @@ export class NovedadesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // this.getReactions('message_1').subscribe((reactions: any[]) => {
+    //   this.selectedReactions_1 = reactions.map((reaction) => ({
+    //     emoji: reaction.emoji,
+    //     count: 1,
+    //     username: reaction.username || 'Anónimo',
+    //   }));
+    // });
+
+    // this.getReactions('message_2').subscribe((reactions: any[]) => {
+    //   this.selectedReactions_2 = reactions.map((reaction) => ({
+    //     emoji: reaction.emoji,
+    //     count: 1,
+    //     username: reaction.username || 'Anónimo',
+    //   }));
+
+    // });
+
     this.getReactions('message_1').subscribe((reactions: any[]) => {
-      this.selectedReactions_1 = reactions.map((reaction) => ({
-        emoji: reaction.emoji,
-        count: 1,
-        username: reaction.username || 'Anónimo',
-      }));
+      this.selectedReactions_1 = this.groupReactionsByEmoji(reactions);
     });
 
     this.getReactions('message_2').subscribe((reactions: any[]) => {
-      this.selectedReactions_2 = reactions.map((reaction) => ({
-        emoji: reaction.emoji,
-        count: 1,
-        username: reaction.username || 'Anónimo',
-      }));
+      this.selectedReactions_2 = this.groupReactionsByEmoji(reactions);
+    });
+
+    this.getReactions('message_3').subscribe((reactions: any[]) => {
+      this.selectedReactions_3 = this.groupReactionsByEmoji(reactions);
 
       this.scrollContainer.nativeElement.addEventListener('scroll', () => {
         const element = this.scrollContainer.nativeElement;
@@ -109,6 +121,41 @@ export class NovedadesComponent implements OnInit {
     );
   }
 
+  getReactionTitle(reaction: any): string {
+    const userCount = reaction.users.length;
+
+    if (userCount === 1) {
+      return `${reaction.users[0]} ha reaccionado con ${reaction.emoji}`;
+    } else if (userCount === 2) {
+      return `${reaction.users[0]} y ${reaction.users[1]} han reaccionado con ${reaction.emoji}`;
+    } else if (userCount === 3) {
+      return `${reaction.users[0]}, ${reaction.users[1]} y ${reaction.users[2]} han reaccionado con ${reaction.emoji}`;
+    } else {
+      const firstThreeUsers = reaction.users.slice(0, 3).join(', ');
+      const remainingUsers = userCount - 3;
+      return `${firstThreeUsers} y ${remainingUsers} personas más han reaccionado con ${reaction.emoji}`;
+    }
+  }
+
+  groupReactionsByEmoji(
+    reactions: any[]
+  ): { emoji: string; count: number; users: string[] }[] {
+    const groupedReactions: {
+      [key: string]: { emoji: string; count: number; users: string[] };
+    } = {};
+
+    reactions.forEach((reaction) => {
+      const { emoji, username } = reaction;
+      if (!groupedReactions[emoji]) {
+        groupedReactions[emoji] = { emoji, count: 0, users: [] };
+      }
+      groupedReactions[emoji].count++;
+      groupedReactions[emoji].users.push(username || 'Anónimo');
+    });
+
+    return Object.values(groupedReactions);
+  }
+
   getReactions(messageId: string): Observable<any[]> {
     const reactionsRef = collection(
       this.firestore,
@@ -126,15 +173,18 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_1 = false;
     } else if (messageId === 'message_2') {
       this.showReactionMenu_2 = false;
+    } else if (messageId === 'message_3') {
+      this.showReactionMenu_3 = false;
     }
   }
 
   toggleReactionMenu(messageId: string) {
     if (messageId === 'message_1') {
       this.showReactionMenu_1 = !this.showReactionMenu_1;
-      console.log(this.showReactionMenu_1);
     } else if (messageId === 'message_2') {
       this.showReactionMenu_2 = !this.showReactionMenu_2;
+    } else if (messageId === 'message_3') {
+      this.showReactionMenu_3 = !this.showReactionMenu_3;
     }
   }
 

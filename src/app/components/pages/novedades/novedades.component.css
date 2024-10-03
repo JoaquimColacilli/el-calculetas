@@ -37,16 +37,6 @@
   cursor: pointer;
 }
 
-.reaction-container {
-  display: inline-block;
-  padding: 4px 8px;
-  border: 2px solid #48b1fc;
-  background-color: #b2e0ff;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 ::-webkit-scrollbar {
   width: 10px;
 }
