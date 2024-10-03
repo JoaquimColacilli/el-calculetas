@@ -248,7 +248,93 @@
             </div>
           </div>
 
-          <!-- Mensaje del admin para v1.2.0 -->
+          <!-- Mensaje del admin para v1.2.2 -->
+          <div
+            class="flex items-start mb-6"
+            [attr.data-message-id]="messageId_3"
+          >
+            <img
+              [src]="userProfilePicture"
+              alt="Foto del Admin"
+              class="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+            <div
+              class="bg-white border border-gray-300 shadow-lg rounded-lg p-4 flex-1 relative message-container"
+            >
+              <div class="flex justify-between items-center">
+                <span class="text-blue-500 font-semibold">Joaquim 😊</span>
+              </div>
+              <p class="mt-2 text-gray-500 text-sm italic">
+                <fa-icon [icon]="['fas', 'clock']" class="mr-2"></fa-icon>
+                Última actualización: v1.2.2 - 03/10/2024 - 09:30hs
+              </p>
+              <div class="mt-4">
+                <div class="flex items-center mb-2">
+                  <fa-icon
+                    [icon]="['fas', 'check-circle']"
+                    class="text-green-500 mr-2"
+                  ></fa-icon>
+                  <h3 class="text-xl font-semibold text-gray-700">
+                    v1.2.2 - Actualización
+                  </h3>
+                </div>
+                <ul class="list-disc list-inside text-gray-600 space-y-4">
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
+                    Se arregla bug que causaba que los gastos del día 01 del mes
+                    no se mostrara en <span class="text-gray-800">"Total" </span
+                    ><span class="text-red-600">"Atrasados" </span
+                    ><span class="text-green-600"> "Pagados" </span
+                    ><span class="text-yellow-600">"Por Pagar"</span>.
+                  </li>
+                </ul>
+              </div>
+
+              <hr class="styled-hr mt-4" />
+
+              <div class="flex items-center mt-4 justify-start">
+                <fa-icon
+                  [icon]="['fas', 'smile']"
+                  class="text-gray-500 cursor-pointer"
+                  (click)="toggleReactionMenu('message_3')"
+                ></fa-icon>
+              </div>
+
+              <div
+                *ngIf="showReactionMenu_3"
+                class="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 flex space-x-4"
+              >
+                <span
+                  *ngFor="let reaction of reactions"
+                  class="reaction-emoji"
+                  (click)="addReaction(reaction, messageId_3)"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+
+              <!-- Mostrando las reacciones actuales -->
+              <div
+                *ngIf="selectedReactions_3.length > 0"
+                class="flex space-x-2 mt-4"
+              >
+                <span
+                  *ngFor="let reaction of selectedReactions_3"
+                  class="reaction-container"
+                >
+                  <!-- Aquí aplicas los estilos para las reacciones -->
+                  <div
+                    class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                  >
+                    {{ reaction.emoji }} {{ reaction.username }}
+                  </div>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

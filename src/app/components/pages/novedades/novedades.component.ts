@@ -33,6 +33,7 @@ import { Observable } from 'rxjs';
 })
 export class NovedadesComponent implements OnInit {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+  private shouldScrollToBottom = true;
 
   selectedVersion: string = 'v1.2.1';
   userProfilePicture: string = '';
@@ -41,12 +42,17 @@ export class NovedadesComponent implements OnInit {
 
   messageId_1: string = 'message_1';
   messageId_2: string = 'message_2';
+  messageId_3: string = 'message_3';
 
   showReactionMenu_1 = false;
   showReactionMenu_2 = false;
+  showReactionMenu_3 = false;
+
   selectedReactions_1: { emoji: string; count: number; username: string }[] =
     [];
   selectedReactions_2: { emoji: string; count: number; username: string }[] =
+    [];
+  selectedReactions_3: { emoji: string; count: number; username: string }[] =
     [];
 
   reactions = [
@@ -82,10 +88,12 @@ export class NovedadesComponent implements OnInit {
         username: reaction.username || 'Anónimo',
       }));
 
-      // this.scrollToLastMessage();
-
-      // this.scrollToBottom();
-      // this.scrollToLastMessage();
+      this.scrollContainer.nativeElement.addEventListener('scroll', () => {
+        const element = this.scrollContainer.nativeElement;
+        const atBottom =
+          element.scrollHeight - element.scrollTop === element.clientHeight;
+        this.shouldScrollToBottom = atBottom;
+      });
     });
 
     this.userService.getUserProfile('4gWQVe05xMgkVxBu8XeP0ktCjav1').subscribe(
@@ -130,12 +138,14 @@ export class NovedadesComponent implements OnInit {
     }
   }
 
-  private scrollToBottom(): void {
-    const element = this.scrollContainer.nativeElement;
-    element.scrollTop = element.scrollHeight; // Esto mueve directamente al final
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom(); // Solo autoscrollea si el usuario no está desplazándose manualmente
+    }
   }
 
-  ngAfterViewChecked(): void {
-    this.scrollToBottom(); // Llamarlo después de que la vista esté actualizada
+  private scrollToBottom(): void {
+    const element = this.scrollContainer.nativeElement;
+    element.scrollTop = element.scrollHeight; // Esto asegura que baje hasta el final
   }
 }
