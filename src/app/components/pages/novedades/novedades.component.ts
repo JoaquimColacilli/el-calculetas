@@ -73,6 +73,14 @@ export class NovedadesComponent implements OnInit {
     library.addIconPacks(fas);
   }
 
+  byCount(a: any, b: any): number {
+    return b.count - a.count;
+  }
+
+  sortReactionsByCount(reactions: any[]): any[] {
+    return reactions.sort((a, b) => b.count - a.count);
+  }
+
   ngOnInit(): void {
     this.getReactions('message_1').subscribe((reactions: any[]) => {
       this.selectedReactions_1 = this.groupReactionsByEmoji(reactions);
@@ -110,83 +118,40 @@ export class NovedadesComponent implements OnInit {
     const userCount = reaction.users.length;
 
     if (userCount === 1) {
-      return `${reaction.users[0]} ha reaccionado con ${reaction.emoji}`;
-    } else if (userCount === 2) {
-      return `${reaction.users[0]} y ${reaction.users[1]} han reaccionado con ${reaction.emoji}`;
-    } else if (userCount === 3) {
-      return `${reaction.users[0]}, ${reaction.users[1]} y ${reaction.users[2]} han reaccionado con ${reaction.emoji}`;
+      return `1 persona ha reaccionado con ${reaction.emoji}`;
     } else {
-      const firstThreeUsers = reaction.users.slice(0, 3).join(', ');
-      const remainingUsers = userCount - 3;
-      return `${firstThreeUsers} y ${remainingUsers} personas más han reaccionado con ${reaction.emoji}`;
+      return `${userCount} personas han reaccionado con ${reaction.emoji}`;
     }
   }
 
   // Función para manejar agregar o eliminar reacciones
-  addOrRemoveReaction(reaction: any, messageId: string, reactionsList: any[]) {
+  addOrRemoveReaction(reaction: any, messageId: string) {
     const currentUser = this.authService.currentUserSig();
-    console.log(currentUser);
 
     if (currentUser && currentUser.uid) {
       const currentUserId = currentUser.uid;
-      const existingReaction = reactionsList.find(
-        (r) =>
-          r.emoji === reaction.emoji && r.users.includes(currentUser.username)
-      );
+      const hasReacted = reaction.users.includes(currentUserId);
 
-      console.log(existingReaction);
-      console.log(reactionsList);
-
-      if (existingReaction) {
+      if (hasReacted) {
         // Eliminar reacción si ya existe
-        return this.userService
-          .removeReaction(reaction, messageId)
-          .subscribe(() => {
-            console.log(`Reacción eliminada para ${messageId}`);
-            existingReaction.users = existingReaction.users.filter(
-              (user: any) => user !== currentUserId
-            );
-            existingReaction.count--;
-
-            // Si no hay usuarios restantes, elimina la reacción
-            if (existingReaction.count === 0) {
-              const index = reactionsList.indexOf(existingReaction);
-              if (index > -1) {
-                reactionsList.splice(index, 1); // Eliminar la reacción de la lista
-              }
-            }
-          });
+        this.userService.removeReaction(reaction, messageId).subscribe(() => {
+          console.log(`Reacción eliminada para ${messageId}`);
+        });
       } else {
         // Agregar reacción si no existe
-        return this.userService
-          .addReaction(reaction, messageId)
-          .subscribe(() => {
-            console.log(`Reacción agregada para ${messageId}`);
-            const foundReaction = reactionsList.find(
-              (r) => r.emoji === reaction.emoji
-            );
-            if (foundReaction) {
-              foundReaction.users.push(currentUserId); // Agregar el userId
-              foundReaction.count++;
-            } else {
-              reactionsList.push({
-                emoji: reaction.emoji,
-                count: 1,
-                users: [currentUserId],
-              });
-            }
-          });
+        this.userService.addReaction(reaction, messageId).subscribe(() => {
+          console.log(`Reacción agregada para ${messageId}`);
+        });
       }
     } else {
       console.error('Usuario no autenticado');
-      return EMPTY;
     }
   }
 
   isReactionSelectedByUser(reaction: any): boolean {
     const currentUser = this.authService.currentUserSig();
     if (currentUser && currentUser.uid) {
-      return reaction.users.includes(currentUser.username);
+      return reaction.users.includes(currentUser.uid);
     }
     return false;
   }
@@ -199,12 +164,15 @@ export class NovedadesComponent implements OnInit {
     } = {};
 
     reactions.forEach((reaction) => {
-      const { emoji, username } = reaction;
+      const { emoji, userId } = reaction;
       if (!groupedReactions[emoji]) {
         groupedReactions[emoji] = { emoji, count: 0, users: [] };
       }
       groupedReactions[emoji].count++;
-      groupedReactions[emoji].users.push(username || 'Anónimo');
+      groupedReactions[emoji].users.push(userId);
+
+      // Agrega este console.log para verificar
+      console.log(`Emoji: ${emoji}, Users:`, groupedReactions[emoji].users);
     });
 
     return Object.values(groupedReactions);
@@ -215,7 +183,7 @@ export class NovedadesComponent implements OnInit {
       this.firestore,
       `messages/${messageId}/reactions`
     );
-    return collectionData(reactionsRef, { idField: 'userId' });
+    return collectionData(reactionsRef);
   }
 
   addReaction(reaction: any, messageId: string) {
@@ -223,6 +191,7 @@ export class NovedadesComponent implements OnInit {
       console.log(`Reacción guardada para ${messageId}`);
     });
 
+    // Cerrar el menú de reacciones correspondiente
     if (messageId === 'message_1') {
       this.showReactionMenu_1 = false;
     } else if (messageId === 'message_2') {
@@ -244,12 +213,12 @@ export class NovedadesComponent implements OnInit {
 
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
-      this.scrollToBottom(); // Solo autoscrollea si el usuario no está desplazándose manualmente
+      this.scrollToBottom();
     }
   }
 
   private scrollToBottom(): void {
     const element = this.scrollContainer.nativeElement;
-    element.scrollTop = element.scrollHeight; // Esto asegura que baje hasta el final
+    element.scrollTop = element.scrollHeight;
   }
 }

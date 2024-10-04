@@ -63,17 +63,16 @@ export class UserService {
     }
 
     const userId = currentUser.uid;
-    const userRef = doc(
+    const reactionDocRef = doc(
       this.firestore,
-      `messages/${messageId}/reactions/${userId}`
+      `messages/${messageId}/reactions/${userId}_${reaction.emoji}`
     );
 
-    // Guardar la reacción en Firestore
     return from(
-      setDoc(userRef, {
+      setDoc(reactionDocRef, {
         emoji: reaction.emoji,
         userId: userId,
-        username: currentUser.username || 'Usuario Desconocido', // Por si acaso no hay un username
+        username: currentUser.username || 'Usuario Desconocido',
       })
     ).pipe(
       catchError((error) => {
@@ -83,14 +82,14 @@ export class UserService {
     );
   }
 
-  removeReaction(reaction: any, messageId: string) {
+  removeReaction(reaction: any, messageId: string): Observable<void> {
     const currentUser = this.authService.currentUserSig();
     if (currentUser && currentUser.uid) {
       const currentUserId = currentUser.uid;
 
       const reactionDocRef = doc(
         this.firestore,
-        `messages/${messageId}/reactions/${currentUserId}`
+        `messages/${messageId}/reactions/${currentUserId}_${reaction.emoji}`
       );
 
       return from(deleteDoc(reactionDocRef)).pipe(
@@ -101,7 +100,7 @@ export class UserService {
         }),
         catchError((error) => {
           console.error('Error al eliminar la reacción:', error);
-          return throwError(error);
+          return throwError(() => new Error('Error al eliminar la reacción'));
         })
       );
     } else {
