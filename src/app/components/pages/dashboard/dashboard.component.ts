@@ -64,6 +64,7 @@ import { SwitchAccountModalComponent } from './account-management/switch-account
 
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
+import { ModalWalletComponent } from './modal-wallet/modal-wallet.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -146,6 +147,8 @@ export class DashboardComponent implements OnInit {
   selectedCategory: string | null = null;
 
   isTodayChecked: boolean = true;
+
+  isTarjetaChecked: boolean = false;
 
   groupedExpenses: { [key: string]: number } = {};
 
@@ -429,6 +432,12 @@ export class DashboardComponent implements OnInit {
     this.getDisplayDate();
   }
 
+  toggleTarjeta() {
+    if (this.isTarjetaChecked) {
+      this.isTodayChecked = false;
+    }
+  }
+
   async saveExpense(): Promise<void> {
     this.isSaveAttempted = true;
 
@@ -660,6 +669,14 @@ export class DashboardComponent implements OnInit {
     this.dialog.open(ModalCategoriasComponent, {
       width: '500px',
       panelClass: 'custom-modal-class',
+    });
+  }
+
+  openModalWallet(): void {
+    this.dialog.open(ModalWalletComponent, {
+      width: '500px',
+      panelClass: 'custom-modal-class',
+      backdropClass: 'custom-backdrop',
     });
   }
 
@@ -1560,15 +1577,13 @@ export class DashboardComponent implements OnInit {
   }
 
   toggleTodayDate() {
-    // Definir 'today' al inicio del método para usarlo en ambos casos
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Asegura que se maneje correctamente el día actual sin errores de huso horario
+    today.setHours(0, 0, 0, 0);
 
     if (this.isTodayChecked) {
-      // Si el checkbox está marcado, asignar la fecha de hoy
-      this.currentExpense.date = today.toISOString().split('T')[0]; // Formato ISO para el input de tipo date
+      this.isTarjetaChecked = false;
+      this.currentExpense.date = today.toISOString().split('T')[0];
     } else {
-      // Si el checkbox está desmarcado, no cambiar la fecha actual del input
       const currentDate = this.currentExpense.date;
       if (currentDate !== today.toISOString().split('T')[0]) {
         this.isTodayChecked = false;

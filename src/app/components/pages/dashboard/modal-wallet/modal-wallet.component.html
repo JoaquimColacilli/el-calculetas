@@ -1,0 +1,79 @@
+<div
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+  [ngClass]="{ hidden: !openModal }"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+    <!-- Cerrar botón -->
+
+    <!-- Aquí va la billetera -->
+    <div class="wallet relative">
+      <button
+        class="absolute top-2 right-2 bg-gray-200 text-gray-700 rounded-full py-1 px-3 hover:bg-gray-300"
+        (click)="closeModal()"
+      >
+        X
+      </button>
+
+      <div
+        class="card"
+        id="card1"
+        [ngStyle]="{ bottom: '0px' }"
+        (click)="animateCard('card1')"
+      >
+        <img
+          id="visa"
+          src="https://18f0uvkdanva8ka03usq5z6i-wpengine.netdna-ssl.com/wp-content/uploads/2017/08/visa-logo.png"
+        />
+        <div class="chip"></div>
+        <h1>0000 0000 0000 0000</h1>
+        <p>Card Holder</p>
+        <p>Expiration Date</p>
+        <h2>Daniel Putzer</h2>
+        <h2>02/22</h2>
+      </div>
+      <div
+        class="card"
+        id="card2"
+        [ngStyle]="{ bottom: '50px' }"
+        (click)="animateCard('card2')"
+      >
+        <img
+          id="visa"
+          src="https://18f0uvkdanva8ka03usq5z6i-wpengine.netdna-ssl.com/wp-content/uploads/2017/08/visa-logo.png"
+        />
+        <div class="chip"></div>
+        <h1>0000 0000 0000 0000</h1>
+        <p>Card Holder</p>
+        <p>Expiration Date</p>
+        <h2>Daniel Putzer</h2>
+        <h2>03/33</h2>
+      </div>
+      <div
+        class="card"
+        id="card3"
+        [ngStyle]="{ bottom: '100px' }"
+        (click)="animateCard('card3')"
+      >
+        <img
+          id="visa"
+          src="https://18f0uvkdanva8ka03usq5z6i-wpengine.netdna-ssl.com/wp-content/uploads/2017/08/visa-logo.png"
+        />
+        <div class="chip"></div>
+        <h1>0000 0000 0000 0000</h1>
+        <p>Card Holder</p>
+        <p>Expiration Date</p>
+        <h2>Daniel Putzer</h2>
+        <h2>04/44</h2>
+      </div>
+
+      <div class="department" id="one"></div>
+      <div class="department" id="two"></div>
+      <div class="department" id="three"></div>
+
+      <img
+        id="logo"
+        src="https://www.sccu.com.au/images/sccu/category_icons/cards_header_icon.png"
+      />
+    </div>
+  </div>
+</div>
