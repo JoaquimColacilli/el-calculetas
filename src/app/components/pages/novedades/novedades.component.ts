@@ -5,6 +5,7 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { PantallaEnConstruccionComponent } from '../../pantalla-en-construccion/pantalla-en-construccion.component';
 import { AsideComponent } from '../../aside/aside.component';
@@ -36,7 +37,6 @@ export class NovedadesComponent implements OnInit {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
   private shouldScrollToBottom = true;
 
-  selectedVersion: string = 'v1.2.1';
   userProfilePicture: string = '';
   defaultProfilePicture = 'default_profile_picture.png';
   showReactionMenu = false;
@@ -44,16 +44,19 @@ export class NovedadesComponent implements OnInit {
   messageId_1: string = 'message_1';
   messageId_2: string = 'message_2';
   messageId_3: string = 'message_3';
+  messageId_4: string = 'message_4';
 
   showReactionMenu_1 = false;
   showReactionMenu_2 = false;
   showReactionMenu_3 = false;
+  showReactionMenu_4 = false;
 
   selectedReactions_1: { emoji: string; count: number; users: string[] }[] = [];
-
   selectedReactions_2: { emoji: string; count: number; users: string[] }[] = [];
-
   selectedReactions_3: { emoji: string; count: number; users: string[] }[] = [];
+  selectedReactions_4: { emoji: string; count: number; users: string[] }[] = [];
+
+  userIdToUsernameMap: { [uid: string]: string } = {};
 
   reactions = [
     { emoji: '👍', name: 'like' },
@@ -68,7 +71,8 @@ export class NovedadesComponent implements OnInit {
     library: FaIconLibrary,
     private userService: UserService,
     private firestore: Firestore,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {
     library.addIconPacks(fas);
   }
@@ -84,14 +88,26 @@ export class NovedadesComponent implements OnInit {
   ngOnInit(): void {
     this.getReactions('message_1').subscribe((reactions: any[]) => {
       this.selectedReactions_1 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
     });
 
     this.getReactions('message_2').subscribe((reactions: any[]) => {
       this.selectedReactions_2 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
     });
 
     this.getReactions('message_3').subscribe((reactions: any[]) => {
       this.selectedReactions_3 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
+    });
+
+    this.getReactions('message_4').subscribe((reactions: any[]) => {
+      this.selectedReactions_4 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
 
       this.scrollContainer.nativeElement.addEventListener('scroll', () => {
         const element = this.scrollContainer.nativeElement;
@@ -117,11 +133,38 @@ export class NovedadesComponent implements OnInit {
   getReactionTitle(reaction: any): string {
     const userCount = reaction.users.length;
 
+    const usernames = reaction.users.map((uid: string) => {
+      return this.userIdToUsernameMap[uid] || 'Cargando...';
+    });
+
     if (userCount === 1) {
-      return `1 persona ha reaccionado con ${reaction.emoji}`;
+      return `${usernames[0]} ha reaccionado con ${reaction.emoji}`;
+    } else if (userCount === 2) {
+      return `${usernames[0]} y ${usernames[1]} han reaccionado con ${reaction.emoji}`;
+    } else if (userCount === 3) {
+      return `${usernames[0]}, ${usernames[1]} y ${usernames[2]} han reaccionado con ${reaction.emoji}`;
     } else {
-      return `${userCount} personas han reaccionado con ${reaction.emoji}`;
+      const firstThreeUsers = usernames.slice(0, 3).join(', ');
+      const remainingUsers = userCount - 3;
+      return `${firstThreeUsers} y ${remainingUsers} personas más han reaccionado con ${reaction.emoji}`;
     }
+  }
+
+  fetchUsernames(uids: string[]) {
+    const uniqueUids = Array.from(new Set(uids));
+
+    uniqueUids.forEach((uid) => {
+      if (!this.userIdToUsernameMap[uid]) {
+        this.userService.getUserProfile(uid).subscribe((userData) => {
+          if (userData && userData.username) {
+            this.userIdToUsernameMap[uid] = userData.username;
+          } else {
+            this.userIdToUsernameMap[uid] = 'Usuario desconocido';
+          }
+          this.cdr.detectChanges();
+        });
+      }
+    });
   }
 
   // Función para manejar agregar o eliminar reacciones
@@ -133,12 +176,10 @@ export class NovedadesComponent implements OnInit {
       const hasReacted = reaction.users.includes(currentUserId);
 
       if (hasReacted) {
-        // Eliminar reacción si ya existe
         this.userService.removeReaction(reaction, messageId).subscribe(() => {
           console.log(`Reacción eliminada para ${messageId}`);
         });
       } else {
-        // Agregar reacción si no existe
         this.userService.addReaction(reaction, messageId).subscribe(() => {
           console.log(`Reacción agregada para ${messageId}`);
         });
@@ -171,7 +212,7 @@ export class NovedadesComponent implements OnInit {
       groupedReactions[emoji].count++;
       groupedReactions[emoji].users.push(userId);
 
-      // Agrega este console.log para verificar
+      // Agrega este .log para verificar
       console.log(`Emoji: ${emoji}, Users:`, groupedReactions[emoji].users);
     });
 
@@ -198,6 +239,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_2 = false;
     } else if (messageId === 'message_3') {
       this.showReactionMenu_3 = false;
+    } else if (messageId === 'message_4') {
+      this.showReactionMenu_4 = false;
     }
   }
 
@@ -208,6 +251,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_2 = !this.showReactionMenu_2;
     } else if (messageId === 'message_3') {
       this.showReactionMenu_3 = !this.showReactionMenu_3;
+    } else if (messageId === 'message_4') {
+      this.showReactionMenu_4 = !this.showReactionMenu_4;
     }
   }
 
