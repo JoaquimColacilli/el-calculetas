@@ -59,12 +59,18 @@ export class NovedadesComponent implements OnInit {
   userIdToUsernameMap: { [uid: string]: string } = {};
 
   reactions = [
-    { emoji: '👍', name: 'like' },
+    { emoji: '👍🏻', name: 'like' },
     { emoji: '❤️', name: 'love' },
     { emoji: '😂', name: 'laugh' },
     { emoji: '😮', name: 'surprise' },
     { emoji: '😢', name: 'sad' },
     { emoji: '🙏', name: 'pray' },
+    { emoji: '👎🏻', name: 'dislike' },
+    { emoji: '🖕🏼', name: 'fku' },
+    { emoji: '💪🏼', name: 'muscle' },
+    { emoji: '💯', name: '100' },
+    { emoji: '❓', name: '?' },
+    { emoji: '☠', name: 'skull' },
   ];
 
   constructor(
