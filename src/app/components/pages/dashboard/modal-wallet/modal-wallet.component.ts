@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import {
@@ -7,6 +7,7 @@ import {
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+
 @Component({
   selector: 'app-modal-wallet',
   standalone: true,
@@ -14,12 +15,21 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
   templateUrl: './modal-wallet.component.html',
   styleUrl: './modal-wallet.component.css',
 })
-export class ModalWalletComponent {
+export class ModalWalletComponent implements OnInit {
   constructor(
     public dialogRef: MatDialogRef<ModalWalletComponent>,
     library: FaIconLibrary
   ) {
     library.addIconPacks(fas);
+
+    // Listener para restablecer las posiciones cuando el modal se cierra
+    this.dialogRef.beforeClosed().subscribe(() => {
+      this.resetCardsPosition();
+    });
+  }
+
+  ngOnInit(): void {
+    this.resetCardsPosition();
   }
 
   openModal = true;
@@ -45,7 +55,7 @@ export class ModalWalletComponent {
 
     if (selectedCard.getAttribute('name') !== 'moved') {
       this.oldBottom = parseInt(selectedCard.style.bottom, 10);
-      this.newBottom = 350;
+      this.newBottom = this.oldBottom + 100;
       selectedCard.style.bottom = `${this.newBottom}px`;
       selectedCard.setAttribute('name', 'moved');
     } else {
@@ -55,6 +65,17 @@ export class ModalWalletComponent {
   }
 
   closeModal(): void {
-    this.openModal = false;
+    this.dialogRef.close();
+  }
+
+  resetCardsPosition(): void {
+    const cards = document.getElementsByClassName(
+      'card'
+    ) as HTMLCollectionOf<HTMLElement>;
+
+    for (let i = 0; i < cards.length; i++) {
+      cards[i].style.bottom = this.bottomValues[i];
+      cards[i].setAttribute('name', '');
+    }
   }
 }

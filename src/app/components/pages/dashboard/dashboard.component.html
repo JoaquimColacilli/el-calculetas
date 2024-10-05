@@ -165,7 +165,7 @@
 
         <div
           [ngClass]="{
-            'bg-blue-100': isDay && weatherData?.weather[0]?.main === 'Clouds',
+            'bg-blue-100 ': isDay && weatherData?.weather[0]?.main === 'Clouds',
             'bg-yellow-100': isDay && weatherData?.weather[0]?.main === 'Clear',
             'bg-gray-200': isDay && weatherData?.weather[0]?.main === 'Drizzle',
             'bg-purple-100': isDay && weatherData?.weather[0]?.main === 'Rain',
@@ -181,7 +181,7 @@
               isNight && weatherData?.weather[0]?.main === 'Drizzle',
             'bg-gray-600': isNight && weatherData?.weather[0]?.main === 'Mist'
           }"
-          class="shadow-lg hover:shadow-xl rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105"
+          class="shadow-lg hover:shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105"
           style="width: 200px; height: 130px"
         >
           <fa-icon
