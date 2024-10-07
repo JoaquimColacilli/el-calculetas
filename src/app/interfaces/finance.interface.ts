@@ -13,5 +13,6 @@ export interface FinanceInterface {
   category: string | { name: string };
   obs: string;
   selected?: boolean;
+  cardId?: string;
   timestamp?: Timestamp | FieldValue;
 }

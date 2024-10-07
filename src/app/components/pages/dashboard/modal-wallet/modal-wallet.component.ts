@@ -7,6 +7,9 @@ import {
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+import { CardService } from '../../../../services/card.service';
+import { Card } from '../../../../interfaces/card.interface';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-modal-wallet',
@@ -35,39 +38,13 @@ export class ModalWalletComponent implements OnInit {
     { value: 12, name: 'Diciembre' },
   ];
 
-  cards = [
-    {
-      id: 'card1',
-      background: '#7533ff',
-      bottom: '0px',
-      zIndex: 90,
-      selectedDay: null as number | null,
-      selectedMonth: null as number | null,
-      date: null as Date | null,
-    },
-    {
-      id: 'card2',
-      background: '#ff473b',
-      bottom: '50px',
-      zIndex: 40,
-      selectedDay: null as number | null,
-      selectedMonth: null as number | null,
-      date: null as Date | null,
-    },
-    {
-      id: 'card3',
-      background: '#5bb6ff',
-      bottom: '100px',
-      zIndex: -10,
-      selectedDay: null as number | null,
-      selectedMonth: null as number | null,
-      date: null as Date | null,
-    },
-  ];
+  cards: Card[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ModalWalletComponent>,
-    library: FaIconLibrary
+    library: FaIconLibrary,
+    private cardService: CardService,
+    private authService: AuthService
   ) {
     library.addIconPacks(fas);
 
@@ -77,9 +54,107 @@ export class ModalWalletComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.resetCardsPosition();
     // Populate days array with numbers from 1 to 31
     this.days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+    // Cargar las tarjetas del usuario
+    this.loadUserCards();
+  }
+
+  loadUserCards(): void {
+    this.cardService.getUserCards().subscribe(
+      (cards) => {
+        if (cards.length === 0) {
+          // Si no hay tarjetas, inicializar las tarjetas por defecto
+          this.initializeDefaultCards();
+        } else {
+          // Si hay tarjetas, cargarlas y convertir fechas si es necesario
+          this.cards = cards.map((card) => {
+            return {
+              ...card,
+              date: card.date ? new Date(card.date) : null,
+              name: card.name || this.getDefaultCardName(card.id),
+            };
+          });
+          this.resetCardsPosition();
+        }
+      },
+      (error) => {
+        console.error('Error al cargar las tarjetas:', error);
+      }
+    );
+  }
+
+  getDefaultCardName(cardId: string): string {
+    switch (cardId) {
+      case 'card1':
+        return 'Visa';
+      case 'card2':
+        return 'Mastercard';
+      case 'card3':
+        return 'American Express';
+      case 'card4':
+        return 'Discover';
+      default:
+        return 'Tarjeta';
+    }
+  }
+
+  initializeDefaultCards(): void {
+    this.cards = [
+      {
+        id: 'card1',
+        background: '#1A1F71',
+        logo: 'assets/visa-logo.png',
+        bottom: '0px',
+        zIndex: 90,
+        selectedDay: null,
+        selectedMonth: null,
+        date: null,
+        name: 'Visa', // Nombre por defecto
+      },
+      {
+        id: 'card2',
+        background: '#EB001B',
+        logo: 'assets/mastercard-logo.png',
+        bottom: '50px',
+        zIndex: 40,
+        selectedDay: null,
+        selectedMonth: null,
+        date: null,
+        name: 'Mastercard', // Nombre por defecto
+      },
+      {
+        id: 'card3',
+        background: '#4D4F53',
+        logo: 'assets/amex-logo.png',
+        bottom: '100px',
+        zIndex: -10,
+        selectedDay: null,
+        selectedMonth: null,
+        date: null,
+        name: 'American Express', // Nombre por defecto
+      },
+      {
+        id: 'card4',
+        background: '#FF6000',
+        logo: 'assets/discover-logo.png',
+        bottom: '150px',
+        zIndex: -60,
+        selectedDay: null,
+        selectedMonth: null,
+        date: null,
+        name: 'Discover', // Nombre por defecto
+      },
+    ];
+
+    // Guardar las tarjetas por defecto en Firebase
+    this.cards.forEach((card) => {
+      this.cardService.setCard(card).catch((error) => {
+        console.error('Error al guardar la tarjeta:', error);
+      });
+    });
+    this.resetCardsPosition();
   }
 
   animateCard(cardId: string): void {
@@ -93,7 +168,7 @@ export class ModalWalletComponent implements OnInit {
     this.cards.forEach((card, index) => {
       if (card.id === cardId) {
         // Move the selected card up
-        card.bottom = `${parseInt(card.bottom, 10) + 120}px`;
+        card.bottom = `${parseInt(card.bottom, 10) + 160}px`;
       } else {
         // Reset other cards to original position
         card.bottom = `${index * 50}px`;
@@ -101,7 +176,7 @@ export class ModalWalletComponent implements OnInit {
     });
   }
 
-  closeCard(card: any): void {
+  closeCard(card: Card): void {
     // Save the selected date (day and month)
     if (card.selectedDay && card.selectedMonth) {
       const currentYear = new Date().getFullYear();
@@ -116,6 +191,16 @@ export class ModalWalletComponent implements OnInit {
     } else {
       console.log(`Card ${card.id} date not fully selected.`);
     }
+
+    // Verificar si el nombre está definido
+    if (!card.name || card.name.trim() === '') {
+      console.log('El nombre de la tarjeta no está definido.');
+    }
+
+    // Actualizar la tarjeta en Firebase
+    this.cardService.updateCard(card).catch((error) => {
+      console.error('Error al actualizar la tarjeta:', error);
+    });
 
     // Lower the card back into the wallet
     this.selectedCardId = null;

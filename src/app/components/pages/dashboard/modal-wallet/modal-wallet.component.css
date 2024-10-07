@@ -2,7 +2,7 @@
   position: absolute;
   display: block;
   width: 450px;
-  height: 340px;
+  height: 390px; /* Aumentado en 50px para acomodar la cuarta tarjeta */
   background: #444;
   border-radius: 15px;
   box-shadow: 0px 0px 120px rgba(40, 40, 40, 0.8);
@@ -51,6 +51,12 @@
   z-index: 0;
 }
 
+#four {
+  bottom: 150px;
+  height: 170px;
+  z-index: -50;
+}
+
 /* ----- Cards ----- */
 
 .card {
@@ -82,8 +88,8 @@
   height: 40px;
   background: #d9c798;
   border-radius: 5px;
-  top: 35px;
-  left: 35px;
+  top: 25px;
+  left: 25px;
 }
 
 .card h1 {
@@ -221,7 +227,32 @@
 
 .close-button {
   position: absolute;
-  top: -140px;
+  top: -160px;
   right: 5px;
   z-index: 1000;
+}
+
+#card-logo {
+  position: absolute;
+  display: block;
+  width: 60px;
+  top: 12px;
+  right: 20px;
+}
+
+.card-name-input {
+  display: block;
+  margin: 10px auto; /* Centrar el input */
+  padding: 8px;
+  width: 70%; /* Ajustar el ancho según sea necesario */
+  font-size: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 5px;
+  text-align: center;
+  color: #000;
+}
+
+.card-name-input:focus {
+  outline: none;
 }

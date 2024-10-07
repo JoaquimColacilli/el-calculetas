@@ -405,9 +405,8 @@
           class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-2"
         >
           <button
-            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 shadow-lg transition flex items-center space-x-4 opacity-50"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 shadow-lg transition flex items-center space-x-4"
             (click)="openModalWallet()"
-            disabled
           >
             <fa-icon [icon]="['fas', 'wallet']" class="text-blue-500"></fa-icon>
             <div class="h-6 w-px bg-gray-400"></div>
@@ -598,29 +597,34 @@
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
+                Valor *
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >
                 <div class="flex items-center justify-between">
-                  Valor *
-
+                  <span>Tarjeta</span>
                   <label
                     *ngIf="addingExpense || editingIndex !== null"
-                    class="flex items-center cursor-pointer ml-2"
+                    class="flex items-center cursor-pointer"
                   >
-                    <span>Tarjeta</span>
                     <input
                       type="checkbox"
                       [(ngModel)]="isTarjetaChecked"
                       (change)="toggleTarjeta()"
-                      class="ml-1"
+                      class="ml-2"
                       title="Tarjeta"
                     />
                   </label>
                 </div>
               </th>
+
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
                 Nombre del gasto *
               </th>
+
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
@@ -695,9 +699,7 @@
                 />
               </td>
 
-              <td
-                class="px-6 py-4 whitespace-nowrap flex items-center space-x-2"
-              >
+              <td class="px-6 py-4 whitespace-nowrap flex space-x-2">
                 <input
                   type="text"
                   [value]="
@@ -724,18 +726,27 @@
                   <option value="ARS">ARS</option>
                   <option value="USD">USD</option>
                 </select>
+              </td>
 
+              <td class="px-6 py-4">
                 <select
-                  [(ngModel)]="currentExpense.currency"
+                  [(ngModel)]="currentExpense.cardId"
+                  (change)="onCardSelectionChange()"
                   [ngClass]="{
-                    'border-red-500':
-                      !currentExpense.currency && isSaveAttempted
+                    'border-red-500': !currentExpense.cardId && isSaveAttempted
                   }"
                   [disabled]="!isTarjetaChecked"
-                  class="border border-gray-300 rounded px-2 py-2 w-3/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="border border-gray-300 rounded px-2 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="ARS">VISA</option>
-                  <option value="USD">MASTERCARD</option>
+                  <option disabled [ngValue]="null">
+                    Seleccione una tarjeta
+                  </option>
+                  <option
+                    *ngFor="let card of cardsWithDate"
+                    [ngValue]="card.id"
+                  >
+                    {{ getCardName(card) }}
+                  </option>
                 </select>
               </td>
 
@@ -910,6 +921,16 @@
                   <span class="text-sm font-semibold"
                     >{{ item.value | numberFormat }}
                   </span>
+                </td>
+
+                <td *ngIf="item.cardId" class="px-6 py-4 whitespace-nowrap">
+                  {{ getCardNameById(item.cardId) }}
+                </td>
+                <td
+                  *ngIf="!item.cardId"
+                  class="px-6 py-4 whitespace-nowrap text-gray-500 italic font-light"
+                >
+                  Vacío
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>

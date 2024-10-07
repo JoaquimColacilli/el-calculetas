@@ -24,7 +24,7 @@
         }"
         (click)="animateCard(card.id)"
       >
-        <!-- Visa Image -->
+        <!-- Card Logo -->
         <img
           id="visa"
           src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
@@ -42,19 +42,31 @@
 
         <ng-container *ngIf="selectedCardId === card.id">
           <!-- Date Picker -->
-          <h1>Fecha cierre de tarjeta</h1>
+          <h1>Configuración de la Tarjeta</h1>
+
+          <!-- Input para el nombre de la tarjeta -->
+          <input
+            type="text"
+            [(ngModel)]="card.name"
+            placeholder="Nombre de la tarjeta"
+            (click)="$event.stopPropagation()"
+            class="card-name-input"
+          />
+
           <!-- Day and Month Selectors -->
           <div class="date-selectors">
             <select
               [(ngModel)]="card.selectedDay"
               (click)="$event.stopPropagation()"
             >
+              <option [value]="null">Día</option>
               <option *ngFor="let day of days" [value]="day">{{ day }}</option>
             </select>
             <select
               [(ngModel)]="card.selectedMonth"
               (click)="$event.stopPropagation()"
             >
+              <option [value]="null">Mes</option>
               <option *ngFor="let month of months" [value]="month.value">
                 {{ month.name }}
               </option>
@@ -66,6 +78,7 @@
       <div class="department" id="one"></div>
       <div class="department" id="two"></div>
       <div class="department" id="three"></div>
+      <div class="department" id="four"></div>
     </div>
   </div>
 </div>

@@ -18,6 +18,7 @@ import { UserService } from '../../../services/user.service';
 import { collection, collectionData, Firestore } from '@angular/fire/firestore';
 import { EMPTY, Observable, tap } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
+import { deleteDoc, doc, getDocs } from 'firebase/firestore';
 
 @Component({
   selector: 'app-novedades',
@@ -46,18 +47,21 @@ export class NovedadesComponent implements OnInit {
   messageId_3: string = 'message_3';
   messageId_4: string = 'message_4';
   messageId_5: string = 'message_5';
+  messageId_6: string = 'message_6';
 
   showReactionMenu_1 = false;
   showReactionMenu_2 = false;
   showReactionMenu_3 = false;
   showReactionMenu_4 = false;
   showReactionMenu_5 = false;
+  showReactionMenu_6 = false;
 
   selectedReactions_1: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_2: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_3: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_4: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_5: { emoji: string; count: number; users: string[] }[] = [];
+  selectedReactions_6: { emoji: string; count: number; users: string[] }[] = [];
 
   userIdToUsernameMap: { [uid: string]: string } = {};
 
@@ -121,6 +125,12 @@ export class NovedadesComponent implements OnInit {
 
     this.getReactions('message_5').subscribe((reactions: any[]) => {
       this.selectedReactions_5 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
+    });
+
+    this.getReactions('message_6').subscribe((reactions: any[]) => {
+      this.selectedReactions_6 = this.groupReactionsByEmoji(reactions);
       const uids = reactions.map((r) => r.userId);
       this.fetchUsernames(uids);
 
@@ -227,7 +237,6 @@ export class NovedadesComponent implements OnInit {
       groupedReactions[emoji].count++;
       groupedReactions[emoji].users.push(userId);
 
-      // Agrega este .log para verificar
       console.log(`Emoji: ${emoji}, Users:`, groupedReactions[emoji].users);
     });
 
@@ -257,6 +266,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_4 = false;
     } else if (messageId === 'message_5') {
       this.showReactionMenu_5 = false;
+    } else if (messageId === 'message_6') {
+      this.showReactionMenu_6 = false;
     }
   }
 
@@ -271,6 +282,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_4 = !this.showReactionMenu_4;
     } else if (messageId === 'message_5') {
       this.showReactionMenu_5 = !this.showReactionMenu_5;
+    } else if (messageId === 'message_6') {
+      this.showReactionMenu_6 = !this.showReactionMenu_6;
     }
   }
 

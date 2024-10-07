@@ -35,6 +35,9 @@ import {
   DefaultCategories,
 } from '../../../interfaces/category.interface';
 
+import { Card } from '../../../interfaces/card.interface';
+import { CardService } from '../../../services/card.service';
+
 import { CategoryService } from '../../../services/category.service';
 
 import { ModalCategoriasComponent } from './modal-categorias/modal-categorias.component';
@@ -176,6 +179,8 @@ export class DashboardComponent implements OnInit {
 
   userLocation: string | null = null;
 
+  cardsWithDate: Card[] = [];
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -187,7 +192,8 @@ export class DashboardComponent implements OnInit {
     private el: ElementRef,
     private financeService: FinanceService,
     private categoryService: CategoryService,
-    private sueldoService: SueldoService
+    private sueldoService: SueldoService,
+    private cardService: CardService
   ) {
     library.addIconPacks(fas);
   }
@@ -259,6 +265,8 @@ export class DashboardComponent implements OnInit {
     this.loadUserCategories();
 
     this.resetSalariesIfNeeded();
+
+    this.loadUserCards();
   }
 
   private async resetSalariesIfNeeded(): Promise<void> {
@@ -282,6 +290,21 @@ export class DashboardComponent implements OnInit {
         console.error('Error al cargar las categorías:', error);
       },
     });
+  }
+
+  loadUserCards(): void {
+    this.cardService.getUserCards().subscribe(
+      (cards) => {
+        this.cardsWithDate = cards.filter((card) => card.date);
+      },
+      (error) => {
+        console.error('Error al cargar las tarjetas:', error);
+      }
+    );
+  }
+
+  getCardName(card: Card): string {
+    return card.name || 'Tarjeta';
   }
 
   loadExpenses(): void {
@@ -432,9 +455,14 @@ export class DashboardComponent implements OnInit {
     this.getDisplayDate();
   }
 
-  toggleTarjeta() {
+  toggleTarjeta(): void {
     if (this.isTarjetaChecked) {
       this.isTodayChecked = false;
+      this.currentExpense.date = '';
+      this.currentExpense.cardId = '';
+    } else {
+      this.currentExpense.cardId = '';
+      this.currentExpense.date = '';
     }
   }
 
@@ -450,6 +478,44 @@ export class DashboardComponent implements OnInit {
       !this.currentExpense.category
     ) {
       console.log('Faltan campos obligatorios.');
+      return;
+    }
+
+    if (this.isTarjetaChecked) {
+      if (!this.currentExpense.cardId) {
+        console.log('Debe seleccionar una tarjeta.');
+        return;
+      }
+
+      const selectedCard = this.cardsWithDate.find(
+        (card) => card.id === this.currentExpense.cardId
+      );
+
+      if (
+        selectedCard &&
+        selectedCard.selectedDay &&
+        selectedCard.selectedMonth
+      ) {
+        // Crear la fecha usando selectedDay y selectedMonth, año actual
+        const currentYear = new Date().getFullYear();
+        const cardDate = new Date(
+          currentYear,
+          selectedCard.selectedMonth - 1,
+          selectedCard.selectedDay
+        );
+
+        // Formatear la fecha a 'YYYY-MM-DD'
+        const formattedCardDate = cardDate.toISOString().split('T')[0];
+        this.currentExpense.date = formattedCardDate;
+      } else {
+        console.log('La tarjeta seleccionada no tiene fecha configurada.');
+        return;
+      }
+    }
+
+    // Si no es un gasto con tarjeta y la fecha no está seleccionada
+    if (!this.isTarjetaChecked && !this.currentExpense.date) {
+      console.log('Debe seleccionar una fecha.');
       return;
     }
 
@@ -546,6 +612,34 @@ export class DashboardComponent implements OnInit {
       await this.loadExpenses();
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
+    }
+  }
+
+  getCardNameById(cardId: string | undefined): string {
+    if (!cardId) return '';
+    const card = this.cardsWithDate.find((c) => c.id === cardId);
+    return card ? this.getCardName(card) : '';
+  }
+
+  onCardSelectionChange(): void {
+    if (this.isTarjetaChecked && this.currentExpense.cardId) {
+      const selectedCard = this.cardsWithDate.find(
+        (card) => card.id === this.currentExpense.cardId
+      );
+      if (
+        selectedCard &&
+        selectedCard.selectedDay &&
+        selectedCard.selectedMonth
+      ) {
+        const currentYear = new Date().getFullYear();
+        const cardDate = new Date(
+          currentYear,
+          selectedCard.selectedMonth - 1,
+          selectedCard.selectedDay
+        );
+        const formattedCardDate = cardDate.toISOString().split('T')[0];
+        this.currentExpense.date = formattedCardDate;
+      }
     }
   }
 
@@ -1448,6 +1542,34 @@ export class DashboardComponent implements OnInit {
     const selectedDate = this.parseDate(this.currentExpense.date);
 
     this.isTodayChecked = selectedDate.getTime() === today.getTime();
+
+    this.isTarjetaChecked = !!expense.cardId;
+
+    if (this.isTarjetaChecked && expense.cardId) {
+      const selectedCard = this.cardsWithDate.find(
+        (card) => card.id === expense.cardId
+      );
+      if (
+        selectedCard &&
+        selectedCard.selectedDay &&
+        selectedCard.selectedMonth
+      ) {
+        const currentYear = new Date().getFullYear();
+        const cardDate = new Date(
+          currentYear,
+          selectedCard.selectedMonth - 1,
+          selectedCard.selectedDay
+        );
+        const formattedCardDate = cardDate.toISOString().split('T')[0];
+        this.currentExpense.date = formattedCardDate;
+      }
+    } else {
+      // Si no es un gasto con tarjeta, manejar isTodayChecked
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = this.parseDate(this.currentExpense.date);
+      this.isTodayChecked = selectedDate.getTime() === today.getTime();
+    }
   }
 
   async updateExpenseInFirebase(expense: FinanceInterface): Promise<void> {
