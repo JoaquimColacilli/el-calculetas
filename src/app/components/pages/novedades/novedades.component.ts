@@ -45,16 +45,19 @@ export class NovedadesComponent implements OnInit {
   messageId_2: string = 'message_2';
   messageId_3: string = 'message_3';
   messageId_4: string = 'message_4';
+  messageId_5: string = 'message_5';
 
   showReactionMenu_1 = false;
   showReactionMenu_2 = false;
   showReactionMenu_3 = false;
   showReactionMenu_4 = false;
+  showReactionMenu_5 = false;
 
   selectedReactions_1: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_2: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_3: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_4: { emoji: string; count: number; users: string[] }[] = [];
+  selectedReactions_5: { emoji: string; count: number; users: string[] }[] = [];
 
   userIdToUsernameMap: { [uid: string]: string } = {};
 
@@ -112,6 +115,12 @@ export class NovedadesComponent implements OnInit {
 
     this.getReactions('message_4').subscribe((reactions: any[]) => {
       this.selectedReactions_4 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
+    });
+
+    this.getReactions('message_5').subscribe((reactions: any[]) => {
+      this.selectedReactions_5 = this.groupReactionsByEmoji(reactions);
       const uids = reactions.map((r) => r.userId);
       this.fetchUsernames(uids);
 
@@ -238,7 +247,6 @@ export class NovedadesComponent implements OnInit {
       console.log(`Reacción guardada para ${messageId}`);
     });
 
-    // Cerrar el menú de reacciones correspondiente
     if (messageId === 'message_1') {
       this.showReactionMenu_1 = false;
     } else if (messageId === 'message_2') {
@@ -247,6 +255,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_3 = false;
     } else if (messageId === 'message_4') {
       this.showReactionMenu_4 = false;
+    } else if (messageId === 'message_5') {
+      this.showReactionMenu_5 = false;
     }
   }
 
@@ -259,6 +269,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_3 = !this.showReactionMenu_3;
     } else if (messageId === 'message_4') {
       this.showReactionMenu_4 = !this.showReactionMenu_4;
+    } else if (messageId === 'message_5') {
+      this.showReactionMenu_5 = !this.showReactionMenu_5;
     }
   }
 
