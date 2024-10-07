@@ -72,7 +72,7 @@
   display: block;
   width: 60px;
   top: 12px;
-  right: 20px;
+  right: 50px; /* Adjusted to make space for the checkmark */
 }
 
 .chip {
@@ -83,18 +83,15 @@
   background: #d9c798;
   border-radius: 5px;
   top: 35px;
-  left: 50px;
+  left: 35px;
 }
 
 .card h1 {
-  display: inline-block;
+  text-align: center;
+  font-size: 18px;
+  color: #fff;
   font-family: "Oswald";
   font-weight: 300;
-  font-size: 26px;
-  color: #fff;
-  width: 100%;
-  margin: 85px 0px 0px 50px;
-  text-decoration: none;
 }
 
 .card h2 {
@@ -145,4 +142,86 @@
 /* Estilos para el fondo oscuro */
 .custom-backdrop {
   background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro */
+}
+
+.card input[type="date"] {
+  display: block;
+  margin: 20px auto; /* Centers the input */
+  padding: 8px;
+  width: 70%; /* Adjust width as needed */
+  font-size: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+  border-radius: 5px;
+  text-align: center;
+  color: #000; /* Text color */
+}
+
+/* Adjust the date picker elements to match the card style */
+.card input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(
+    1
+  ); /* Invert the color to make it visible on dark backgrounds */
+}
+
+/* Style the heading above the date input */
+
+.checkmark-icon {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.checkmark-icon:hover {
+  color: #00ff00; /* Optional: Change color on hover */
+}
+
+/* Style for the date selectors */
+.date-selectors {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.date-selectors select {
+  margin: 0 5px;
+  padding: 8px;
+  font-size: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 5px;
+  text-align: center;
+  color: #000;
+}
+
+.date-selectors select:focus {
+  outline: none;
+}
+
+/* Adjust the date picker elements to match the card style */
+.card select {
+  -webkit-appearance: none; /* Remove default styling */
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5" viewBox="0 0 10 5"><path fill="none" stroke="%23000" stroke-width="1.5" d="M1 1l4 3 4-3"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px top 50%;
+  background-size: 10px 5px;
+}
+
+/* Style the heading above the date input */
+.card h1 {
+  text-align: center;
+  margin-top: 60px; /* Adjust margin as needed */
+  font-size: 18px;
+  color: #fff;
+}
+
+.close-button {
+  position: absolute;
+  top: -140px;
+  right: 5px;
+  z-index: 1000;
 }

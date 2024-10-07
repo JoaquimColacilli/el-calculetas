@@ -3,67 +3,64 @@
   [ngClass]="{ hidden: !openModal }"
 >
   <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
-    <!-- Cerrar botón -->
+    <!-- Close button -->
+    <button
+      class="close-button bg-gray-200 text-gray-700 rounded-full py-1 px-3 hover:bg-gray-300"
+      (click)="closeModal()"
+    >
+      X
+    </button>
 
-    <!-- Aquí va la billetera -->
+    <!-- Wallet -->
     <div class="wallet relative">
-      <button
-        class="absolute top-2 right-2 bg-gray-200 text-gray-700 rounded-full py-1 px-3 hover:bg-gray-300"
-        (click)="closeModal()"
+      <div
+        class="card"
+        *ngFor="let card of cards"
+        [id]="card.id"
+        [ngStyle]="{
+          bottom: card.bottom,
+          background: card.background,
+          'z-index': card.zIndex
+        }"
+        (click)="animateCard(card.id)"
       >
-        X
-      </button>
+        <!-- Visa Image -->
+        <img
+          id="visa"
+          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
+        />
 
-      <div
-        class="card"
-        id="card1"
-        [ngStyle]="{ bottom: '0px' }"
-        (click)="animateCard('card1')"
-      >
-        <img
-          id="visa"
-          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-        />
+        <!-- Checkmark Icon -->
+        <fa-icon
+          *ngIf="selectedCardId === card.id"
+          [icon]="['fas', 'check']"
+          class="checkmark-icon"
+          (click)="closeCard(card); $event.stopPropagation()"
+        ></fa-icon>
+
         <div class="chip"></div>
-        <h1>0000 0000 0000 0000</h1>
-        <p>Card Holder</p>
-        <p>Expiration Date</p>
-        <h2>Daniel Putzer</h2>
-        <h2>02/22</h2>
-      </div>
-      <div
-        class="card"
-        id="card2"
-        [ngStyle]="{ bottom: '50px' }"
-        (click)="animateCard('card2')"
-      >
-        <img
-          id="visa"
-          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-        />
-        <div class="chip"></div>
-        <h1>0000 0000 0000 0000</h1>
-        <p>Card Holder</p>
-        <p>Expiration Date</p>
-        <h2>Daniel Putzer</h2>
-        <h2>03/33</h2>
-      </div>
-      <div
-        class="card"
-        id="card3"
-        [ngStyle]="{ bottom: '100px' }"
-        (click)="animateCard('card3')"
-      >
-        <img
-          id="visa"
-          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-        />
-        <div class="chip"></div>
-        <h1>0000 0000 0000 0000</h1>
-        <p>Card Holder</p>
-        <p>Expiration Date</p>
-        <h2>Daniel Putzer</h2>
-        <h2>04/44</h2>
+
+        <ng-container *ngIf="selectedCardId === card.id">
+          <!-- Date Picker -->
+          <h1>Fecha cierre de tarjeta</h1>
+          <!-- Day and Month Selectors -->
+          <div class="date-selectors">
+            <select
+              [(ngModel)]="card.selectedDay"
+              (click)="$event.stopPropagation()"
+            >
+              <option *ngFor="let day of days" [value]="day">{{ day }}</option>
+            </select>
+            <select
+              [(ngModel)]="card.selectedMonth"
+              (click)="$event.stopPropagation()"
+            >
+              <option *ngFor="let month of months" [value]="month.value">
+                {{ month.name }}
+              </option>
+            </select>
+          </div>
+        </ng-container>
       </div>
 
       <div class="department" id="one"></div>
