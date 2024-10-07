@@ -144,7 +144,7 @@ export class DashboardComponent implements OnInit {
   private intervalId: any;
 
   searchQuery: string = '';
-  selectedCategory: string | null = null;
+  selectedCategory: string | { name: string } | null = null;
 
   isTodayChecked: boolean = true;
 
@@ -646,8 +646,72 @@ export class DashboardComponent implements OnInit {
     clearInterval(this.intervalId);
   }
 
+  get countSelectedItemsThisMonth(): number {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // Mes actual (0 es enero)
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDateForComparisonCheck(item.date);
+      // Asegúrate de comparar correctamente el año y mes
+      return (
+        item.selected &&
+        itemDate.getFullYear() === currentYear &&
+        itemDate.getMonth() === currentMonth
+      );
+    }).length;
+  }
+
+  get countSelectedItemsThisWeek(): number {
+    const now = new Date();
+    const startOfWeek = this.getStartOfWeek(now);
+    const endOfWeek = this.getEndOfWeek(now);
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDateForComparisonCheck(item.date);
+      return item.selected && itemDate >= startOfWeek && itemDate <= endOfWeek;
+    }).length;
+  }
+
+  get countSelectedItemsThisYear(): number {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDateForComparisonCheck(item.date);
+      return item.selected && itemDate.getFullYear() === currentYear;
+    }).length;
+  }
+
   get countSelectedItems(): number {
-    return this.financeItems.filter((item) => item.selected).length;
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        return this.countSelectedItemsThisMonth;
+      case 'Esta semana':
+        return this.countSelectedItemsThisWeek;
+      case 'Este año':
+        return this.countSelectedItemsThisYear;
+      default:
+        return this.financeItems.filter((item) => item.selected).length;
+    }
+  }
+
+  parseDateForComparisonCheck(dateString: string): Date {
+    if (dateString.includes('-')) {
+      const dateParts = dateString.split('-');
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const day = parseInt(dateParts[2], 10);
+      return new Date(year, month, day, 0, 0, 0, 0);
+    } else if (dateString.includes('/')) {
+      const dateParts = dateString.split('/');
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const year = parseInt(dateParts[2], 10);
+      return new Date(year, month, day, 0, 0, 0, 0);
+    }
+
+    return new Date('Invalid Date');
   }
 
   eliminarSeleccionados() {
@@ -946,16 +1010,43 @@ export class DashboardComponent implements OnInit {
   }
 
   getFilteredExpenses(): FinanceInterface[] {
+    let filteredItems: FinanceInterface[] = [];
+
+    // Aplica los filtros por mes, semana o año
     switch (this.options[this.currentIndex]) {
       case 'Este mes':
-        return this.getExpensesForThisMonth();
+        filteredItems = this.getExpensesForThisMonth();
+        break;
       case 'Esta semana':
-        return this.getExpensesForThisWeek();
+        filteredItems = this.getExpensesForThisWeek();
+        break;
       case 'Este año':
-        return this.getExpensesForThisYear();
+        filteredItems = this.getExpensesForThisYear();
+        break;
       default:
-        return this.financeItems;
+        filteredItems = this.financeItems;
+        break;
     }
+
+    // Aplica el filtro de búsqueda y categoría después de filtrar por fecha
+    const searchQueryLower = this.searchQuery.toLowerCase();
+    return filteredItems.filter((item) => {
+      const matchesSearchQuery = Object.values(item).some((value) =>
+        String(value).toLowerCase().includes(searchQueryLower)
+      );
+
+      const matchesCategory = this.selectedCategory
+        ? typeof this.selectedCategory === 'string'
+          ? this.getCategoryName(item.category).toLowerCase() ===
+            this.selectedCategory.toLowerCase()
+          : this.selectedCategory && 'name' in this.selectedCategory
+          ? this.getCategoryName(item.category).toLowerCase() ===
+            this.selectedCategory.name.toLowerCase()
+          : true
+        : true;
+
+      return matchesSearchQuery && matchesCategory;
+    });
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
@@ -1396,24 +1487,19 @@ export class DashboardComponent implements OnInit {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth(); // Mes actual de 0 (enero) a 11 (diciembre)
 
-    // Normaliza la fecha de "now" a medianoche para evitar problemas de horas
-    now.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0); // Normalizar la hora
 
     switch (this.options[this.currentIndex]) {
       case 'Este mes':
         return items.filter((item) => {
           const itemDate = this.parseDate(item.date);
-
-          // Normaliza también la fecha del gasto a medianoche
           itemDate.setHours(0, 0, 0, 0);
-
           return (
             itemDate.getFullYear() === currentYear &&
             itemDate.getMonth() === currentMonth
           );
         });
 
-      // Resto de los casos sin cambios
       case 'Esta semana':
         const currentWeekStart = this.getStartOfWeek(now);
         const currentWeekEnd = this.getEndOfWeek(now);
@@ -1517,8 +1603,26 @@ export class DashboardComponent implements OnInit {
 
   toggleSelectAll() {
     this.selectAll = !this.selectAll;
-    const visibleItems = this.getCurrentMonthItems();
 
+    let visibleItems: FinanceInterface[] = [];
+
+    // Determina los ítems visibles según la vista seleccionada
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        visibleItems = this.getExpensesForThisMonth();
+        break;
+      case 'Esta semana':
+        visibleItems = this.getExpensesForThisWeek();
+        break;
+      case 'Este año':
+        visibleItems = this.getExpensesForThisYear();
+        break;
+      default:
+        visibleItems = this.financeItems;
+        break;
+    }
+
+    // Marca o desmarca todos los ítems visibles
     visibleItems.forEach((item) => {
       item.selected = this.selectAll;
     });
