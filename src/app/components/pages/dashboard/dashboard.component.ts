@@ -188,6 +188,8 @@ export class DashboardComponent implements OnInit {
 
   cardsWithDate: Card[] = [];
 
+  pagoFilterState: 'Todos' | 'Pagado' | 'Por pagar' | 'Vencido' = 'Todos';
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -318,17 +320,23 @@ export class DashboardComponent implements OnInit {
     this.isLoadingData = true;
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
-        this.financeItems = expenses.map((expense) => {
-          const numericValue = parseFloat(String(expense.value));
+        this.financeItems = expenses
+          .map((expense) => {
+            const numericValue = parseFloat(String(expense.value));
 
-          const formattedValue = this.formatCurrency(numericValue);
+            const formattedValue = this.formatCurrency(numericValue);
 
-          return {
-            ...expense,
-            value: String(numericValue),
-            valueFormatted: formattedValue,
-          };
-        });
+            return {
+              ...expense,
+              value: String(numericValue),
+              valueFormatted: formattedValue,
+            };
+          })
+          .sort((a, b) => {
+            const dateA = this.parseDate(a.date).getTime();
+            const dateB = this.parseDate(b.date).getTime();
+            return dateB - dateA; // Orden descendente
+          });
 
         this.updateExpensesStatus();
         this.isLoadingData = false;
@@ -677,6 +685,30 @@ export class DashboardComponent implements OnInit {
     this.isTodayChecked = selectedDate.getTime() === today.getTime();
   }
 
+  togglePagoFilter(): void {
+    if (this.pagoFilterState === 'Todos') {
+      this.pagoFilterState = 'Pagado';
+    } else if (this.pagoFilterState === 'Pagado') {
+      this.pagoFilterState = 'Por pagar';
+    } else if (this.pagoFilterState === 'Por pagar') {
+      this.pagoFilterState = 'Vencido';
+    } else if (this.pagoFilterState === 'Vencido') {
+      this.pagoFilterState = 'Todos';
+    }
+  }
+
+  getPagoFilterButtonClass(): string {
+    if (this.pagoFilterState === 'Pagado') {
+      return 'bg-green-500 hover:bg-green-600';
+    } else if (this.pagoFilterState === 'Por pagar') {
+      return 'bg-yellow-500 hover:bg-yellow-600';
+    } else if (this.pagoFilterState === 'Vencido') {
+      return 'bg-red-500 hover:bg-red-600';
+    } else {
+      return 'bg-gray-500 hover:bg-gray-600';
+    }
+  }
+
   // Eliminar un gasto
   async deleteExpense(expense: FinanceInterface): Promise<void> {
     const uid = this.getCurrentUserUid();
@@ -701,7 +733,7 @@ export class DashboardComponent implements OnInit {
       );
       await deleteDoc(expenseDoc);
 
-      this.getExpenses();
+      this.loadExpenses();
       this.showDeleteNotification(expense.name);
     } catch (error) {
       console.error('Error al eliminar el gasto:', error);
@@ -1106,7 +1138,7 @@ export class DashboardComponent implements OnInit {
   getFilteredExpenses(): FinanceInterface[] {
     let filteredItems: FinanceInterface[] = [];
 
-    // Aplica los filtros por mes, semana o año
+    // Filtrar por mes, semana o año
     switch (this.options[this.currentIndex]) {
       case 'Este mes':
         filteredItems = this.getExpensesForThisMonth();
@@ -1122,9 +1154,9 @@ export class DashboardComponent implements OnInit {
         break;
     }
 
-    // Aplica el filtro de búsqueda y categoría después de filtrar por fecha
+    // Aplicar filtros de búsqueda y categoría
     const searchQueryLower = this.searchQuery.toLowerCase();
-    return filteredItems.filter((item) => {
+    filteredItems = filteredItems.filter((item) => {
       const matchesSearchQuery = Object.values(item).some((value) =>
         String(value).toLowerCase().includes(searchQueryLower)
       );
@@ -1141,6 +1173,15 @@ export class DashboardComponent implements OnInit {
 
       return matchesSearchQuery && matchesCategory;
     });
+
+    // Aplicar filtro por estado de pago
+    if (this.pagoFilterState !== 'Todos') {
+      filteredItems = filteredItems.filter(
+        (item) => item.status === this.pagoFilterState
+      );
+    }
+
+    return filteredItems;
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
@@ -1709,6 +1750,8 @@ export class DashboardComponent implements OnInit {
             popup: 'swal-custom-popup',
           },
         });
+
+        this.loadExpenses();
       } catch (error) {
         console.error('Error al eliminar los gastos:', error);
       }
