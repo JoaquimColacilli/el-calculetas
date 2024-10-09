@@ -190,6 +190,8 @@ export class DashboardComponent implements OnInit {
 
   pagoFilterState: 'Todos' | 'Pagado' | 'Por pagar' | 'Vencido' = 'Todos';
 
+  showAllExpenses: boolean = false;
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -276,6 +278,17 @@ export class DashboardComponent implements OnInit {
     this.resetSalariesIfNeeded();
 
     this.loadUserCards();
+
+    this.loadShowAllExpenses();
+  }
+
+  loadShowAllExpenses() {
+    const storedValue = localStorage.getItem('showAllExpenses');
+    if (storedValue !== null) {
+      this.showAllExpenses = JSON.parse(storedValue);
+    } else {
+      this.showAllExpenses = false; // Valor por defecto si no existe en localStorage
+    }
   }
 
   private async resetSalariesIfNeeded(): Promise<void> {
@@ -1138,23 +1151,28 @@ export class DashboardComponent implements OnInit {
   getFilteredExpenses(): FinanceInterface[] {
     let filteredItems: FinanceInterface[] = [];
 
-    // Filtrar por mes, semana o año
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        filteredItems = this.getExpensesForThisMonth();
-        break;
-      case 'Esta semana':
-        filteredItems = this.getExpensesForThisWeek();
-        break;
-      case 'Este año':
-        filteredItems = this.getExpensesForThisYear();
-        break;
-      default:
-        filteredItems = this.financeItems;
-        break;
+    // Si 'Mostrar todos' está activado, mostrar todos los gastos
+    if (this.showAllExpenses) {
+      filteredItems = this.financeItems.slice(); // Copia todos los gastos
+    } else {
+      // Lógica existente para filtrar por mes, semana o año
+      switch (this.options[this.currentIndex]) {
+        case 'Este mes':
+          filteredItems = this.getExpensesForThisMonth();
+          break;
+        case 'Esta semana':
+          filteredItems = this.getExpensesForThisWeek();
+          break;
+        case 'Este año':
+          filteredItems = this.getExpensesForThisYear();
+          break;
+        default:
+          filteredItems = this.financeItems;
+          break;
+      }
     }
 
-    // Aplicar filtros de búsqueda y categoría
+    // Aplicar filtros de búsqueda y categoría como antes
     const searchQueryLower = this.searchQuery.toLowerCase();
     filteredItems = filteredItems.filter((item) => {
       const matchesSearchQuery = Object.values(item).some((value) =>
@@ -1182,6 +1200,23 @@ export class DashboardComponent implements OnInit {
     }
 
     return filteredItems;
+  }
+
+  onShowAllExpensesChange(): void {
+    this.cdr.detectChanges();
+  }
+
+  getExpensesForCurrentPeriod(): FinanceInterface[] {
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        return this.getExpensesForThisMonth();
+      case 'Esta semana':
+        return this.getExpensesForThisWeek();
+      case 'Este año':
+        return this.getExpensesForThisYear();
+      default:
+        return this.financeItems;
+    }
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
@@ -1386,8 +1421,9 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateTotals(): void {
-    // Totales en ARS
-    this.totalAmountARS = this.financeItems
+    const filteredItems = this.getFilteredExpenses();
+
+    this.totalAmountARS = filteredItems
       .filter((item) => item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1395,7 +1431,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalVencidosARS = this.financeItems
+    this.totalVencidosARS = filteredItems
       .filter((item) => item.status === 'Vencido' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1403,7 +1439,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPagadosARS = this.financeItems
+    this.totalPagadosARS = filteredItems
       .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1411,7 +1447,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPorPagarARS = this.financeItems
+    this.totalPorPagarARS = filteredItems
       .filter((item) => item.status === 'Por pagar' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1420,7 +1456,7 @@ export class DashboardComponent implements OnInit {
       );
 
     // Totales en USD
-    this.totalAmountUSD = this.financeItems
+    this.totalAmountUSD = filteredItems
       .filter((item) => item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1428,7 +1464,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalVencidosUSD = this.financeItems
+    this.totalVencidosUSD = filteredItems
       .filter((item) => item.status === 'Vencido' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1436,7 +1472,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPagadosUSD = this.financeItems
+    this.totalPagadosUSD = filteredItems
       .filter((item) => item.status === 'Pagado' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1444,7 +1480,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPorPagarUSD = this.financeItems
+    this.totalPorPagarUSD = filteredItems
       .filter((item) => item.status === 'Por pagar' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1562,6 +1598,15 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  toggleShowAllExpenses() {
+    this.showAllExpenses = !this.showAllExpenses;
+    localStorage.setItem(
+      'showAllExpenses',
+      JSON.stringify(this.showAllExpenses)
+    );
+    this.onShowAllExpensesChange();
+  }
+
   getMarcarTodosIcon(): IconProp {
     const selectedItems = this.financeItems.filter((item) => item.selected);
     const allPaid = selectedItems.every((item) => item.isPaid);
@@ -1571,7 +1616,7 @@ export class DashboardComponent implements OnInit {
   getMarcarTodosTooltip(): string {
     const selectedItems = this.financeItems.filter((item) => item.selected);
     const allPaid = selectedItems.every((item) => item.isPaid);
-    return allPaid ? 'Marcar todos como no pagos' : 'Marcar todos como pagos';
+    return allPaid ? 'Marcar como no pago' : 'Marcar como pago';
   }
 
   getMarcarTodosButtonClass(): string {
