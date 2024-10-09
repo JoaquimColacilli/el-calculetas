@@ -28,3 +28,9 @@
     transform: rotate(360deg);
   }
 }
+
+canvas#doughnutChart {
+  max-width: 500px;
+  max-height: 500px;
+  margin: 0 auto;
+}

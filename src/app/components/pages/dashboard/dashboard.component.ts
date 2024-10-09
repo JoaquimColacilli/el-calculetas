@@ -10,6 +10,8 @@ import {
   Directive,
 } from '@angular/core';
 
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+
 import { MatDialog } from '@angular/material/dialog';
 
 import { AuthService } from '../../../services/auth.service';
@@ -19,7 +21,11 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { fas } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheckCircle,
+  fas,
+  faTimesCircle,
+} from '@fortawesome/free-solid-svg-icons';
 
 import { WeatherService } from '../../../services/weather.service';
 import { CurrencyService } from '../../../services/currency.service';
@@ -68,6 +74,7 @@ import { SwitchAccountModalComponent } from './account-management/switch-account
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { ModalWalletComponent } from './modal-wallet/modal-wallet.component';
+import { writeBatch } from 'firebase/firestore';
 
 @Component({
   selector: 'app-dashboard',
@@ -808,13 +815,6 @@ export class DashboardComponent implements OnInit {
     return new Date('Invalid Date');
   }
 
-  eliminarSeleccionados() {
-    this.financeItems = this.financeItems.filter((item) => !item.selected);
-    this.selectAll = false;
-    this.haySeleccionados = false;
-    this.cdr.detectChanges();
-  }
-
   updateDateTime(): void {
     const now = new Date();
     this.currentDateTime = now.toLocaleString('es-ES', {
@@ -1517,6 +1517,200 @@ export class DashboardComponent implements OnInit {
         item.status = 'Vencido';
       } else {
         item.status = 'Por pagar';
+      }
+    }
+  }
+
+  getMarcarTodosIcon(): IconProp {
+    const selectedItems = this.financeItems.filter((item) => item.selected);
+    const allPaid = selectedItems.every((item) => item.isPaid);
+    return allPaid ? ['fas', 'thumbs-down'] : ['fas', 'thumbs-up'];
+  }
+
+  getMarcarTodosTooltip(): string {
+    const selectedItems = this.financeItems.filter((item) => item.selected);
+    const allPaid = selectedItems.every((item) => item.isPaid);
+    return allPaid ? 'Marcar todos como no pagos' : 'Marcar todos como pagos';
+  }
+
+  getMarcarTodosButtonClass(): string {
+    const selectedItems = this.financeItems.filter((item) => item.selected);
+    const allPaid = selectedItems.every((item) => item.isPaid);
+
+    return allPaid
+      ? 'bg-red-500 hover:bg-red-600'
+      : 'bg-green-500 hover:bg-green-600';
+  }
+
+  getMarcarTodosIconClass(): string {
+    const selectedItems = this.financeItems.filter((item) => item.selected);
+    const allPaid = selectedItems.every((item) => item.isPaid);
+
+    return allPaid ? 'text-white' : 'text-white';
+  }
+
+  async marcarTodosComoPagos() {
+    const selectedItems = this.financeItems.filter((item) => item.selected);
+    const allPaid = selectedItems.every((item) => item.isPaid);
+
+    const action = allPaid ? 'marcar como no pagos' : 'marcar como pagos';
+    const confirmButtonText = allPaid
+      ? 'Sí, marcar como no pagos'
+      : 'Sí, marcar como pagos';
+
+    const result = await Swal.fire({
+      title: `¿Seguro que desea ${action} los gastos seleccionados?`,
+      icon: 'warning',
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: confirmButtonText,
+      width: '400px',
+      customClass: {
+        title: 'swal-title-small',
+      },
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      this.selectAll = false;
+      this.haySeleccionados = false;
+      const uid = this.getCurrentUserUid();
+      if (!uid) return;
+
+      // Prepare batch to update expenses in Firebase
+      const batch = writeBatch(this.firestore);
+
+      selectedItems.forEach((expense) => {
+        if (!expense.id) return;
+
+        // Update the isPaid and status in the local object
+        expense.isPaid = !allPaid;
+        this.updateExpenseStatus(expense);
+
+        // Reference to the document in Firestore
+        const expenseDocRef = doc(
+          this.firestore,
+          `users/${uid}/gastos/${expense.id}`
+        );
+
+        // Update in batch
+        batch.update(expenseDocRef, {
+          isPaid: expense.isPaid,
+          status: expense.status,
+        });
+      });
+
+      // Commit the batch
+      try {
+        await batch.commit();
+
+        // Show success notification
+        Swal.fire({
+          position: 'top',
+          icon: 'success',
+          title: `Se han actualizado los gastos seleccionados.`,
+          showConfirmButton: false,
+          timer: 3000,
+          toast: true,
+          customClass: {
+            popup: 'swal-custom-popup',
+          },
+        });
+
+        this.calculateCounts();
+        this.calculateTotals();
+        this.cdr.detectChanges();
+      } catch (error) {
+        console.error('Error al actualizar los gastos:', error);
+      }
+    }
+  }
+
+  mantenerGastoSiguienteMes() {
+    // Lógica para mantener los gastos para el mes siguiente
+  }
+
+  async eliminarSeleccionados() {
+    const countSelectedItems = this.countSelectedItems;
+
+    const result = await Swal.fire({
+      title: `¿Seguro que quiere enviar ${countSelectedItems} gasto(s) a la papelera temporal?`,
+      icon: 'warning',
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: 'Sí, enviar',
+      width: '400px', // Hacer el modal más pequeño
+      customClass: {
+        title: 'swal-title-small',
+      },
+      reverseButtons: true, // Intercambia la posición de los botones
+    });
+
+    if (result.isConfirmed) {
+      const uid = this.getCurrentUserUid();
+      if (!uid) return;
+
+      const deletedAt = this.getTodayDate();
+      const selectedItems = this.financeItems.filter((item) => item.selected);
+
+      // Desmarcar todos los checkboxes antes de eliminar
+      this.financeItems.forEach((item) => (item.selected = false));
+      this.selectAll = false;
+      this.haySeleccionados = false;
+      this.cdr.detectChanges();
+
+      // Preparar batch para eliminar todos los gastos de una sola vez
+      const batch = writeBatch(this.firestore);
+
+      selectedItems.forEach((expense) => {
+        if (!expense.id) return;
+
+        const trashDocRef = doc(
+          this.firestore,
+          `users/${uid}/papeleraTemporal/${expense.id}`
+        );
+        const expenseDocRef = doc(
+          this.firestore,
+          `users/${uid}/gastos/${expense.id}`
+        );
+
+        // Establecer 'selected' a false antes de guardar en la papelera temporal
+        const expenseData = {
+          ...expense,
+          selected: false,
+          deletedAt,
+        };
+
+        // Mover a papelera temporal con 'selected' en false
+        batch.set(trashDocRef, expenseData);
+
+        // Eliminar de gastos
+        batch.delete(expenseDocRef);
+      });
+
+      // Ejecutar el batch
+      try {
+        await batch.commit();
+
+        // Actualizar la lista local de gastos
+        this.financeItems = this.financeItems.filter(
+          (item) => !selectedItems.includes(item)
+        );
+
+        // Mostrar notificación de éxito
+        Swal.fire({
+          position: 'top',
+          icon: 'success',
+          title: `Se han enviado los ${countSelectedItems} gasto(s) a la papelera temporal.`,
+          showConfirmButton: false,
+          timer: 3000,
+          toast: true,
+          customClass: {
+            popup: 'swal-custom-popup',
+          },
+        });
+      } catch (error) {
+        console.error('Error al eliminar los gastos:', error);
       }
     }
   }

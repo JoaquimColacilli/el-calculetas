@@ -543,12 +543,37 @@
         class="bg-gray-100 rounded-lg shadow-lg transition-transform transform animate-slide-in mb-2 flex justify-between items-center px-6 py-3"
       >
         <span class="flex-1">Seleccionados: {{ countSelectedItems }}</span>
-        <button
-          (click)="eliminarSeleccionados()"
-          class="flex items-center justify-center px-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300"
-        >
-          <fa-icon [icon]="'trash'"></fa-icon>
-        </button>
+        <div class="flex space-x-2">
+          <!-- Botón para marcar todos como pagos o no pagos -->
+          <button
+            (click)="marcarTodosComoPagos()"
+            [title]="getMarcarTodosTooltip()"
+            [ngClass]="getMarcarTodosButtonClass()"
+            class="flex items-center justify-center py-1 px-3 text-white rounded-full transition duration-300"
+          >
+            <fa-icon
+              [icon]="getMarcarTodosIcon()"
+              [ngClass]="getMarcarTodosIconClass()"
+            ></fa-icon>
+          </button>
+
+          <button
+            (click)="mantenerGastoSiguienteMes()"
+            disabled
+            title="Mantener gasto para el mes siguiente"
+            class="flex items-center justify-center py-1 px-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 opacity-50"
+          >
+            <fa-icon [icon]="['fas', 'calendar-plus']"></fa-icon>
+          </button>
+
+          <button
+            (click)="eliminarSeleccionados()"
+            title="Eliminar seleccionados"
+            class="flex items-center justify-center py-1 px-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300"
+          >
+            <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+          </button>
+        </div>
       </div>
 
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
@@ -649,13 +674,17 @@
               <th
                 class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
               >
-                <input
-                  type="checkbox"
-                  class="checkbox-ripple cursor-pointer hover:bg-blue-100 transition-colors"
-                  (click)="toggleSelectAll()"
-                  [checked]="selectAll"
+                <label
+                  class="checkbox-label cursor-pointer hover:bg-blue-100 transition-colors"
                   title="Seleccionar todo"
-                />
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox-ripple"
+                    (click)="toggleSelectAll()"
+                    [checked]="selectAll"
+                  />
+                </label>
               </th>
             </tr>
           </thead>
@@ -963,13 +992,18 @@
                   </button>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="item.selected"
-                    class="checkbox-ripple cursor-pointer transition duration-300 rounded-full"
-                    (change)="onCheckboxChange()"
-                    title="Seleccionar"
-                  />
+                  <label
+                    class="checkbox-label cursor-pointer hover:bg-blue-100 transition-colors"
+                    title="Seleccionar todo"
+                  >
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="item.selected"
+                      class="checkbox-ripple"
+                      (change)="onCheckboxChange()"
+                      title="Seleccionar"
+                    />
+                  </label>
                 </td>
               </ng-container>
             </tr>

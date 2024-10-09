@@ -9,7 +9,7 @@ import {
   updateDoc,
   doc,
 } from '@angular/fire/firestore';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { FinanceInterface } from '../interfaces/finance.interface';
 import { AuthService } from '../services/auth.service';
 import { switchMap, catchError } from 'rxjs/operators';
@@ -102,6 +102,62 @@ export class FinanceService {
         console.error('Error al actualizar el gasto en Firebase:', error);
         return throwError(
           () => new Error('Error al actualizar el gasto en Firebase')
+        );
+      })
+    );
+  }
+
+  getTotalExpenses(): Observable<{ totalARS: number; totalUSD: number }> {
+    return this.getExpenses().pipe(
+      switchMap((expenses) => {
+        let totalARS = 0;
+        let totalUSD = 0;
+
+        expenses.forEach((expense) => {
+          const value = parseFloat(expense.value);
+          if (expense.currency === 'ARS') {
+            totalARS += value;
+          } else if (expense.currency === 'USD') {
+            totalUSD += value;
+          }
+        });
+
+        return of({ totalARS, totalUSD });
+      }),
+      catchError((error) => {
+        console.error('Error al calcular los totales:', error);
+        return throwError(() => new Error('Error al calcular los totales'));
+      })
+    );
+  }
+
+  getExpensesByCategory(): Observable<{ [category: string]: number }> {
+    return this.getExpenses().pipe(
+      switchMap((expenses) => {
+        const expensesByCategory: { [category: string]: number } = {};
+
+        expenses.forEach((expense) => {
+          const value = parseFloat(expense.value);
+          const categoryName =
+            typeof expense.category === 'string'
+              ? expense.category
+              : expense.category.name;
+
+          if (expensesByCategory[categoryName]) {
+            expensesByCategory[categoryName] += value;
+          } else {
+            expensesByCategory[categoryName] = value;
+          }
+        });
+
+        console.log(expensesByCategory);
+
+        return of(expensesByCategory);
+      }),
+      catchError((error) => {
+        console.error('Error al agrupar los gastos por categoría:', error);
+        return throwError(
+          () => new Error('Error al agrupar los gastos por categoría')
         );
       })
     );

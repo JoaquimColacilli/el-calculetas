@@ -3,6 +3,8 @@ import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { PantallaEnConstruccionComponent } from '../../pantalla-en-construccion/pantalla-en-construccion.component';
 import { CommonModule } from '@angular/common';
+import { FinanceService } from '../../../services/finance.service';
+
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 
 @Component({
@@ -17,20 +19,35 @@ import { Chart, ChartConfiguration } from 'chart.js/auto';
   templateUrl: './estadisticas.component.html',
   styleUrl: './estadisticas.component.css',
 })
-export class EstadisticasComponent implements OnInit, AfterViewInit {
+export class EstadisticasComponent implements OnInit {
   isLoadingData: boolean = false;
+  totalGastosARS: number = 0;
+  totalGastosUSD: number = 0;
+  doughnutChart: Chart<'doughnut', number[], string> | null = null;
+  expensesByCategory: { [category: string]: number } = {};
 
-  constructor() {}
-
-  ngAfterViewInit(): void {
-    this.createBarChart();
-    this.createDoughnutChart();
-  }
+  constructor(private financeService: FinanceService) {}
 
   ngOnInit(): void {
     this.createLineChart();
     this.createBarChart();
     this.createDoughnutChart();
+    this.loadExpensesByCategory();
+    this.loadFinanceExpenses();
+  }
+
+  loadFinanceExpenses() {
+    this.financeService.getTotalExpenses().subscribe((totals) => {
+      this.totalGastosARS = totals.totalARS;
+      this.totalGastosUSD = totals.totalUSD;
+    });
+  }
+
+  loadExpensesByCategory() {
+    this.financeService.getExpensesByCategory().subscribe((categoryData) => {
+      this.expensesByCategory = categoryData;
+      this.createDoughnutChart();
+    });
   }
 
   createLineChart(): void {
@@ -105,37 +122,62 @@ export class EstadisticasComponent implements OnInit, AfterViewInit {
     }
   }
 
+  updateDoughnutChart(): void {
+    if (this.doughnutChart) {
+      this.doughnutChart.data.datasets[0].data = [
+        this.totalGastosARS,
+        this.totalGastosUSD,
+      ];
+      this.doughnutChart.update();
+    }
+  }
+
   createDoughnutChart(): void {
     const canvas = document.getElementById(
       'doughnutChart'
     ) as HTMLCanvasElement;
     const ctxDoughnut = canvas?.getContext('2d');
 
+    // Destruir el gráfico previo si existe
+    if (this.doughnutChart) {
+      this.doughnutChart.destroy();
+    }
+
     if (ctxDoughnut) {
-      new Chart(ctxDoughnut, {
+      const categories = Object.keys(this.expensesByCategory);
+      const categoryValues = Object.values(this.expensesByCategory);
+
+      const config: ChartConfiguration<'doughnut', number[], string> = {
         type: 'doughnut',
         data: {
-          labels: ['Comida', 'Transporte', 'Ocio', 'Ropa', 'Salud'],
+          labels: categories,
           datasets: [
             {
-              label: 'Distribución de Gastos',
-              data: [300, 150, 200, 100, 250],
+              label: 'Gastos por Categoría',
+              data: categoryValues,
               backgroundColor: [
                 '#FF6384',
                 '#36A2EB',
                 '#FFCE56',
                 '#4BC0C0',
                 '#9966FF',
+                '#FFA07A',
+                '#8A2BE2',
+                '#00FA9A',
               ],
             },
           ],
         },
         options: {
           responsive: true,
+          animation: {
+            animateScale: true,
+          },
         },
-      });
-    } else {
-      console.error('No se pudo obtener el contexto 2D del canvas');
+      };
+
+      // Crear un nuevo gráfico después de destruir el anterior
+      this.doughnutChart = new Chart(ctxDoughnut, config);
     }
   }
 }

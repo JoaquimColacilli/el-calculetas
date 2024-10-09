@@ -45,6 +45,7 @@
 .checkbox-ripple {
   position: relative;
   overflow: visible;
+  cursor: pointer;
 }
 
 .checkbox-ripple::after {
@@ -64,6 +65,19 @@
 .checkbox-ripple:hover::after {
   width: 250%;
   height: 250%;
+}
+
+.checkbox-label {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+.checkbox-label:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .spinner {
@@ -98,4 +112,9 @@
 
 .ng-select-custom .ng-select-container .ng-placeholder {
   line-height: 38px;
+}
+
+/* En tu archivo CSS global o componente de estilos */
+.swal-title-small {
+  font-size: 16px; /* Ajusta el tamaño según prefieras */
 }
