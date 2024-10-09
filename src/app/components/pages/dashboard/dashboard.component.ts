@@ -278,17 +278,6 @@ export class DashboardComponent implements OnInit {
     this.resetSalariesIfNeeded();
 
     this.loadUserCards();
-
-    this.loadShowAllExpenses();
-  }
-
-  loadShowAllExpenses() {
-    const storedValue = localStorage.getItem('showAllExpenses');
-    if (storedValue !== null) {
-      this.showAllExpenses = JSON.parse(storedValue);
-    } else {
-      this.showAllExpenses = false; // Valor por defecto si no existe en localStorage
-    }
   }
 
   private async resetSalariesIfNeeded(): Promise<void> {
@@ -407,11 +396,16 @@ export class DashboardComponent implements OnInit {
 
   parseDateForFinance(expenseDate: string): Date {
     if (expenseDate.includes('-')) {
-      return new Date(expenseDate);
+      // Formato 'YYYY-MM-DD'
+      const [year, month, day] = expenseDate.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    } else if (expenseDate.includes('/')) {
+      // Formato 'DD/MM/YYYY'
+      const [day, month, year] = expenseDate.split('/').map(Number);
+      return new Date(year, month - 1, day);
+    } else {
+      return new Date('Invalid Date');
     }
-
-    const [day, month, year] = expenseDate.split('/');
-    return new Date(+year, +month - 1, +day);
   }
 
   updateExpensesStatus(): void {
@@ -575,24 +569,21 @@ export class DashboardComponent implements OnInit {
     this.addingExpense = false;
 
     console.log(this.currentExpense.date);
-    // Verificar si isPaid es true, entonces no cambiar status
+
     if (this.currentExpense.isPaid) {
       this.currentExpense.status = 'Pagado';
     } else {
-      // Mantener la lógica original para gestionar el estado del gasto según la fecha
       if (this.isTodayChecked || selectedDateFormatted === formattedToday) {
-        // Si está marcado el check o la fecha ingresada es hoy, marcar como 'Por pagar'
         this.currentExpense.date = formattedToday;
         this.currentExpense.status = 'Por pagar';
       } else {
-        // Parsear la fecha ingresada para comparación si no es hoy
         const selectedDate = this.parseDate(this.currentExpense.date);
         selectedDate.setHours(0, 0, 0, 0);
 
-        // Determinar el estado del gasto según la fecha seleccionada
         if (selectedDate > today) {
           this.currentExpense.status = 'Por pagar';
         } else {
+          console.log();
           this.currentExpense.status = 'Vencido';
         }
       }
@@ -1151,28 +1142,23 @@ export class DashboardComponent implements OnInit {
   getFilteredExpenses(): FinanceInterface[] {
     let filteredItems: FinanceInterface[] = [];
 
-    // Si 'Mostrar todos' está activado, mostrar todos los gastos
-    if (this.showAllExpenses) {
-      filteredItems = this.financeItems.slice(); // Copia todos los gastos
-    } else {
-      // Lógica existente para filtrar por mes, semana o año
-      switch (this.options[this.currentIndex]) {
-        case 'Este mes':
-          filteredItems = this.getExpensesForThisMonth();
-          break;
-        case 'Esta semana':
-          filteredItems = this.getExpensesForThisWeek();
-          break;
-        case 'Este año':
-          filteredItems = this.getExpensesForThisYear();
-          break;
-        default:
-          filteredItems = this.financeItems;
-          break;
-      }
+    // Filtrar por mes, semana o año
+    switch (this.options[this.currentIndex]) {
+      case 'Este mes':
+        filteredItems = this.getExpensesForThisMonth();
+        break;
+      case 'Esta semana':
+        filteredItems = this.getExpensesForThisWeek();
+        break;
+      case 'Este año':
+        filteredItems = this.getExpensesForThisYear();
+        break;
+      default:
+        filteredItems = this.financeItems;
+        break;
     }
 
-    // Aplicar filtros de búsqueda y categoría como antes
+    // Aplicar filtros de búsqueda y categoría
     const searchQueryLower = this.searchQuery.toLowerCase();
     filteredItems = filteredItems.filter((item) => {
       const matchesSearchQuery = Object.values(item).some((value) =>
@@ -1200,23 +1186,6 @@ export class DashboardComponent implements OnInit {
     }
 
     return filteredItems;
-  }
-
-  onShowAllExpensesChange(): void {
-    this.cdr.detectChanges();
-  }
-
-  getExpensesForCurrentPeriod(): FinanceInterface[] {
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        return this.getExpensesForThisMonth();
-      case 'Esta semana':
-        return this.getExpensesForThisWeek();
-      case 'Este año':
-        return this.getExpensesForThisYear();
-      default:
-        return this.financeItems;
-    }
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
@@ -1421,9 +1390,8 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateTotals(): void {
-    const filteredItems = this.getFilteredExpenses();
-
-    this.totalAmountARS = filteredItems
+    // Totales en ARS
+    this.totalAmountARS = this.financeItems
       .filter((item) => item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1431,7 +1399,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalVencidosARS = filteredItems
+    this.totalVencidosARS = this.financeItems
       .filter((item) => item.status === 'Vencido' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1439,7 +1407,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPagadosARS = filteredItems
+    this.totalPagadosARS = this.financeItems
       .filter((item) => item.status === 'Pagado' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1447,7 +1415,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPorPagarARS = filteredItems
+    this.totalPorPagarARS = this.financeItems
       .filter((item) => item.status === 'Por pagar' && item.currency === 'ARS')
       .reduce(
         (acc, item) =>
@@ -1456,7 +1424,7 @@ export class DashboardComponent implements OnInit {
       );
 
     // Totales en USD
-    this.totalAmountUSD = filteredItems
+    this.totalAmountUSD = this.financeItems
       .filter((item) => item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1464,7 +1432,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalVencidosUSD = filteredItems
+    this.totalVencidosUSD = this.financeItems
       .filter((item) => item.status === 'Vencido' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1472,7 +1440,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPagadosUSD = filteredItems
+    this.totalPagadosUSD = this.financeItems
       .filter((item) => item.status === 'Pagado' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1480,7 +1448,7 @@ export class DashboardComponent implements OnInit {
         0
       );
 
-    this.totalPorPagarUSD = filteredItems
+    this.totalPorPagarUSD = this.financeItems
       .filter((item) => item.status === 'Por pagar' && item.currency === 'USD')
       .reduce(
         (acc, item) =>
@@ -1582,8 +1550,10 @@ export class DashboardComponent implements OnInit {
 
   updateExpenseStatus(item: FinanceInterface): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Normaliza la fecha de hoy a medianoche
+
     const itemDate = this.parseDate(item.date);
+    itemDate.setHours(0, 0, 0, 0); // Normaliza la fecha del gasto a medianoche
 
     if (item.isPaid) {
       item.status = 'Pagado';
@@ -1596,15 +1566,6 @@ export class DashboardComponent implements OnInit {
         item.status = 'Por pagar';
       }
     }
-  }
-
-  toggleShowAllExpenses() {
-    this.showAllExpenses = !this.showAllExpenses;
-    localStorage.setItem(
-      'showAllExpenses',
-      JSON.stringify(this.showAllExpenses)
-    );
-    this.onShowAllExpensesChange();
   }
 
   getMarcarTodosIcon(): IconProp {
@@ -1924,16 +1885,21 @@ export class DashboardComponent implements OnInit {
   }
 
   parseDate(dateString: string): Date {
+    let date;
     if (dateString.includes('-')) {
-      return new Date(dateString); // Manejo de formato ISO
+      // Format 'YYYY-MM-DD'
+      const [year, month, day] = dateString.split('-').map(Number);
+      date = new Date(year, month - 1, day);
+    } else if (dateString.includes('/')) {
+      // Format 'DD/MM/YYYY'
+      const [day, month, year] = dateString.split('/').map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date('Invalid Date');
     }
-
-    const [day, month, year] = dateString.split('/').map(Number);
-    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-      return new Date(year, month - 1, day); // Mes -1 porque Date maneja los meses de 0 a 11
-    }
-
-    return new Date('Invalid Date'); // Maneja fechas no válidas
+    // Set time components to zero
+    date.setHours(0, 0, 0, 0);
+    return date;
   }
 
   previousOption() {
@@ -2047,7 +2013,8 @@ export class DashboardComponent implements OnInit {
 
     this.financeItems.forEach((item) => {
       const itemDate = this.parseDate(item.date);
-      if (item.status === 'Por pagar' && itemDate <= today) {
+      itemDate.setHours(0, 0, 0, 0); // Normalize itemDate
+      if (item.status === 'Por pagar' && itemDate < today) {
         item.status = 'Vencido';
       }
     });
