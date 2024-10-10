@@ -149,6 +149,7 @@ export class DashboardComponent implements OnInit {
   }> = [];
 
   sortOrder: 'asc' | 'desc' = 'desc';
+  sortOrderIngreso: 'asc' | 'desc' = 'desc';
 
   currentDateTime: string = '';
   private intervalId: any;
@@ -970,6 +971,27 @@ export class DashboardComponent implements OnInit {
   toggleSortOrder() {
     this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
     this.sortFinanceItems();
+  }
+
+  toggleSortOrderIngreso() {
+    this.sortOrderIngreso = this.sortOrderIngreso === 'asc' ? 'desc' : 'asc';
+
+    // Llamar al método de ordenamiento
+    this.sortFinanceItemsIngreso();
+  }
+
+  sortFinanceItemsIngreso() {
+    this.financeItems.sort((a, b) => {
+      const timestampA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+      const timestampB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+
+      // Ordenar de acuerdo al orden seleccionado (asc o desc)
+      if (this.sortOrderIngreso === 'asc') {
+        return timestampA - timestampB; // Orden ascendente
+      } else {
+        return timestampB - timestampA; // Orden descendente
+      }
+    });
   }
 
   sortFinanceItems() {

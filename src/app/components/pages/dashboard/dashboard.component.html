@@ -657,12 +657,12 @@
                 <button
                   *ngIf="!addingExpense && editingIndex === null"
                   class="text-gray-500 hover:text-blue-500 focus:outline-none ml-2"
-                  (click)="toggleSortOrder()"
+                  (click)="toggleSortOrderIngreso()"
                   title="Ordenar por fecha"
                 >
                   <fa-icon
                     [icon]="
-                      sortOrder === 'desc'
+                      sortOrderIngreso === 'desc'
                         ? ['fas', 'sort-numeric-down']
                         : ['fas', 'sort-numeric-up']
                     "
