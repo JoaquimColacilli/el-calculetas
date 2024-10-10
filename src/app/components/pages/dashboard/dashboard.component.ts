@@ -375,7 +375,7 @@ export class DashboardComponent implements OnInit {
 
   descargarResumenMensual(): void {
     // Obtener los gastos del mes actual utilizando tu método
-    const monthlyExpenses = this.getExpensesForThisMonth();
+    const monthlyExpenses = this.getExpensesForPreviousMonth();
 
     if (monthlyExpenses.length === 0) {
       return; // Si no hay gastos, salir de la función
@@ -1241,6 +1241,20 @@ export class DashboardComponent implements OnInit {
     }
 
     return new Date('Invalid Date'); // Si el formato no es reconocido
+  }
+
+  getExpensesForPreviousMonth(): FinanceInterface[] {
+    const now = new Date();
+    const previousMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const year =
+      now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+
+    return this.financeItems.filter((item) => {
+      const itemDate = this.parseDateForComparison(item.date);
+      return (
+        itemDate.getFullYear() === year && itemDate.getMonth() === previousMonth
+      );
+    });
   }
 
   getExpensesForThisMonth(): FinanceInterface[] {
