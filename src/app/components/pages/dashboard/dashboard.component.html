@@ -546,6 +546,13 @@
                 >
                   Descargar resumen mensual
                 </p>
+
+                <!-- Mostrar los días restantes antes de que desaparezca -->
+                <p class="text-xs text-gray-500">
+                  Este mensaje desaparecerá en {{ remainingDays }} día{{
+                    remainingDays === 1 ? "" : "s"
+                  }}.
+                </p>
               </div>
             </div>
           </div>

@@ -198,6 +198,7 @@ export class DashboardComponent implements OnInit {
   pagoFilterState: 'Todos' | 'Pagado' | 'Por pagar' | 'Vencido' = 'Todos';
 
   showAllExpenses: boolean = false;
+  remainingDays: number = 0;
 
   selectedSortCriteria: 'timestamp' | 'date' = 'timestamp';
 
@@ -443,11 +444,10 @@ export class DashboardComponent implements OnInit {
     });
     const now = new Date(argentinaTime);
     const day = now.getDate();
-    const month = now.getMonth();
-    const year = now.getFullYear();
 
-    if (day === 1) {
+    if (day >= 1 && day <= 5) {
       this.showMonthlySummaryMessage = true;
+      this.remainingDays = 5 - day;
     } else {
       this.showMonthlySummaryMessage = false;
     }
