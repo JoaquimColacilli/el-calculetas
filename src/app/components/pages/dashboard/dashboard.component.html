@@ -516,6 +516,39 @@
               USD
             </span>
           </div>
+
+          <!-- Línea separadora vertical -->
+          <div
+            *ngIf="showMonthlySummaryMessage"
+            class="border-l border-gray-300 h-12 mx-6"
+          ></div>
+
+          <!-- Nuevo contenido a la derecha de la línea separadora -->
+          <div
+            *ngIf="showMonthlySummaryMessage"
+            class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md flex justify-between items-center"
+          >
+            <div class="flex items-center">
+              <!-- Icono -->
+              <fa-icon
+                [icon]="['fas', 'check-circle']"
+                class="text-blue-500 text-xl mr-3"
+              ></fa-icon>
+
+              <div>
+                <h2 class="text-lg font-semibold">
+                  ¡Su resumen de gastos mensual está listo!
+                </h2>
+
+                <p
+                  (click)="descargarResumenMensual()"
+                  class="text-sm text-blue-600 font-medium cursor-pointer hover:underline hover:text-blue-800 transition duration-300"
+                >
+                  Descargar resumen mensual
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -548,6 +581,14 @@
           </button>
 
           <button
+            (click)="descargarExcel()"
+            title="Descargar seleccionados en Excel"
+            class="flex items-center justify-center py-1 px-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition duration-300"
+          >
+            <fa-icon [icon]="['fas', 'file-excel']"></fa-icon>
+          </button>
+
+          <button
             (click)="eliminarSeleccionados()"
             title="Eliminar seleccionados"
             class="flex items-center justify-center py-1 px-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300"
@@ -557,7 +598,7 @@
         </div>
       </div>
 
-      <div class="bg-gray-50 shadow-md rounded-lg overflow-hidden">
+      <div class="bg-gray-50 shadow-md rounded-lg">
         <div
           class="sort-controls flex items-center space-x-4 px-6 py-3 mb-4 border-b border-gray-300"
         >
@@ -570,7 +611,7 @@
               id="sortCriteria"
               [(ngModel)]="selectedSortCriteria"
               (change)="onSortCriteriaChange()"
-              class="appearance-none w-full border border-gray-400 text-gray-800 py-2 px-4 rounded-md focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+              class="appearance-none w-full border border-gray-400 text-gray-800 py-1 px-4 rounded-md focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
             >
               <option value="date">Fecha a Pagar</option>
               <option value="timestamp">Fecha Ingreso</option>
@@ -588,6 +629,29 @@
                 <path d="M5.5 8.5l4 4 4-4H5.5z" />
               </svg>
             </div>
+          </div>
+
+          <div class="flex items-center px-6 py-2">
+            <button
+              (click)="toggleShowAllExpenses()"
+              class="relative bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50"
+            >
+              <!-- Texto dinámico con animación -->
+              <span
+                class="inset-0 flex justify-center items-center transition-opacity duration-300"
+              >
+                {{
+                  showAllExpenses
+                    ? "Viendo todos los gastos"
+                    : "Viendo gastos de " + (options[currentIndex] | lowercase)
+                }}
+              </span>
+
+              <!-- Efecto de resplandor y movimiento en hover -->
+              <div
+                class="absolute inset-0 opacity-0 bg-blue-400 rounded-full blur-lg transform scale-90 transition-transform duration-300 ease-in-out group-hover:opacity-100 group-hover:scale-100"
+              ></div>
+            </button>
           </div>
         </div>
 
@@ -714,7 +778,7 @@
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                Obs.
+                Obs
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -851,7 +915,6 @@
                   class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </td>
-
               <td class="px-6 py-4">
                 <ng-select
                   [items]="categories"
@@ -863,7 +926,7 @@
                   }"
                   placeholder="Seleccione una categoría"
                   class="ng-select-custom w-full bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  appendTo="body"
+                  [dropdownPosition]="'bottom'"
                 ></ng-select>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">

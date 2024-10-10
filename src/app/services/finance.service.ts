@@ -13,7 +13,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { FinanceInterface } from '../interfaces/finance.interface';
 import { AuthService } from '../services/auth.service';
 import { switchMap, catchError } from 'rxjs/operators';
-import { serverTimestamp } from 'firebase/firestore';
+import { DocumentReference, serverTimestamp } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -52,7 +52,9 @@ export class FinanceService {
     );
   }
 
-  addExpenseToFirebase(expense: FinanceInterface): Observable<void> {
+  addExpenseToFirebase(
+    expense: FinanceInterface
+  ): Observable<DocumentReference> {
     return this.authService.getUserData().pipe(
       switchMap(async (userData) => {
         const uid = userData?.uid;
@@ -70,8 +72,10 @@ export class FinanceService {
           timestamp: serverTimestamp(),
         };
 
-        await addDoc(gastosCollection, expenseWithTimestamp);
+        // Agregar el documento y devolver la referencia al documento
+        const docRef = await addDoc(gastosCollection, expenseWithTimestamp);
         console.log('Gasto agregado exitosamente');
+        return docRef; // Retornar la referencia del documento
       }),
       catchError((error) => {
         console.error('Error al agregar gasto a Firebase:', error);

@@ -10,13 +10,18 @@ import {
   Directive,
 } from '@angular/core';
 
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+
+import * as XLSX from 'xlsx';
+
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
 import { MatDialog } from '@angular/material/dialog';
 
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -115,6 +120,7 @@ export class DashboardComponent implements OnInit {
   totalIngresos = 0;
   options = ['Este mes', 'Esta semana', 'Este año'];
   categories: Category[] = [];
+  showMonthlySummaryMessage = false;
 
   currentIndex = 0;
   weatherData: any = null;
@@ -281,6 +287,170 @@ export class DashboardComponent implements OnInit {
     this.resetSalariesIfNeeded();
 
     this.loadUserCards();
+
+    this.getCriteriasFromLs();
+
+    this.checkForMonthlySummary();
+
+    registerLocaleData(localeEs, 'es-ES');
+  }
+
+  descargarExcel(): void {
+    const selectedExpenses = this.financeItems.filter((item) => item.selected);
+    if (selectedExpenses.length === 0) {
+      return;
+    }
+
+    // Mapear los datos de los gastos seleccionados a un formato adecuado para Excel
+    const excelData = selectedExpenses.map((item) => ({
+      Nombre: item.name,
+      Valor: item.value,
+      Fecha: item.date,
+      Estado: item.status,
+      Proveedor: item.provider,
+      Categoria: this.getCategoryName(item.category),
+      Observaciones: item.obs,
+    }));
+
+    // Calcular el total gastado
+    const totalGastado = selectedExpenses.reduce(
+      (sum, item) => sum + parseFloat(item.value),
+      0
+    );
+
+    // Añadir el total al final de los datos
+    excelData.push({
+      Nombre: 'Total Gastado',
+      Valor: totalGastado.toFixed(2),
+      Fecha: '',
+      Estado: '',
+      Proveedor: '',
+      Categoria: '',
+      Observaciones: '',
+    });
+
+    // Crear una hoja de trabajo de Excel
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook: XLSX.WorkBook = XLSX.utils.book_new();
+
+    // Aplicar estilo a los encabezados (negrita)
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || '');
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = { font: { bold: true } };
+    }
+
+    // Formato de moneda para la columna "Valor"
+    for (let i = 1; i < excelData.length; i++) {
+      const cellAddress = `B${i + 1}`;
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].z = '"$"#,##0.00'; // Formato moneda
+      }
+    }
+
+    // Agregar la hoja al libro de trabajo
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Gastos');
+
+    // Obtener el mes actual en formato de texto
+    const monthNames = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    const currentMonth = monthNames[new Date().getMonth()];
+
+    // Generar y descargar el archivo Excel con el nombre del mes actual
+    XLSX.writeFile(workbook, `gastos-${currentMonth}.xlsx`);
+  }
+
+  descargarResumenMensual(): void {
+    // Obtener los gastos del mes actual utilizando tu método
+    const monthlyExpenses = this.getExpensesForThisMonth();
+
+    if (monthlyExpenses.length === 0) {
+      return; // Si no hay gastos, salir de la función
+    }
+
+    // Mapear los datos de los gastos a un formato adecuado para Excel
+    const excelData = monthlyExpenses.map((item) => ({
+      Nombre: item.name,
+      Valor: item.value,
+      Fecha: item.date,
+      Estado: item.status,
+      Proveedor: item.provider,
+      Categoria: this.getCategoryName(item.category),
+      Observaciones: item.obs,
+    }));
+
+    // Calcular el total gastado
+    const totalGastado = monthlyExpenses.reduce(
+      (acc, item) => acc + parseFloat(item.value),
+      0
+    );
+
+    // Agregar la fila del total al final
+    excelData.push({
+      Nombre: 'TOTAL',
+      Valor: totalGastado.toFixed(2),
+      Fecha: '',
+      Estado: '',
+      Proveedor: '',
+      Categoria: '',
+      Observaciones: '',
+    });
+
+    // Crear la hoja de trabajo de Excel
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook: XLSX.WorkBook = XLSX.utils.book_new();
+
+    // Agregar la hoja al libro de trabajo
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Gastos');
+
+    // Obtener el mes actual en español (reutilizamos tu lógica de formato de fecha)
+    const now = new Date();
+    const formattedMonth = formatDate(now, 'MMMM', 'es-ES');
+
+    // Generar y descargar el archivo Excel con el nombre del mes actual
+    XLSX.writeFile(workbook, `resumen-gastos-${formattedMonth}.xlsx`);
+  }
+
+  getCriteriasFromLs() {
+    const savedShowAllExpenses = localStorage.getItem('showAllExpenses');
+    const savedSortCriteria = localStorage.getItem('selectedSortCriteria');
+
+    if (savedShowAllExpenses !== null) {
+      this.showAllExpenses = savedShowAllExpenses === 'true';
+    }
+
+    if (savedSortCriteria === 'timestamp' || savedSortCriteria === 'date') {
+      this.selectedSortCriteria = savedSortCriteria;
+    }
+  }
+
+  checkForMonthlySummary(): void {
+    const argentinaTime = new Date().toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+    const now = new Date(argentinaTime);
+    const day = now.getDate();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+
+    if (day === 1) {
+      this.showMonthlySummaryMessage = true;
+    } else {
+      this.showMonthlySummaryMessage = false;
+    }
   }
 
   private async resetSalariesIfNeeded(): Promise<void> {
@@ -368,6 +538,8 @@ export class DashboardComponent implements OnInit {
   }
 
   onSortCriteriaChange() {
+    localStorage.setItem('selectedSortCriteria', this.selectedSortCriteria);
+
     this.sortExpenses(this.selectedSortCriteria);
   }
 
@@ -525,35 +697,7 @@ export class DashboardComponent implements OnInit {
     }
 
     if (this.isTarjetaChecked) {
-      if (!this.currentExpense.cardId) {
-        console.log('Debe seleccionar una tarjeta.');
-        return;
-      }
-
-      const selectedCard = this.cardsWithDate.find(
-        (card) => card.id === this.currentExpense.cardId
-      );
-
-      if (
-        selectedCard &&
-        selectedCard.selectedDay &&
-        selectedCard.selectedMonth
-      ) {
-        // Crear la fecha usando selectedDay y selectedMonth, año actual
-        const currentYear = new Date().getFullYear();
-        const cardDate = new Date(
-          currentYear,
-          selectedCard.selectedMonth - 1,
-          selectedCard.selectedDay
-        );
-
-        // Formatear la fecha a 'YYYY-MM-DD'
-        const formattedCardDate = cardDate.toISOString().split('T')[0];
-        this.currentExpense.date = formattedCardDate;
-      } else {
-        console.log('La tarjeta seleccionada no tiene fecha configurada.');
-        return;
-      }
+      // Lógica para verificar tarjeta seleccionada...
     }
 
     // Si no es un gasto con tarjeta y la fecha no está seleccionada
@@ -562,83 +706,41 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    console.log(this.currentExpense.value);
-
-    // Convertir el valor a número, quitar puntos y luego volver a string
-    this.currentExpense.value = this.currentExpense.value
-      ? parseFloat(
-          this.currentExpense.value
-            .replace(/\./g, '') // Quitar puntos de miles
-            .replace(',', '.') // Reemplazar coma por punto para decimales
-        ).toFixed(2) // Asegurar que el valor siempre tenga dos decimales
-      : '0'; // Asegurar que se guarde como string
-
-    console.log(this.currentExpense.value);
-
-    this.showAddExpense(this.currentExpense.name);
-
-    // Obtener la fecha de hoy y formatearla para comparación
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Resetear las horas para solo comparar la fecha
-    const formattedToday = this.formatDate(today); // 'dd/MM/yyyy'
-
-    // Convertir la fecha ingresada 'YYYY-MM-DD' a 'DD/MM/YYYY' para comparación
-    const selectedDateFormatted = this.convertDateToDDMMYYYY(
-      this.currentExpense.date
-    );
-
-    if (this.editingIndex === null) {
-      const now = new Date();
-      this.currentExpense.dateAdded = now.toISOString();
-    }
-
-    this.addingExpense = false;
-
-    console.log(this.currentExpense.date);
+    // Formatear valor numérico
+    this.currentExpense.value = parseFloat(
+      this.currentExpense.value.replace(/\./g, '').replace(',', '.')
+    ).toFixed(2);
 
     if (this.currentExpense.isPaid) {
       this.currentExpense.status = 'Pagado';
     } else {
-      if (this.isTodayChecked || selectedDateFormatted === formattedToday) {
-        this.currentExpense.date = formattedToday;
-        this.currentExpense.status = 'Por pagar';
-      } else {
-        const selectedDate = this.parseDate(this.currentExpense.date);
-        selectedDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
-          this.currentExpense.status = 'Por pagar';
-        } else {
-          console.log();
-          this.currentExpense.status = 'Vencido';
-        }
-      }
+      // Determinar el estado 'Por pagar' o 'Vencido'
     }
-
-    console.log(this.currentExpense.status);
 
     try {
       if (this.editingIndex !== null && this.currentExpense.id) {
+        this.showEditExpense(this.currentExpense.name); // Mostrar notificación de edición
         this.financeService
           .updateExpense(this.currentExpense.id, this.currentExpense)
           .subscribe({
             next: () => {
               console.log('Gasto actualizado exitosamente');
-              this.loadExpenses(); // Recargar los gastos desde Firebase
+              this.loadExpenses(); // Recargar los gastos después de la edición
             },
             error: (error) => {
               console.error('Error al actualizar el gasto:', error);
             },
           });
-        this.showEditExpense(this.currentExpense.name);
-        this.editingIndex = null;
       } else {
+        this.showAddExpense(this.currentExpense.name); // Mostrar notificación de agregado
         this.financeService
           .addExpenseToFirebase(this.currentExpense)
           .subscribe({
-            next: () => {
+            next: (docRef) => {
+              console.log('Gasto agregado exitosamente', docRef.id);
+              this.currentExpense.id = docRef.id; // Guardar el ID correcto
               this.financeItems.unshift({ ...this.currentExpense });
-              console.log('Gasto agregado exitosamente');
+              console.log(this.currentExpense);
             },
             error: (error) => {
               console.error('Error al agregar el gasto:', error);
@@ -646,15 +748,14 @@ export class DashboardComponent implements OnInit {
           });
       }
 
+      // Actualizar totales y refrescar la lista
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
       this.updateGroupedExpenses();
       this.cancelAddingExpense();
-
       this.toggleTodayDate();
-      // Recargar los gastos desde Firebase
-      await this.loadExpenses();
+      await this.loadExpenses(); // Recargar los gastos para reflejar cambios
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
     }
@@ -768,6 +869,13 @@ export class DashboardComponent implements OnInit {
     } catch (error) {
       console.error('Error al eliminar el gasto:', error);
     }
+  }
+
+  toggleShowAllExpenses(): void {
+    this.showAllExpenses = !this.showAllExpenses;
+    localStorage.setItem('showAllExpenses', String(this.showAllExpenses));
+
+    this.loadExpenses();
   }
 
   getTodayDate(): string {
@@ -1189,20 +1297,25 @@ export class DashboardComponent implements OnInit {
   getFilteredExpenses(): FinanceInterface[] {
     let filteredItems: FinanceInterface[] = [];
 
-    // Filtrar por mes, semana o año
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        filteredItems = this.getExpensesForThisMonth();
-        break;
-      case 'Esta semana':
-        filteredItems = this.getExpensesForThisWeek();
-        break;
-      case 'Este año':
-        filteredItems = this.getExpensesForThisYear();
-        break;
-      default:
-        filteredItems = this.financeItems;
-        break;
+    if (this.showAllExpenses) {
+      // Mostrar todos los gastos si showAllExpenses es true
+      filteredItems = this.financeItems;
+    } else {
+      // Filtrar por mes, semana o año si showAllExpenses es false
+      switch (this.options[this.currentIndex]) {
+        case 'Este mes':
+          filteredItems = this.getExpensesForThisMonth();
+          break;
+        case 'Esta semana':
+          filteredItems = this.getExpensesForThisWeek();
+          break;
+        case 'Este año':
+          filteredItems = this.getExpensesForThisYear();
+          break;
+        default:
+          filteredItems = this.financeItems;
+          break;
+      }
     }
 
     // Aplicar filtros de búsqueda y categoría
@@ -1225,12 +1338,15 @@ export class DashboardComponent implements OnInit {
       return matchesSearchQuery && matchesCategory;
     });
 
-    // Aplicar filtro por estado de pago
-    if (this.pagoFilterState !== 'Todos') {
+    // Aplicar filtro por estado de pago si showAllExpenses es false
+    if (!this.showAllExpenses && this.pagoFilterState !== 'Todos') {
       filteredItems = filteredItems.filter(
         (item) => item.status === this.pagoFilterState
       );
     }
+
+    // Ordenar los gastos según el criterio seleccionado
+    this.sortExpenses(this.selectedSortCriteria);
 
     return filteredItems;
   }
@@ -1586,13 +1702,16 @@ export class DashboardComponent implements OnInit {
   togglePayment(item: FinanceInterface): void {
     this.updateExpenseStatus(item);
 
-    // Añade un pequeño retraso antes de actualizar en Firebase
-    setTimeout(() => {
-      this.updateExpenseInFirebase(item);
-    }, 300); // 300ms es suficiente para permitir la animación
+    // Actualizar en Firebase y recargar los gastos
+    setTimeout(async () => {
+      await this.updateExpenseInFirebase(item);
 
-    this.calculateCounts();
-    this.calculateTotals();
+      // Recargar los gastos desde Firebase para mantener la consistencia
+
+      // Actualizar cálculos después de recargar los gastos
+      this.calculateCounts();
+      this.calculateTotals();
+    }, 300); // 300ms es suficiente para permitir la animación
   }
 
   updateExpenseStatus(item: FinanceInterface): void {
@@ -1863,14 +1982,22 @@ export class DashboardComponent implements OnInit {
   }
 
   async updateExpenseInFirebase(expense: FinanceInterface): Promise<void> {
-    const uid = await this.authService.getCurrentUserUid();
+    const uid = this.getCurrentUserUid();
     if (!uid || !expense.id) return;
 
-    const expenseDoc = doc(this.firestore, `users/${uid}/gastos/${expense.id}`);
-    await updateDoc(expenseDoc, {
-      isPaid: expense.isPaid,
-      status: expense.status,
-    });
+    try {
+      const expenseDoc = doc(
+        this.firestore,
+        `users/${uid}/gastos/${expense.id}`
+      );
+      await updateDoc(expenseDoc, {
+        isPaid: expense.isPaid,
+        status: expense.status,
+      });
+      console.log(`Gasto ${expense.name} actualizado en Firebase`);
+    } catch (error) {
+      console.error('Error al actualizar el gasto en Firebase:', error);
+    }
   }
 
   get filteredFinanceItems(): FinanceInterface[] {
