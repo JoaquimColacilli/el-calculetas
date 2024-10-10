@@ -74,7 +74,7 @@ import { SwitchAccountModalComponent } from './account-management/switch-account
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { ModalWalletComponent } from './modal-wallet/modal-wallet.component';
-import { writeBatch } from 'firebase/firestore';
+import { Timestamp, writeBatch } from 'firebase/firestore';
 
 @Component({
   selector: 'app-dashboard',
@@ -191,6 +191,8 @@ export class DashboardComponent implements OnInit {
   pagoFilterState: 'Todos' | 'Pagado' | 'Por pagar' | 'Vencido' = 'Todos';
 
   showAllExpenses: boolean = false;
+
+  selectedSortCriteria: 'timestamp' | 'date' = 'timestamp';
 
   constructor(
     private router: Router,
@@ -322,23 +324,18 @@ export class DashboardComponent implements OnInit {
     this.isLoadingData = true;
     this.financeService.getExpenses().subscribe({
       next: (expenses) => {
-        this.financeItems = expenses
-          .map((expense) => {
-            const numericValue = parseFloat(String(expense.value));
+        this.financeItems = expenses.map((expense) => {
+          const numericValue = parseFloat(String(expense.value));
+          const formattedValue = this.formatCurrency(numericValue);
+          return {
+            ...expense,
+            value: String(numericValue),
+            valueFormatted: formattedValue,
+          };
+        });
 
-            const formattedValue = this.formatCurrency(numericValue);
-
-            return {
-              ...expense,
-              value: String(numericValue),
-              valueFormatted: formattedValue,
-            };
-          })
-          .sort((a, b) => {
-            const dateA = this.parseDate(a.date).getTime();
-            const dateB = this.parseDate(b.date).getTime();
-            return dateB - dateA; // Orden descendente
-          });
+        // Ordenar según el criterio seleccionado
+        this.sortExpenses(this.selectedSortCriteria);
 
         this.updateExpensesStatus();
         this.isLoadingData = false;
@@ -348,6 +345,29 @@ export class DashboardComponent implements OnInit {
         this.isLoadingData = false;
       },
     });
+  }
+
+  sortExpenses(criteria: 'date' | 'timestamp') {
+    this.financeItems.sort((a, b) => {
+      let valueA: number;
+      let valueB: number;
+
+      if (criteria === 'date') {
+        valueA = this.parseDate(a.date).getTime();
+        valueB = this.parseDate(b.date).getTime();
+      } else if (criteria === 'timestamp') {
+        valueA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+        valueB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+      } else {
+        return 0;
+      }
+
+      return valueB - valueA;
+    });
+  }
+
+  onSortCriteriaChange() {
+    this.sortExpenses(this.selectedSortCriteria);
   }
 
   formatCurrency(value: number): string {
@@ -565,6 +585,11 @@ export class DashboardComponent implements OnInit {
     const selectedDateFormatted = this.convertDateToDDMMYYYY(
       this.currentExpense.date
     );
+
+    if (this.editingIndex === null) {
+      const now = new Date();
+      this.currentExpense.dateAdded = now.toISOString();
+    }
 
     this.addingExpense = false;
 
@@ -2094,6 +2119,22 @@ export class DashboardComponent implements OnInit {
 
     console.error('Formato de fecha no reconocido:', dateString);
     return 'Fecha inválida';
+  }
+
+  formatDateDisplayFor(timestamp: Timestamp | undefined): string {
+    if (!timestamp) {
+      return 'Fecha no disponible';
+    }
+
+    const date = timestamp.toDate();
+
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   showDeleteNotification(deletedItemName: string) {

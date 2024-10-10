@@ -14,5 +14,6 @@ export interface FinanceInterface {
   obs: string;
   selected?: boolean;
   cardId?: string;
-  timestamp?: Timestamp | FieldValue;
+  timestamp?: Timestamp;
+  dateAdded?: string;
 }

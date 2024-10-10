@@ -557,7 +557,40 @@
         </div>
       </div>
 
-      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="bg-gray-50 shadow-md rounded-lg overflow-hidden">
+        <div
+          class="sort-controls flex items-center space-x-4 px-6 py-3 mb-4 border-b border-gray-300"
+        >
+          <label for="sortCriteria" class="text-lg font-medium text-gray-700">
+            Ordenar por:
+          </label>
+
+          <div class="relative w-44">
+            <select
+              id="sortCriteria"
+              [(ngModel)]="selectedSortCriteria"
+              (change)="onSortCriteriaChange()"
+              class="appearance-none w-full border border-gray-400 text-gray-800 py-2 px-4 rounded-md focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+            >
+              <option value="date">Fecha a Pagar</option>
+              <option value="timestamp">Fecha Ingreso</option>
+            </select>
+
+            <!-- Flecha personalizada para select -->
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"
+            >
+              <svg
+                class="fill-current h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <path d="M5.5 8.5l4 4 4-4H5.5z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <table class="min-w-full table-auto">
           <thead class="bg-gray-50">
             <tr>
@@ -615,6 +648,28 @@
                   </label>
                 </div>
               </th>
+
+              <th
+                *ngIf="!addingExpense && editingIndex === null"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >
+                <span>Fecha Ingreso</span>
+                <button
+                  *ngIf="!addingExpense && editingIndex === null"
+                  class="text-gray-500 hover:text-blue-500 focus:outline-none ml-2"
+                  (click)="toggleSortOrder()"
+                  title="Ordenar por fecha"
+                >
+                  <fa-icon
+                    [icon]="
+                      sortOrder === 'desc'
+                        ? ['fas', 'sort-numeric-down']
+                        : ['fas', 'sort-numeric-up']
+                    "
+                  ></fa-icon>
+                </button>
+              </th>
+
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
@@ -926,6 +981,12 @@
                   <div class="text-xs text-gray-500">
                     {{ formatDateDisplay(item.date) }}
                   </div>
+                </td>
+                <td
+                  *ngIf="!addingExpense && editingIndex === null"
+                  class="px-6 py-4 whitespace-nowrap text-sm font-sans"
+                >
+                  {{ formatDateDisplayFor(item.timestamp) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap flex items-center">
                   <ng-container *ngIf="item.currency === 'USD'">
