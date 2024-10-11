@@ -497,7 +497,7 @@ export class DashboardComponent implements OnInit {
 
   toggleCuotas() {
     if (!this.isCuotasChecked) {
-      this.numCuotas = 1; // Resetear cuotas a 1 si se desactiva el checkbox
+      this.numCuotas = 3;
     }
   }
 
@@ -653,6 +653,9 @@ export class DashboardComponent implements OnInit {
       category: '',
       obs: '',
       currency: 'ARS',
+      cardId: '',
+      nextMonth: false,
+      numCuotas: 0,
     };
   }
 
@@ -704,14 +707,21 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    if (this.isTarjetaChecked) {
-      // Lógica para verificar tarjeta seleccionada...
-    }
-
-    // Si no es un gasto con tarjeta y la fecha no está seleccionada
-    if (!this.isTarjetaChecked && !this.currentExpense.date) {
-      console.log('Debe seleccionar una fecha.');
+    // Verificar el formato de la fecha
+    const validDate = this.formatDateForSave(this.currentExpense.date);
+    if (!validDate) {
+      console.error(
+        'Fecha inválida antes de guardar:',
+        this.currentExpense.date
+      );
       return;
+    }
+    this.currentExpense.date = validDate; // Aseguramos que la fecha esté formateada correctamente
+
+    // Verificar cuotas
+    if (this.isCuotasChecked && this.editingIndex === null) {
+      this.currentExpense.currentCuota = 1; // Inicializar la primera cuota
+      this.currentExpense.numCuotas = this.numCuotas; // Asignar el número de cuotas ingresado
     }
 
     // Formatear valor numérico
@@ -727,20 +737,25 @@ export class DashboardComponent implements OnInit {
 
     try {
       if (this.editingIndex !== null && this.currentExpense.id) {
-        this.showEditExpense(this.currentExpense.name); // Mostrar notificación de edición
+        // Al editar, si el gasto tiene cuotas, marcar el checkbox de cuotas
+        if (this.currentExpense.currentCuota) {
+          this.isCuotasChecked = true;
+        }
+
+        this.showEditExpense(this.currentExpense.name); // Notificación de edición
         this.financeService
           .updateExpense(this.currentExpense.id, this.currentExpense)
           .subscribe({
             next: () => {
               console.log('Gasto actualizado exitosamente');
-              this.loadExpenses(); // Recargar los gastos después de la edición
+              this.loadExpenses(); // Recargar los gastos
             },
             error: (error) => {
               console.error('Error al actualizar el gasto:', error);
             },
           });
       } else {
-        this.showAddExpense(this.currentExpense.name); // Mostrar notificación de agregado
+        this.showAddExpense(this.currentExpense.name); // Notificación de agregado
         this.financeService
           .addExpenseToFirebase(this.currentExpense)
           .subscribe({
@@ -763,10 +778,34 @@ export class DashboardComponent implements OnInit {
       this.updateGroupedExpenses();
       this.cancelAddingExpense();
       this.toggleTodayDate();
-      await this.loadExpenses(); // Recargar los gastos para reflejar cambios
+      await this.loadExpenses(); // Recargar los gastos
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
     }
+  }
+
+  formatDateForSave(dateString: string): string | null {
+    if (!dateString || typeof dateString !== 'string') {
+      return null;
+    }
+
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      if (!day || !month || !year) {
+        return null;
+      }
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    if (dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      if (!year || !month || !day) {
+        return null;
+      }
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    return null;
   }
 
   getCardNameById(cardId: string | undefined): string {
@@ -1974,8 +2013,8 @@ export class DashboardComponent implements OnInit {
 
     this.isTodayChecked = selectedDate.getTime() === today.getTime();
 
+    // Verificar si es un gasto con tarjeta
     this.isTarjetaChecked = !!expense.cardId;
-
     if (this.isTarjetaChecked && expense.cardId) {
       const selectedCard = this.cardsWithDate.find(
         (card) => card.id === expense.cardId
@@ -1994,13 +2033,11 @@ export class DashboardComponent implements OnInit {
         const formattedCardDate = cardDate.toISOString().split('T')[0];
         this.currentExpense.date = formattedCardDate;
       }
-    } else {
-      // Si no es un gasto con tarjeta, manejar isTodayChecked
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const selectedDate = this.parseDate(this.currentExpense.date);
-      this.isTodayChecked = selectedDate.getTime() === today.getTime();
     }
+
+    // Manejo de cuotas
+    this.isCuotasChecked = !!this.currentExpense.numCuotas; // Si tiene numCuotas, marcar el check
+    this.numCuotas = this.currentExpense.numCuotas ?? 1; // Si numCuotas es undefined, asignar 1
   }
 
   async updateExpenseInFirebase(expense: FinanceInterface): Promise<void> {
@@ -2199,6 +2236,8 @@ export class DashboardComponent implements OnInit {
   cancelAddingExpense(): void {
     this.addingExpense = false;
     this.editingIndex = null;
+    this.isTarjetaChecked = false;
+    this.isCuotasChecked = false;
     this.currentExpense = this.createEmptyExpense();
     this.isSaveAttempted = false;
   }

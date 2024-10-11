@@ -67,15 +67,37 @@ export class FinanceService {
           `users/${uid}/gastos`
         );
 
-        const expenseWithTimestamp = {
+        // Guardar el gasto en la colección de gastos
+        const docRef = await addDoc(gastosCollection, {
           ...expense,
           timestamp: serverTimestamp(),
-        };
+        });
 
-        // Agregar el documento y devolver la referencia al documento
-        const docRef = await addDoc(gastosCollection, expenseWithTimestamp);
-        console.log('Gasto agregado exitosamente');
-        return docRef; // Retornar la referencia del documento
+        // Si el gasto tiene nextMonth true, agregarlo a la colección 'gastosNextMonth'
+        if (expense.nextMonth) {
+          const nextMonthCollection = collection(
+            this.firestore,
+            `users/${uid}/gastosNextMonth`
+          );
+          await addDoc(nextMonthCollection, {
+            ...expense,
+            timestamp: serverTimestamp(),
+          });
+        }
+
+        // Si el gasto tiene cuotas, guardar también la información de cuotas
+        if (expense.numCuotas && expense.currentCuota) {
+          const cuotasCollection = collection(
+            this.firestore,
+            `users/${uid}/cuotas`
+          );
+          await addDoc(cuotasCollection, {
+            ...expense,
+            timestamp: serverTimestamp(),
+          });
+        }
+
+        return docRef;
       }),
       catchError((error) => {
         console.error('Error al agregar gasto a Firebase:', error);
@@ -101,6 +123,18 @@ export class FinanceService {
           ...updatedExpense,
           timestamp: serverTimestamp(),
         });
+
+        // Si el gasto tiene cuotas, actualizar también la información de cuotas
+        if (
+          (updatedExpense.numCuotas ?? 0) > 0 &&
+          updatedExpense.currentCuota
+        ) {
+          const cuotasDocRef = doc(this.firestore, `users/${uid}/cuotas/${id}`);
+          await updateDoc(cuotasDocRef, {
+            ...updatedExpense,
+            timestamp: serverTimestamp(),
+          });
+        }
       }),
       catchError((error) => {
         console.error('Error al actualizar el gasto en Firebase:', error);

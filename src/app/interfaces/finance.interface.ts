@@ -18,4 +18,5 @@ export interface FinanceInterface {
   dateAdded?: string;
   numCuotas?: number;
   currentCuota?: number;
+  nextMonth?: boolean;
 }
