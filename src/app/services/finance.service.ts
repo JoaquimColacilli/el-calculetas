@@ -13,7 +13,13 @@ import { Observable, of, throwError } from 'rxjs';
 import { FinanceInterface } from '../interfaces/finance.interface';
 import { AuthService } from '../services/auth.service';
 import { switchMap, catchError } from 'rxjs/operators';
-import { DocumentReference, serverTimestamp } from 'firebase/firestore';
+import {
+  deleteDoc,
+  DocumentReference,
+  getDocs,
+  serverTimestamp,
+  where,
+} from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -73,25 +79,13 @@ export class FinanceService {
           timestamp: serverTimestamp(),
         });
 
-        // Si el gasto tiene nextMonth true, agregarlo a la colección 'gastosNextMonth'
-        if (expense.nextMonth) {
+        // Si el gasto tiene cuotas, agregarlo también a la colección 'expensesNextMonth'
+        if (expense.numCuotas && expense.currentCuota) {
           const nextMonthCollection = collection(
             this.firestore,
-            `users/${uid}/gastosNextMonth`
+            `users/${uid}/expensesNextMonth`
           );
           await addDoc(nextMonthCollection, {
-            ...expense,
-            timestamp: serverTimestamp(),
-          });
-        }
-
-        // Si el gasto tiene cuotas, guardar también la información de cuotas
-        if (expense.numCuotas && expense.currentCuota) {
-          const cuotasCollection = collection(
-            this.firestore,
-            `users/${uid}/cuotas`
-          );
-          await addDoc(cuotasCollection, {
             ...expense,
             timestamp: serverTimestamp(),
           });
@@ -119,20 +113,58 @@ export class FinanceService {
 
         const expenseDocRef = doc(this.firestore, `users/${uid}/gastos/${id}`);
 
+        // Actualizar el gasto en la colección 'gastos'
         await updateDoc(expenseDocRef, {
           ...updatedExpense,
+          numCuotas: updatedExpense.numCuotas ?? null, // Asegurar que el valor de numCuotas se actualice
+          currentCuota: updatedExpense.currentCuota ?? null, // También actualizar el currentCuota
           timestamp: serverTimestamp(),
         });
 
-        // Si el gasto tiene cuotas, actualizar también la información de cuotas
+        // Si el gasto tiene cuotas, buscar en 'expensesNextMonth' por nombre y actualizarlo
         if (
           (updatedExpense.numCuotas ?? 0) > 0 &&
           updatedExpense.currentCuota
         ) {
-          const cuotasDocRef = doc(this.firestore, `users/${uid}/cuotas/${id}`);
-          await updateDoc(cuotasDocRef, {
-            ...updatedExpense,
-            timestamp: serverTimestamp(),
+          const nextMonthCollection = collection(
+            this.firestore,
+            `users/${uid}/expensesNextMonth`
+          );
+          const q = query(
+            nextMonthCollection,
+            where('name', '==', updatedExpense.name)
+          );
+
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach(async (docSnapshot) => {
+            const nextMonthDocRef = doc(
+              this.firestore,
+              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+            );
+            await updateDoc(nextMonthDocRef, {
+              ...updatedExpense,
+              numCuotas: updatedExpense.numCuotas, // Asegurarse de que el valor actualizado se guarde
+              currentCuota: updatedExpense.currentCuota, // Asegurar que se actualice el currentCuota
+              timestamp: serverTimestamp(),
+            });
+          });
+        } else {
+          const nextMonthCollection = collection(
+            this.firestore,
+            `users/${uid}/expensesNextMonth`
+          );
+          const q = query(
+            nextMonthCollection,
+            where('name', '==', updatedExpense.name)
+          );
+
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach(async (docSnapshot) => {
+            const nextMonthDocRef = doc(
+              this.firestore,
+              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+            );
+            await deleteDoc(nextMonthDocRef);
           });
         }
       }),

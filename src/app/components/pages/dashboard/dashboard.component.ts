@@ -707,8 +707,8 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Verificar el formato de la fecha
-    const validDate = this.formatDateForSave(this.currentExpense.date);
+    console.log(this.currentExpense.date);
+    const validDate = this.formatDateDisplay(this.currentExpense.date);
     if (!validDate) {
       console.error(
         'Fecha inválida antes de guardar:',
@@ -719,9 +719,13 @@ export class DashboardComponent implements OnInit {
     this.currentExpense.date = validDate; // Aseguramos que la fecha esté formateada correctamente
 
     // Verificar cuotas
-    if (this.isCuotasChecked && this.editingIndex === null) {
-      this.currentExpense.currentCuota = 1; // Inicializar la primera cuota
-      this.currentExpense.numCuotas = this.numCuotas; // Asignar el número de cuotas ingresado
+    if (this.isCuotasChecked) {
+      this.currentExpense.currentCuota = this.currentExpense.currentCuota || 1; // Si no hay cuota actual, inicializarla
+      this.currentExpense.numCuotas = this.numCuotas; // Actualizar el número de cuotas con el valor del select
+      this.currentExpense.nextMonth = true;
+    } else {
+      this.currentExpense.currentCuota = 0;
+      this.currentExpense.numCuotas = 0;
     }
 
     // Formatear valor numérico
@@ -731,13 +735,10 @@ export class DashboardComponent implements OnInit {
 
     if (this.currentExpense.isPaid) {
       this.currentExpense.status = 'Pagado';
-    } else {
-      // Determinar el estado 'Por pagar' o 'Vencido'
     }
 
     try {
       if (this.editingIndex !== null && this.currentExpense.id) {
-        // Al editar, si el gasto tiene cuotas, marcar el checkbox de cuotas
         if (this.currentExpense.currentCuota) {
           this.isCuotasChecked = true;
         }
@@ -760,10 +761,8 @@ export class DashboardComponent implements OnInit {
           .addExpenseToFirebase(this.currentExpense)
           .subscribe({
             next: (docRef) => {
-              console.log('Gasto agregado exitosamente', docRef.id);
-              this.currentExpense.id = docRef.id; // Guardar el ID correcto
+              this.currentExpense.id = docRef.id;
               this.financeItems.unshift({ ...this.currentExpense });
-              console.log(this.currentExpense);
             },
             error: (error) => {
               console.error('Error al agregar el gasto:', error);
@@ -771,7 +770,6 @@ export class DashboardComponent implements OnInit {
           });
       }
 
-      // Actualizar totales y refrescar la lista
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
@@ -895,22 +893,40 @@ export class DashboardComponent implements OnInit {
     try {
       const deletedAt = this.getTodayDate();
 
+      // Mover a papelera temporal
       const trashDoc = doc(
         this.firestore,
         `users/${uid}/papeleraTemporal/${expense.id}`
       );
-
       await setDoc(trashDoc, {
         ...expense,
         deletedAt: deletedAt,
       });
 
+      // Eliminar de la colección de gastos
       const expenseDoc = doc(
         this.firestore,
         `users/${uid}/gastos/${expense.id}`
       );
       await deleteDoc(expenseDoc);
 
+      // Buscar y eliminar en 'expensesNextMonth' por nombre
+      const nextMonthCollection = collection(
+        this.firestore,
+        `users/${uid}/expensesNextMonth`
+      );
+      const q = query(nextMonthCollection, where('name', '==', expense.name));
+
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async (docSnapshot) => {
+        const nextMonthDocRef = doc(
+          this.firestore,
+          `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+        );
+        await deleteDoc(nextMonthDocRef);
+      });
+
+      // Recargar los gastos y mostrar notificación
       this.loadExpenses();
       this.showDeleteNotification(expense.name);
     } catch (error) {
@@ -1936,8 +1952,8 @@ export class DashboardComponent implements OnInit {
       // Preparar batch para eliminar todos los gastos de una sola vez
       const batch = writeBatch(this.firestore);
 
-      selectedItems.forEach((expense) => {
-        if (!expense.id) return;
+      for (const expense of selectedItems) {
+        if (!expense.id) continue;
 
         const trashDocRef = doc(
           this.firestore,
@@ -1960,7 +1976,23 @@ export class DashboardComponent implements OnInit {
 
         // Eliminar de gastos
         batch.delete(expenseDocRef);
-      });
+
+        // Buscar y eliminar en 'expensesNextMonth' por nombre
+        const nextMonthCollection = collection(
+          this.firestore,
+          `users/${uid}/expensesNextMonth`
+        );
+        const q = query(nextMonthCollection, where('name', '==', expense.name));
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((docSnapshot) => {
+          const nextMonthDocRef = doc(
+            this.firestore,
+            `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+          );
+          batch.delete(nextMonthDocRef);
+        });
+      }
 
       // Ejecutar el batch
       try {
@@ -2006,7 +2038,7 @@ export class DashboardComponent implements OnInit {
       )}-${day.padStart(2, '0')}`;
     }
 
-    // Verificar si la fecha del registro coincide con hoy y ajustar el checkbox
+    // Manejar el formato yyyy-MM-dd directamente si ya es válido
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Sin horas, minutos y segundos para comparar correctamente
     const selectedDate = this.parseDate(this.currentExpense.date);
@@ -2301,9 +2333,36 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  handleDateForExpense(dateString: string | null | undefined): string | null {
+    if (!dateString || typeof dateString !== 'string') {
+      console.log('Fecha vacía o no válida:', dateString);
+      return null;
+    }
+
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      if (!day || !month || !year) {
+        console.log('Partes de la fecha inválidas:', { day, month, year });
+        return null;
+      }
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    if (dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      if (!year || !month || !day) {
+        console.log('Partes de la fecha inválidas:', { year, month, day });
+        return null;
+      }
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    console.log('Formato de fecha no reconocido:', dateString);
+    return null; // Retornar null si no se reconoce el formato
+  }
+
   formatDateDisplay(dateString: string): string {
     if (!dateString || typeof dateString !== 'string') {
-      console.error('Fecha inválida o en formato incorrecto:', dateString);
       return 'Fecha inválida';
     }
 
@@ -2311,7 +2370,6 @@ export class DashboardComponent implements OnInit {
     if (dateString.includes('/')) {
       const [day, month, year] = dateString.split('/');
       if (!day || !month || !year) {
-        console.error('Partes de la fecha inválidas:', { day, month, year });
         return 'Fecha inválida';
       }
       return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
@@ -2321,13 +2379,10 @@ export class DashboardComponent implements OnInit {
     if (dateString.includes('-')) {
       const [year, month, day] = dateString.split('-');
       if (!year || !month || !day) {
-        console.error('Partes de la fecha inválidas:', { year, month, day });
         return 'Fecha inválida';
       }
       return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
     }
-
-    console.error('Formato de fecha no reconocido:', dateString);
     return 'Fecha inválida';
   }
 

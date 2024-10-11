@@ -1046,7 +1046,12 @@
             </tr>
 
             <!-- Filas de los gastos existentes -->
-            <tr *ngFor="let item of getFilteredExpenses(); let i = index">
+            <tr
+              *ngFor="let item of getFilteredExpenses(); let i = index"
+              [ngClass]="{
+                'bg-yellow-100': item.nextMonth === true && editingIndex !== i
+              }"
+            >
               <ng-container *ngIf="editingIndex !== i">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <label class="flex items-center cursor-pointer">

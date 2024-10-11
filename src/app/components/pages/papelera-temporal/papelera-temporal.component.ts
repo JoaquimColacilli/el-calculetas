@@ -21,6 +21,7 @@ import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import Swal from 'sweetalert2';
+import { addDoc, serverTimestamp } from 'firebase/firestore';
 
 @Component({
   selector: 'app-papelera-temporal',
@@ -188,6 +189,7 @@ export class PapeleraTemporalComponent implements OnInit {
     if (!uid || !expense.id) return;
 
     try {
+      // Restaurar el gasto a la colección 'gastos'
       const expenseDoc = doc(
         this.firestore,
         `users/${uid}/gastos/${expense.id}`
@@ -197,6 +199,19 @@ export class PapeleraTemporalComponent implements OnInit {
         restoredAt: new Date().toLocaleDateString('es-ES'),
       });
 
+      // Si el gasto tiene cuotas, restaurarlo también en 'expensesNextMonth'
+      if (expense.numCuotas && expense.currentCuota) {
+        const nextMonthCollection = collection(
+          this.firestore,
+          `users/${uid}/expensesNextMonth`
+        );
+        await addDoc(nextMonthCollection, {
+          ...expense,
+          timestamp: serverTimestamp(),
+        });
+      }
+
+      // Eliminar el gasto de la papelera temporal
       await this.deleteFromTrash(expense);
       this.showRestoreExpenseNotification(expense.name);
     } catch (error) {
