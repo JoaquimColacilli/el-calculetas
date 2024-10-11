@@ -202,6 +202,10 @@ export class DashboardComponent implements OnInit {
 
   selectedSortCriteria: 'timestamp' | 'date' = 'timestamp';
 
+  isCuotasChecked: boolean = false;
+  numCuotas: number = 1;
+  cuotasArray: number[] = Array.from({ length: 24 }, (_, i) => i + 1);
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -491,6 +495,12 @@ export class DashboardComponent implements OnInit {
     return card.name || 'Tarjeta';
   }
 
+  toggleCuotas() {
+    if (!this.isCuotasChecked) {
+      this.numCuotas = 1; // Resetear cuotas a 1 si se desactiva el checkbox
+    }
+  }
+
   loadExpenses(): void {
     this.isLoadingData = true;
     this.financeService.getExpenses().subscribe({
@@ -550,8 +560,6 @@ export class DashboardComponent implements OnInit {
     // Formatear la parte entera con puntos para los miles
     integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-    console.log(integerPart);
-    console.log(decimalPart);
     return `${integerPart},${decimalPart}`;
   }
 

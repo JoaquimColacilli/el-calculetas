@@ -16,4 +16,6 @@ export interface FinanceInterface {
   cardId?: string;
   timestamp?: Timestamp;
   dateAdded?: string;
+  numCuotas?: number;
+  currentCuota?: number;
 }

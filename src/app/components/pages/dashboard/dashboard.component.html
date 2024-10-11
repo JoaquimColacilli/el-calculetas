@@ -749,20 +749,39 @@
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
               >
-                <div class="flex items-center justify-between">
-                  <span>Tarjeta</span>
-                  <label
+                <div class="flex flex-col space-y-2">
+                  <!-- Checkbox de Tarjeta -->
+                  <div class="flex items-center justify-between">
+                    <span>Tarjeta</span>
+                    <label
+                      class="flex items-center cursor-pointer"
+                      *ngIf="addingExpense || editingIndex !== null"
+                    >
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="isTarjetaChecked"
+                        (change)="toggleTarjeta()"
+                        title="Tarjeta"
+                      />
+                    </label>
+                  </div>
+
+                  <div
                     *ngIf="addingExpense || editingIndex !== null"
-                    class="flex items-center cursor-pointer"
+                    class="flex items-center justify-between"
+                    [ngClass]="{ 'opacity-50': !isTarjetaChecked }"
                   >
-                    <input
-                      type="checkbox"
-                      [(ngModel)]="isTarjetaChecked"
-                      (change)="toggleTarjeta()"
-                      class="ml-2"
-                      title="Tarjeta"
-                    />
-                  </label>
+                    <span>¿Cuotas?</span>
+                    <label class="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="isCuotasChecked"
+                        [disabled]="!isTarjetaChecked"
+                        (change)="toggleCuotas()"
+                        title="Cuotas"
+                      />
+                    </label>
+                  </div>
                 </div>
               </th>
 
@@ -880,25 +899,49 @@
               </td>
 
               <td class="px-6 py-4">
-                <select
-                  [(ngModel)]="currentExpense.cardId"
-                  (change)="onCardSelectionChange()"
-                  [ngClass]="{
-                    'border-red-500': !currentExpense.cardId && isSaveAttempted
-                  }"
-                  [disabled]="!isTarjetaChecked"
-                  class="border border-gray-300 rounded px-2 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option disabled [ngValue]="null">
-                    Seleccione una tarjeta
-                  </option>
-                  <option
-                    *ngFor="let card of cardsWithDate"
-                    [ngValue]="card.id"
+                <div class="flex items-center space-x-2">
+                  <!-- Select de Tarjeta -->
+                  <select
+                    [(ngModel)]="currentExpense.cardId"
+                    (change)="onCardSelectionChange()"
+                    [ngClass]="{
+                      'border-red-500':
+                        !currentExpense.cardId && isSaveAttempted
+                    }"
+                    [disabled]="!isTarjetaChecked"
+                    class="border border-gray-300 rounded px-2 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    [ngStyle]="{
+                      width: isCuotasChecked ? '100%' : '100%'
+                    }"
                   >
-                    {{ getCardName(card) }}
-                  </option>
-                </select>
+                    <option disabled [ngValue]="null">
+                      Seleccione una tarjeta
+                    </option>
+                    <option
+                      *ngFor="let card of cardsWithDate"
+                      [ngValue]="card.id"
+                    >
+                      {{ getCardName(card) }}
+                    </option>
+                  </select>
+
+                  <!-- Select de Cuotas (solo si Cuotas está activado) -->
+                  <div *ngIf="isCuotasChecked" class="flex items-center">
+                    <select
+                      id="cuotas-select"
+                      [(ngModel)]="numCuotas"
+                      class="border border-gray-300 rounded px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style="width: 100%"
+                    >
+                      <option disabled [ngValue]="null">
+                        Seleccione cuotas
+                      </option>
+                      <option *ngFor="let cuota of cuotasArray" [value]="cuota">
+                        {{ cuota }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
@@ -1032,6 +1075,7 @@
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap">
+                  <!-- Estado del gasto -->
                   <span
                     [ngClass]="{
                       'text-green-600': item.status === 'Pagado',
@@ -1048,17 +1092,53 @@
                         : "Venció"
                     }}
                   </span>
+
+                  <!-- Fecha del gasto -->
                   <div class="text-xs text-gray-500">
                     {{ formatDateDisplay(item.date) }}
                   </div>
+
+                  <!-- Separador vertical y detalles de tarjeta/cuotas -->
+                  <div class="flex items-center mt-2">
+                    <div *ngIf="item.cardId"></div>
+
+                    <!-- Icono de tarjeta -->
+                    <fa-icon
+                      *ngIf="item.cardId"
+                      [icon]="['fas', 'credit-card']"
+                      class="text-blue-500"
+                    ></fa-icon>
+
+                    <div
+                      *ngIf="item.cardId"
+                      class="border-l border-gray-300 h-6 mx-2"
+                    ></div>
+
+                    <!-- Mostrar "Sin cuotas" o Cuota X/Y -->
+                    <div *ngIf="item.cardId" class="text-sm text-gray-700">
+                      <p
+                        *ngIf="!item.numCuotas"
+                        class="whitespace-nowrap text-gray-500 italic font-light"
+                      >
+                        Sin cuotas
+                      </p>
+                      <p
+                        *ngIf="item.numCuotas"
+                        class="text-left text-xs font-medium text-gray-500 uppercase"
+                      >
+                        Cuota: {{ item.currentCuota }}/{{ item.numCuotas }}
+                      </p>
+                    </div>
+                  </div>
                 </td>
+
                 <td
                   *ngIf="!addingExpense && editingIndex === null"
                   class="px-6 py-4 whitespace-nowrap text-sm font-sans"
                 >
                   {{ formatDateDisplayFor(item.timestamp) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap flex items-center">
+                <td class="px-6 py-4">
                   <ng-container *ngIf="item.currency === 'USD'">
                     <span class="mr-2 text-sm font-semibold text-gray-700"
                       >USD</span
@@ -1069,11 +1149,7 @@
                       >ARS</span
                     >
                   </ng-container>
-                  <ng-container *ngIf="item.currency === 'EUR'">
-                    <span class="mr-2 text-sm font-semibold text-gray-700"
-                      >EUR</span
-                    >
-                  </ng-container>
+
                   <span class="text-sm font-semibold"
                     >{{ item.value | numberFormat }}
                   </span>
