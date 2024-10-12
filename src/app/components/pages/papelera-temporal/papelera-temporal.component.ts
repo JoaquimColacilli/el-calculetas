@@ -201,12 +201,13 @@ export class PapeleraTemporalComponent implements OnInit {
 
       // Si el gasto tiene cuotas, restaurarlo también en 'expensesNextMonth'
       if (expense.numCuotas && expense.currentCuota) {
-        const nextMonthCollection = collection(
+        const nextMonthDocRef = doc(
           this.firestore,
-          `users/${uid}/expensesNextMonth`
+          `users/${uid}/expensesNextMonth/${expense.id}`
         );
-        await addDoc(nextMonthCollection, {
+        await setDoc(nextMonthDocRef, {
           ...expense,
+          date: '', // Mantener 'date' vacío
           timestamp: serverTimestamp(),
         });
       }

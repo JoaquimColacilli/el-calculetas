@@ -911,21 +911,12 @@ export class DashboardComponent implements OnInit {
       );
       await deleteDoc(expenseDoc);
 
-      // Buscar y eliminar en 'expensesNextMonth' por nombre
-      const nextMonthCollection = collection(
+      // Eliminar en 'expensesNextMonth' usando el mismo id
+      const nextMonthDocRef = doc(
         this.firestore,
-        `users/${uid}/expensesNextMonth`
+        `users/${uid}/expensesNextMonth/${expense.id}`
       );
-      const q = query(nextMonthCollection, where('name', '==', expense.name));
-
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach(async (docSnapshot) => {
-        const nextMonthDocRef = doc(
-          this.firestore,
-          `users/${uid}/expensesNextMonth/${docSnapshot.id}`
-        );
-        await deleteDoc(nextMonthDocRef);
-      });
+      await deleteDoc(nextMonthDocRef);
 
       // Recargar los gastos y mostrar notificación
       this.loadExpenses();
@@ -2026,11 +2017,11 @@ export class DashboardComponent implements OnInit {
       showCancelButton: true,
       cancelButtonText: 'Cancelar',
       confirmButtonText: 'Sí, enviar',
-      width: '400px', // Hacer el modal más pequeño
+      width: '400px',
       customClass: {
         title: 'swal-title-small',
       },
-      reverseButtons: true, // Intercambia la posición de los botones
+      reverseButtons: true,
     });
 
     if (result.isConfirmed) {
@@ -2074,21 +2065,12 @@ export class DashboardComponent implements OnInit {
         // Eliminar de gastos
         batch.delete(expenseDocRef);
 
-        // Buscar y eliminar en 'expensesNextMonth' por nombre
-        const nextMonthCollection = collection(
+        // Eliminar de 'expensesNextMonth' por id
+        const nextMonthDocRef = doc(
           this.firestore,
-          `users/${uid}/expensesNextMonth`
+          `users/${uid}/expensesNextMonth/${expense.id}`
         );
-        const q = query(nextMonthCollection, where('name', '==', expense.name));
-
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((docSnapshot) => {
-          const nextMonthDocRef = doc(
-            this.firestore,
-            `users/${uid}/expensesNextMonth/${docSnapshot.id}`
-          );
-          batch.delete(nextMonthDocRef);
-        });
+        batch.delete(nextMonthDocRef);
       }
 
       // Ejecutar el batch

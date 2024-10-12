@@ -18,6 +18,7 @@ import {
   DocumentReference,
   getDocs,
   serverTimestamp,
+  setDoc,
   where,
 } from 'firebase/firestore';
 
@@ -79,16 +80,21 @@ export class FinanceService {
           timestamp: serverTimestamp(),
         });
 
-        // Si el gasto tiene cuotas, agregarlo también a la colección 'expensesNextMonth'
+        // Si el gasto tiene cuotas, agregarlo a la colección 'expensesNextMonth' con el mismo id
         if (expense.numCuotas && expense.currentCuota) {
           const nextMonthCollection = collection(
             this.firestore,
             `users/${uid}/expensesNextMonth`
           );
-          await addDoc(nextMonthCollection, {
-            ...expense,
-            timestamp: serverTimestamp(),
-          });
+          await setDoc(
+            doc(this.firestore, `users/${uid}/expensesNextMonth/${docRef.id}`),
+            {
+              ...expense,
+              date: '', // Dejar el campo 'date' vacío
+              currentCuota: expense.currentCuota + 1, // Incrementar la cuota
+              timestamp: serverTimestamp(),
+            }
+          );
         }
 
         return docRef;
@@ -116,55 +122,20 @@ export class FinanceService {
         // Actualizar el gasto en la colección 'gastos'
         await updateDoc(expenseDocRef, {
           ...updatedExpense,
-          numCuotas: updatedExpense.numCuotas ?? null, // Asegurar que el valor de numCuotas se actualice
-          currentCuota: updatedExpense.currentCuota ?? null, // También actualizar el currentCuota
-          timestamp: serverTimestamp(),
+          numCuotas: updatedExpense.numCuotas ?? null,
+          currentCuota: updatedExpense.currentCuota ?? null,
         });
 
-        // Si el gasto tiene cuotas, buscar en 'expensesNextMonth' por nombre y actualizarlo
-        if (
-          (updatedExpense.numCuotas ?? 0) > 0 &&
-          updatedExpense.currentCuota
-        ) {
-          const nextMonthCollection = collection(
+        // Si el gasto tiene cuotas, actualizar también en 'expensesNextMonth'
+        if (updatedExpense.numCuotas && updatedExpense.currentCuota) {
+          const nextMonthDocRef = doc(
             this.firestore,
-            `users/${uid}/expensesNextMonth`
+            `users/${uid}/expensesNextMonth/${id}`
           );
-          const q = query(
-            nextMonthCollection,
-            where('name', '==', updatedExpense.name)
-          );
-
-          const querySnapshot = await getDocs(q);
-          querySnapshot.forEach(async (docSnapshot) => {
-            const nextMonthDocRef = doc(
-              this.firestore,
-              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
-            );
-            await updateDoc(nextMonthDocRef, {
-              ...updatedExpense,
-              numCuotas: updatedExpense.numCuotas, // Asegurarse de que el valor actualizado se guarde
-              currentCuota: updatedExpense.currentCuota, // Asegurar que se actualice el currentCuota
-              timestamp: serverTimestamp(),
-            });
-          });
-        } else {
-          const nextMonthCollection = collection(
-            this.firestore,
-            `users/${uid}/expensesNextMonth`
-          );
-          const q = query(
-            nextMonthCollection,
-            where('name', '==', updatedExpense.name)
-          );
-
-          const querySnapshot = await getDocs(q);
-          querySnapshot.forEach(async (docSnapshot) => {
-            const nextMonthDocRef = doc(
-              this.firestore,
-              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
-            );
-            await deleteDoc(nextMonthDocRef);
+          await updateDoc(nextMonthDocRef, {
+            ...updatedExpense,
+            date: '', // Mantener la fecha vacía para el próximo mes
+            currentCuota: updatedExpense.currentCuota + 1, // Incrementar la cuota
           });
         }
       }),
