@@ -14,25 +14,6 @@
           <h1 class="text-3xl font-bold">Estadísticas</h1>
         </div>
 
-        <!-- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <p class="text-sm text-gray-500">Total Gastos</p>
-            <h2 class="text-2xl font-bold text-red-500">$1,200</h2>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <p class="text-sm text-gray-500">Total Ingresos</p>
-            <h2 class="text-2xl font-bold text-green-500">$3,500</h2>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <p class="text-sm text-gray-500">Saldo Disponible</p>
-            <h2 class="text-2xl font-bold text-blue-500">$2,300</h2>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <p class="text-sm text-gray-500">Ahorros</p>
-            <h2 class="text-2xl font-bold text-purple-500">$500</h2>
-          </div>
-        </div> -->
-
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <div class="bg-white p-6 rounded-lg shadow-md">
             <p class="text-sm text-gray-500">Total Gastos (ARS)</p>
@@ -48,18 +29,32 @@
           </div>
         </div>
 
-        <!-- <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-          <canvas id="lineChart"></canvas>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-          <canvas id="barChart"></canvas>
-        </div> -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-          <canvas id="doughnutChart" width="500" height="500"></canvas>
+        <div class="flex gap-6 mb-8">
+          <!-- Gráfico de ARS -->
+          <div
+            [style.display]="hasExpensesARS() ? 'block' : 'none'"
+            [ngClass]="{
+              'w-full': !hasExpensesUSD(),
+              'lg:w-1/2': hasExpensesUSD()
+            }"
+            class="flex justify-center bg-white p-6 rounded-lg shadow-md"
+          >
+            <canvas id="doughnutChartARS" width="450" height="450"></canvas>
+          </div>
+
+          <!-- Gráfico de USD -->
+          <div
+            [style.display]="hasExpensesUSD() ? 'block' : 'none'"
+            [ngClass]="{
+              'w-full': !hasExpensesARS(),
+              'lg:w-1/2': hasExpensesARS()
+            }"
+            class="flex justify-center bg-white p-6 rounded-lg shadow-md"
+          >
+            <canvas id="doughnutChartUSD" width="450" height="450"></canvas>
+          </div>
         </div>
       </div>
     </main>
   </div>
 </div>
-
-<!-- <app-pantalla-en-construccion></app-pantalla-en-construccion> -->

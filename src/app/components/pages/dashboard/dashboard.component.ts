@@ -204,7 +204,7 @@ export class DashboardComponent implements OnInit {
 
   isCuotasChecked: boolean = false;
   numCuotas: number = 1;
-  cuotasArray: number[] = Array.from({ length: 24 }, (_, i) => i + 1);
+  cuotasArray: number[] = Array.from({ length: 23 }, (_, i) => i + 2);
 
   constructor(
     private router: Router,

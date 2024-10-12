@@ -29,8 +29,14 @@
   }
 }
 
-canvas#doughnutChart {
-  max-width: 500px;
-  max-height: 500px;
+canvas#doughnutChartARS {
+  max-width: 450px;
+  max-height: 450px;
+  margin: 0 auto;
+}
+
+canvas#doughnutChartUSD {
+  max-width: 450px;
+  max-height: 450px;
   margin: 0 auto;
 }

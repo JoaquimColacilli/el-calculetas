@@ -201,26 +201,35 @@ export class FinanceService {
     );
   }
 
-  getExpensesByCategory(): Observable<{ [category: string]: number }> {
+  getExpensesByCategory(): Observable<{
+    [currency: string]: { [category: string]: number };
+  }> {
     return this.getExpenses().pipe(
       switchMap((expenses) => {
-        const expensesByCategory: { [category: string]: number } = {};
+        const expensesByCategory: {
+          [currency: string]: { [category: string]: number };
+        } = {};
 
         expenses.forEach((expense) => {
           const value = parseFloat(expense.value);
+          const currency = expense.currency; // Asegúrate de que cada gasto tiene una propiedad 'currency'
           const categoryName =
             typeof expense.category === 'string'
               ? expense.category
               : expense.category.name;
 
-          if (expensesByCategory[categoryName]) {
-            expensesByCategory[categoryName] += value;
+          if (!expensesByCategory[currency]) {
+            expensesByCategory[currency] = {};
+          }
+
+          if (expensesByCategory[currency][categoryName]) {
+            expensesByCategory[currency][categoryName] += value;
           } else {
-            expensesByCategory[categoryName] = value;
+            expensesByCategory[currency][categoryName] = value;
           }
         });
 
-        console.log(expensesByCategory);
+        console.log(expensesByCategory); // Muestra los gastos organizados por moneda y categoría
 
         return of(expensesByCategory);
       }),

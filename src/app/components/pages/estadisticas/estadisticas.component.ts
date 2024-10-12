@@ -4,7 +4,6 @@ import { AsideComponent } from '../../aside/aside.component';
 import { PantallaEnConstruccionComponent } from '../../pantalla-en-construccion/pantalla-en-construccion.component';
 import { CommonModule } from '@angular/common';
 import { FinanceService } from '../../../services/finance.service';
-
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 
 @Component({
@@ -17,23 +16,23 @@ import { Chart, ChartConfiguration } from 'chart.js/auto';
     CommonModule,
   ],
   templateUrl: './estadisticas.component.html',
-  styleUrl: './estadisticas.component.css',
+  styleUrls: ['./estadisticas.component.css'],
 })
 export class EstadisticasComponent implements OnInit {
   isLoadingData: boolean = false;
   totalGastosARS: number = 0;
   totalGastosUSD: number = 0;
-  doughnutChart: Chart<'doughnut', number[], string> | null = null;
-  expensesByCategory: { [category: string]: number } = {};
+  doughnutChartARS: Chart<'doughnut', number[], string> | null = null;
+  doughnutChartUSD: Chart<'doughnut', number[], string> | null = null;
+  expensesByCategoryARS: { [category: string]: number } = {};
+  expensesByCategoryUSD: { [category: string]: number } = {};
 
   constructor(private financeService: FinanceService) {}
 
   ngOnInit(): void {
-    this.createLineChart();
-    this.createBarChart();
-    this.createDoughnutChart();
-    this.loadExpensesByCategory();
+    this.isLoadingData = true;
     this.loadFinanceExpenses();
+    this.loadExpensesByCategory();
   }
 
   loadFinanceExpenses() {
@@ -45,139 +44,94 @@ export class EstadisticasComponent implements OnInit {
 
   loadExpensesByCategory() {
     this.financeService.getExpensesByCategory().subscribe((categoryData) => {
-      this.expensesByCategory = categoryData;
-      this.createDoughnutChart();
+      this.expensesByCategoryARS = categoryData['ARS'] || {};
+      this.expensesByCategoryUSD = categoryData['USD'] || {};
+
+      this.isLoadingData = false;
+
+      // Renderiza los gráficos con un ligero retardo para asegurarse de que el DOM esté actualizado.
+      setTimeout(() => {
+        this.createDoughnutChartARS();
+        this.createDoughnutChartUSD();
+      }, 0);
     });
   }
 
-  createLineChart(): void {
-    const canvas = document.getElementById('lineChart') as HTMLCanvasElement;
-    const ctxLine = canvas?.getContext('2d');
-
-    if (ctxLine) {
-      const chartConfig: ChartConfiguration = {
-        type: 'line',
-        data: {
-          labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-          datasets: [
-            {
-              label: 'Sales',
-              data: [65, 59, 80, 81, 56, 55],
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 2,
-              fill: false,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-            },
-          },
-        },
-      };
-
-      new Chart(ctxLine, chartConfig);
-    } else {
-      console.error('No se pudo obtener el contexto 2D del canvas');
-    }
-  }
-
-  createBarChart(): void {
-    const canvas = document.getElementById('barChart') as HTMLCanvasElement;
-    const ctxBar = canvas?.getContext('2d');
-
-    if (ctxBar) {
-      new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: ['Comida', 'Transporte', 'Ocio', 'Ropa', 'Salud'],
-          datasets: [
-            {
-              label: 'Gastos por Categoría',
-              data: [300, 150, 200, 100, 250],
-              backgroundColor: [
-                '#FF6384',
-                '#36A2EB',
-                '#FFCE56',
-                '#4BC0C0',
-                '#9966FF',
-              ],
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-            },
-          },
-        },
-      });
-    } else {
-      console.error('No se pudo obtener el contexto 2D del canvas');
-    }
-  }
-
-  updateDoughnutChart(): void {
-    if (this.doughnutChart) {
-      this.doughnutChart.data.datasets[0].data = [
-        this.totalGastosARS,
-        this.totalGastosUSD,
-      ];
-      this.doughnutChart.update();
-    }
-  }
-
-  createDoughnutChart(): void {
+  createDoughnutChartARS(): void {
     const canvas = document.getElementById(
-      'doughnutChart'
+      'doughnutChartARS'
     ) as HTMLCanvasElement;
-    const ctxDoughnut = canvas?.getContext('2d');
-
-    // Destruir el gráfico previo si existe
-    if (this.doughnutChart) {
-      this.doughnutChart.destroy();
-    }
-
-    if (ctxDoughnut) {
-      const categories = Object.keys(this.expensesByCategory);
-      const categoryValues = Object.values(this.expensesByCategory);
-
-      const config: ChartConfiguration<'doughnut', number[], string> = {
-        type: 'doughnut',
-        data: {
-          labels: categories,
-          datasets: [
-            {
-              label: 'Gastos por Categoría',
-              data: categoryValues,
-              backgroundColor: [
-                '#FF6384',
-                '#36A2EB',
-                '#FFCE56',
-                '#4BC0C0',
-                '#9966FF',
-                '#FFA07A',
-                '#8A2BE2',
-                '#00FA9A',
-              ],
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          animation: {
-            animateScale: true,
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (this.doughnutChartARS) {
+        this.doughnutChartARS.destroy();
+      }
+      if (ctx) {
+        const categories = Object.keys(this.expensesByCategoryARS);
+        const values = Object.values(this.expensesByCategoryARS);
+        const config: ChartConfiguration<'doughnut', number[], string> = {
+          type: 'doughnut',
+          data: {
+            labels: categories,
+            datasets: [
+              {
+                data: values,
+                backgroundColor: [
+                  '#FF6384',
+                  '#36A2EB',
+                  '#FFCE56',
+                  '#4BC0C0',
+                  '#9966FF',
+                ],
+              },
+            ],
           },
-        },
-      };
-
-      // Crear un nuevo gráfico después de destruir el anterior
-      this.doughnutChart = new Chart(ctxDoughnut, config);
+        };
+        this.doughnutChartARS = new Chart(ctx, config);
+      }
     }
+  }
+
+  createDoughnutChartUSD(): void {
+    const canvas = document.getElementById(
+      'doughnutChartUSD'
+    ) as HTMLCanvasElement;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (this.doughnutChartUSD) {
+        this.doughnutChartUSD.destroy();
+      }
+      if (ctx) {
+        const categories = Object.keys(this.expensesByCategoryUSD);
+        const values = Object.values(this.expensesByCategoryUSD);
+        const config: ChartConfiguration<'doughnut', number[], string> = {
+          type: 'doughnut',
+          data: {
+            labels: categories,
+            datasets: [
+              {
+                data: values,
+                backgroundColor: [
+                  '#FF6384',
+                  '#36A2EB',
+                  '#FFCE56',
+                  '#4BC0C0',
+                  '#9966FF',
+                ],
+              },
+            ],
+          },
+        };
+        this.doughnutChartUSD = new Chart(ctx, config);
+      }
+    }
+  }
+
+  hasExpensesARS(): boolean {
+    return Object.keys(this.expensesByCategoryARS).length > 0;
+  }
+
+  hasExpensesUSD(): boolean {
+    return Object.keys(this.expensesByCategoryUSD).length > 0;
   }
 }
