@@ -205,6 +205,7 @@ export class DashboardComponent implements OnInit {
   isCuotasChecked: boolean = false;
   numCuotas: number = 1;
   cuotasArray: number[] = Array.from({ length: 23 }, (_, i) => i + 2);
+  selectedExpenses: FinanceInterface[] = [];
 
   constructor(
     private router: Router,
@@ -1916,8 +1917,104 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  mantenerGastoSiguienteMes() {
-    // Lógica para mantener los gastos para el mes siguiente
+  mantenerGastoFijo() {
+    const selectedExpenses = this.financeItems.filter((item) => item.selected);
+
+    // Verificar si algún gasto seleccionado tiene cuotas
+    const hasCuotas = selectedExpenses.some(
+      (expense) => expense.numCuotas && expense.numCuotas > 0
+    );
+
+    if (hasCuotas) {
+      // Si algún gasto tiene cuotas, mostrar advertencia y salir de la función
+      Swal.fire({
+        icon: 'error',
+        title: 'No se puede marcar como fijo',
+        text: 'Uno o más gastos seleccionados tienen cuotas. Debe desmarcar estos gastos para continuar.',
+        confirmButtonText: 'Aceptar',
+      });
+      return;
+    }
+
+    // Si no hay gastos con cuotas, continuar con la lógica de marcar como fijo
+    selectedExpenses.forEach((expense) => {
+      const fixedExpense = { ...expense };
+
+      // Si el gasto ya es fijo, desmarcarlo y eliminarlo de 'gastosFijos'
+      if (fixedExpense.isFinanceFijo) {
+        fixedExpense.isFinanceFijo = false;
+
+        if (expense.id) {
+          this.financeService
+            .updateExpenseWithoutTimestamp(expense.id, { isFinanceFijo: false })
+            .subscribe(() => {
+              console.log(`Gasto desmarcado como fijo: ${expense.name}`);
+              this.haySeleccionados = false;
+
+              // Eliminar de 'gastosFijos'
+              this.financeService.eliminarGastoFijo(expense).subscribe(() => {
+                console.log(`Gasto eliminado de gastosFijos: ${expense.name}`);
+              });
+
+              Swal.fire({
+                position: 'top',
+                icon: 'success',
+                title: `Gasto ${expense.name} desmarcado como fijo`,
+                showConfirmButton: false,
+                timer: 3000,
+                toast: true,
+                customClass: {
+                  popup: 'swal-custom-popup',
+                },
+              });
+            });
+        }
+      } else {
+        const expenseDate = fixedExpense.date.includes('-')
+          ? new Date(fixedExpense.date) // Asume formato YYYY-MM-DD
+          : (() => {
+              const [day, month, year] = fixedExpense.date
+                .split('/')
+                .map(Number); // Asume formato DD/MM/YYYY
+              return new Date(year, month - 1, day);
+            })();
+
+        // Ahora sí, sumamos un mes correctamente
+        expenseDate.setMonth(expenseDate.getMonth() + 1);
+
+        // Actualizamos el campo 'date' del gasto con el nuevo valor, asegurando el formato YYYY-MM-DD
+        fixedExpense.date = expenseDate.toISOString().split('T')[0];
+
+        // Guardar el gasto fijo en la colección 'gastosFijos'
+        this.financeService.marcarGastoComoFijo(fixedExpense).subscribe(() => {
+          console.log(`Gasto fijo agregado: ${fixedExpense.name}`);
+        });
+
+        // Actualizar el gasto en la colección 'gastos'
+        if (expense.id) {
+          this.financeService
+            .updateExpenseWithoutTimestamp(expense.id, { isFinanceFijo: true })
+            .subscribe(() => {
+              this.haySeleccionados = false;
+
+              console.log(`Gasto actualizado como fijo: ${expense.name}`);
+              Swal.fire({
+                position: 'top',
+                icon: 'success',
+                title: `Gasto ${expense.name} marcado como fijo`,
+                showConfirmButton: false,
+                timer: 3000,
+                toast: true,
+                customClass: {
+                  popup: 'swal-custom-popup',
+                },
+              });
+            });
+        }
+      }
+    });
+
+    this.selectedExpenses = [];
   }
 
   async eliminarSeleccionados() {

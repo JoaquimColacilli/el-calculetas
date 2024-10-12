@@ -177,6 +177,79 @@ export class FinanceService {
     );
   }
 
+  updateExpenseWithoutTimestamp(
+    id: string,
+    updatedExpense: Partial<FinanceInterface>
+  ): Observable<void> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        const expenseDocRef = doc(this.firestore, `users/${uid}/gastos/${id}`);
+
+        await updateDoc(expenseDocRef, {
+          ...updatedExpense,
+          numCuotas: updatedExpense.numCuotas ?? null,
+          currentCuota: updatedExpense.currentCuota ?? null,
+        });
+
+        return;
+      }),
+      catchError((error) => {
+        console.error(
+          'Error al actualizar el gasto sin timestamp en Firebase:',
+          error
+        );
+        return throwError(
+          () =>
+            new Error('Error al actualizar el gasto sin timestamp en Firebase')
+        );
+      })
+    );
+  }
+
+  eliminarGastoFijo(expense: FinanceInterface): Observable<void> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        const gastosFijosCollection = collection(
+          this.firestore,
+          `users/${uid}/gastosFijos`
+        );
+        const q = query(
+          gastosFijosCollection,
+          where('name', '==', expense.name),
+          where('value', '==', expense.value),
+          where('provider', '==', expense.provider)
+        );
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach(async (docSnapshot) => {
+          const fixedExpenseDocRef = doc(
+            this.firestore,
+            `users/${uid}/gastosFijos/${docSnapshot.id}`
+          );
+          await deleteDoc(fixedExpenseDocRef);
+        });
+
+        return;
+      }),
+      catchError((error) => {
+        console.error('Error al eliminar el gasto fijo en Firebase:', error);
+        return throwError(
+          () => new Error('Error al eliminar el gasto fijo en Firebase')
+        );
+      })
+    );
+  }
+
   getTotalExpenses(): Observable<{ totalARS: number; totalUSD: number }> {
     return this.getExpenses().pipe(
       switchMap((expenses) => {
@@ -237,6 +310,38 @@ export class FinanceService {
         console.error('Error al agrupar los gastos por categoría:', error);
         return throwError(
           () => new Error('Error al agrupar los gastos por categoría')
+        );
+      })
+    );
+  }
+
+  marcarGastoComoFijo(
+    expense: FinanceInterface
+  ): Observable<DocumentReference> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        const gastosFijosCollection = collection(
+          this.firestore,
+          `users/${uid}/gastosFijos`
+        );
+
+        // Guardar el gasto fijo en la colección de gastos fijos
+        const docRef = await addDoc(gastosFijosCollection, {
+          ...expense,
+          timestamp: serverTimestamp(),
+        });
+
+        return docRef;
+      }),
+      catchError((error) => {
+        console.error('Error al agregar gasto fijo a Firebase:', error);
+        return throwError(
+          () => new Error('Error al agregar gasto fijo a Firebase')
         );
       })
     );

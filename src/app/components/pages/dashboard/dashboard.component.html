@@ -579,20 +579,19 @@
           </button>
 
           <button
-            (click)="mantenerGastoSiguienteMes()"
-            disabled
-            title="Mantener gasto para el mes siguiente"
-            class="flex items-center justify-center py-1 px-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 opacity-50"
-          >
-            <fa-icon [icon]="['fas', 'calendar-plus']"></fa-icon>
-          </button>
-
-          <button
             (click)="descargarExcel()"
             title="Descargar seleccionados en Excel"
             class="flex items-center justify-center py-1 px-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition duration-300"
           >
             <fa-icon [icon]="['fas', 'file-excel']"></fa-icon>
+          </button>
+
+          <button
+            (click)="mantenerGastoFijo()"
+            title="Mantener gasto para el mes siguiente"
+            class="flex items-center justify-center py-1 px-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300"
+          >
+            <fa-icon [icon]="['fas', 'calendar-plus']"></fa-icon>
           </button>
 
           <button
@@ -1049,7 +1048,8 @@
             <tr
               *ngFor="let item of getFilteredExpenses(); let i = index"
               [ngClass]="{
-                'bg-yellow-100': item.nextMonth === true && editingIndex !== i
+                'bg-yellow-100': item.nextMonth === true && editingIndex !== i,
+                'bg-blue-100': item.isFinanceFijo === true && editingIndex !== i
               }"
             >
               <ng-container *ngIf="editingIndex !== i">
@@ -1183,17 +1183,15 @@
                 >
                   Vacío
                 </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap flex space-x-2 items-center"
-                >
+                <td class="px-6 py-4 whitespace-nowrap">
                   <button
-                    class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition flex items-center"
+                    class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition mr-1"
                     (click)="editExpense(item)"
                   >
                     <fa-icon [icon]="['fas', 'edit']"></fa-icon>
                   </button>
                   <button
-                    class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition flex items-center"
+                    class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
                     (click)="deleteExpense(item)"
                   >
                     <fa-icon [icon]="['fas', 'trash']"></fa-icon>
