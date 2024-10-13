@@ -9,6 +9,7 @@ import {
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+import { PantallaEnConstruccionComponent } from '../../pantalla-en-construccion/pantalla-en-construccion.component';
 
 interface Ahorro {
   id?: string;
@@ -34,6 +35,7 @@ interface Conversion {
     CommonModule,
     FormsModule,
     FontAwesomeModule,
+    PantallaEnConstruccionComponent,
   ],
   templateUrl: './ahorros.component.html',
   styleUrls: ['./ahorros.component.css'],

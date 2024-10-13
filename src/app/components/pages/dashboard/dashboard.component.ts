@@ -717,7 +717,7 @@ export class DashboardComponent implements OnInit {
       );
       return;
     }
-    this.currentExpense.date = validDate; // Aseguramos que la fecha esté formateada correctamente
+    this.currentExpense.date = validDate;
 
     // Verificar cuotas
     if (this.isCuotasChecked) {
@@ -757,7 +757,7 @@ export class DashboardComponent implements OnInit {
             },
           });
       } else {
-        this.showAddExpense(this.currentExpense.name); // Notificación de agregado
+        this.showAddExpense(this.currentExpense.name);
         this.financeService
           .addExpenseToFirebase(this.currentExpense)
           .subscribe({
@@ -777,7 +777,7 @@ export class DashboardComponent implements OnInit {
       this.updateGroupedExpenses();
       this.cancelAddingExpense();
       this.toggleTodayDate();
-      await this.loadExpenses(); // Recargar los gastos
+      this.loadExpenses(); // Recargar los gastos
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
     }

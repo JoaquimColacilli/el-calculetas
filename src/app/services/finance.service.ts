@@ -21,6 +21,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
+import moment from 'moment';
 
 @Injectable({
   providedIn: 'root',
@@ -74,13 +75,16 @@ export class FinanceService {
           `users/${uid}/gastos`
         );
 
-        // Guardar el gasto en la colección de gastos
+        // Guardar el gasto en la colección de gastos con un placeholder para el timestamp
         const docRef = await addDoc(gastosCollection, {
           ...expense,
-          timestamp: serverTimestamp(),
+          timestamp: serverTimestamp(), // Se añade pero puede retornar null hasta que Firebase lo procese
         });
 
-        // Si el gasto tiene cuotas, agregarlo a la colección 'expensesNextMonth' con el mismo id
+        // Asegúrate de que el campo timestamp se resuelva correctamente
+        await updateDoc(docRef, { timestamp: serverTimestamp() });
+
+        // Si el gasto tiene cuotas, agregarlo también a la colección 'expensesNextMonth'
         if (expense.numCuotas && expense.currentCuota) {
           const nextMonthCollection = collection(
             this.firestore,
@@ -221,13 +225,17 @@ export class FinanceService {
     );
   }
 
-  getTotalExpenses(): Observable<{ totalARS: number; totalUSD: number }> {
+  getTotalExpenses(
+    period: string
+  ): Observable<{ totalARS: number; totalUSD: number }> {
     return this.getExpenses().pipe(
       switchMap((expenses) => {
         let totalARS = 0;
         let totalUSD = 0;
 
-        expenses.forEach((expense) => {
+        const filteredExpenses = this.filterExpensesByPeriod(expenses, period); // Filtramos los gastos por el período
+
+        filteredExpenses.forEach((expense) => {
           const value = parseFloat(expense.value);
           if (expense.currency === 'ARS') {
             totalARS += value;
@@ -245,18 +253,20 @@ export class FinanceService {
     );
   }
 
-  getExpensesByCategory(): Observable<{
-    [currency: string]: { [category: string]: number };
-  }> {
+  getExpensesByCategory(
+    period: string
+  ): Observable<{ [currency: string]: { [category: string]: number } }> {
     return this.getExpenses().pipe(
       switchMap((expenses) => {
         const expensesByCategory: {
           [currency: string]: { [category: string]: number };
         } = {};
 
-        expenses.forEach((expense) => {
+        const filteredExpenses = this.filterExpensesByPeriod(expenses, period); // Filtramos los gastos por el período
+
+        filteredExpenses.forEach((expense) => {
           const value = parseFloat(expense.value);
-          const currency = expense.currency; // Asegúrate de que cada gasto tiene una propiedad 'currency'
+          const currency = expense.currency;
           const categoryName =
             typeof expense.category === 'string'
               ? expense.category
@@ -273,8 +283,6 @@ export class FinanceService {
           }
         });
 
-        console.log(expensesByCategory); // Muestra los gastos organizados por moneda y categoría
-
         return of(expensesByCategory);
       }),
       catchError((error) => {
@@ -284,6 +292,70 @@ export class FinanceService {
         );
       })
     );
+  }
+
+  filterExpensesByPeriod(
+    expenses: FinanceInterface[],
+    period: string
+  ): FinanceInterface[] {
+    const currentMonth = moment(period, 'MMMM, YYYY'); // Convertimos 'period' a un objeto Moment
+    return this.getExpensesForThisMonth(expenses, currentMonth); // Filtramos los gastos por mes
+  }
+
+  getExpensesForThisMonth(
+    expenses: FinanceInterface[],
+    currentMonth: moment.Moment
+  ): FinanceInterface[] {
+    return expenses.filter((item) => {
+      const itemDate = this.parseDateForComparison(item.date); // Parseamos la fecha
+      return (
+        itemDate.getFullYear() === currentMonth.year() && // Comparamos el año
+        itemDate.getMonth() === currentMonth.month() // Comparamos el mes
+      );
+    });
+  }
+
+  getExpensesForThisWeek(expenses: FinanceInterface[]): FinanceInterface[] {
+    const now = new Date();
+    const startOfWeek = this.getStartOfWeek(now);
+    const endOfWeek = this.getEndOfWeek(now);
+
+    return expenses.filter((item) => {
+      const itemDate = this.parseDateForComparison(item.date);
+      return itemDate >= startOfWeek && itemDate <= endOfWeek;
+    });
+  }
+
+  getExpensesForThisYear(expenses: FinanceInterface[]): FinanceInterface[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    return expenses.filter((item) => {
+      const itemDate = this.parseDateForComparison(item.date);
+      return itemDate.getFullYear() === currentYear;
+    });
+  }
+
+  parseDateForComparison(dateString: string): Date {
+    const formats = ['DD/MM/YYYY', 'DD-MM-YYYY']; // Manejar ambos formatos de fecha
+    const parsedDate = moment(dateString, formats, true); // Intentamos parsear la fecha con ambos formatos
+    return parsedDate.isValid() ? parsedDate.toDate() : new Date(); // Si es válida, devolvemos la fecha; de lo contrario, retornamos la fecha actual para evitar errores
+  }
+
+  getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que el lunes sea el inicio
+    const startOfWeek = new Date(date.setDate(diff));
+    startOfWeek.setHours(0, 0, 0, 0); // Normaliza a medianoche
+    return startOfWeek;
+  }
+
+  getEndOfWeek(date: Date): Date {
+    const startOfWeek = this.getStartOfWeek(date);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Fin de semana (domingo)
+    endOfWeek.setHours(23, 59, 59, 999);
+    return endOfWeek;
   }
 
   marcarGastoComoFijo(

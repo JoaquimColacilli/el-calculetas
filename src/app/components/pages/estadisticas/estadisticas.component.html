@@ -11,7 +11,19 @@
 
       <div class="p-8">
         <div class="flex justify-between items-center mb-8">
-          <h1 class="text-3xl font-bold">Estadísticas</h1>
+          <fa-icon
+            [icon]="['fas', 'chevron-left']"
+            (click)="previousMonth()"
+            class="cursor-pointer fa-2x"
+          ></fa-icon>
+          <h1 class="text-4xl font-bold">
+            {{ translateMonthToSpanish(currentMonth) }}
+          </h1>
+          <fa-icon
+            [icon]="['fas', 'chevron-right']"
+            (click)="nextMonth()"
+            class="cursor-pointer fa-2x"
+          ></fa-icon>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
@@ -32,7 +44,7 @@
         <div class="flex gap-6 mb-8">
           <!-- Gráfico de ARS -->
           <div
-            [style.display]="hasExpensesARS() ? 'block' : 'none'"
+            *ngIf="hasExpensesARS(); else noExpensesARS"
             [ngClass]="{
               'w-full': !hasExpensesUSD(),
               'lg:w-1/2': hasExpensesUSD()
@@ -41,10 +53,17 @@
           >
             <canvas id="doughnutChartARS" width="450" height="450"></canvas>
           </div>
+          <ng-template #noExpensesARS>
+            <div
+              class="flex justify-center items-center w-full bg-white p-6 rounded-lg shadow-md"
+            >
+              <p class="text-gray-500 text-lg">No hay gastos este mes</p>
+            </div>
+          </ng-template>
 
           <!-- Gráfico de USD -->
           <div
-            [style.display]="hasExpensesUSD() ? 'block' : 'none'"
+            *ngIf="hasExpensesUSD(); else noExpensesUSD"
             [ngClass]="{
               'w-full': !hasExpensesARS(),
               'lg:w-1/2': hasExpensesARS()
@@ -53,6 +72,13 @@
           >
             <canvas id="doughnutChartUSD" width="450" height="450"></canvas>
           </div>
+          <ng-template #noExpensesUSD>
+            <div
+              class="flex justify-center items-center w-full bg-white p-6 rounded-lg shadow-md"
+            >
+              <p class="text-gray-500 text-lg">No hay gastos este mes</p>
+            </div>
+          </ng-template>
         </div>
       </div>
     </main>

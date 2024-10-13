@@ -604,7 +604,7 @@
                     <span
                       class="inline-flex items-center px-2 py-1 bg-opacity-40 bg-white text-black text-base font-bold rounded-lg backdrop-blur-lg shadow-md border border-white hover:bg-opacity-60 transition-transform transform hover:scale-105"
                     >
-                      v1.3.0 - Actualización Actual
+                      v1.3.0 - Actualización
                     </span>
                   </h3>
                 </div>
@@ -656,6 +656,210 @@
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
                     [title]="getReactionTitle(reaction)"
                     (click)="addOrRemoveReaction(reaction, messageId_6)"
+                    [ngClass]="{
+                      'ring-2 ring-blue-500 bg-blue-400 text-white':
+                        isReactionSelectedByUser(reaction),
+                      'ring-0': !isReactionSelectedByUser(reaction)
+                    }"
+                  >
+                    {{ reaction.emoji }} {{ reaction.count }}
+                  </div>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensaje del admin para v1.4.0 -->
+          <div
+            class="flex items-start mb-6"
+            [attr.data-message-id]="messageId_7"
+          >
+            <img
+              [src]="userProfilePicture"
+              alt="Foto del Admin"
+              class="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+            <div
+              class="relative border border-gray-300 shadow-lg rounded-lg p-4 flex-1 message-container-msj-7 blurred-background"
+            >
+              <div class="flex justify-between items-center">
+                <span class="text-gray-50 font-semibold">Joaquim 😊</span>
+              </div>
+              <p class="mt-2 text-gray-50 text-sm italic">
+                <fa-icon
+                  [icon]="['fas', 'clock']"
+                  class="text-gray-50 mr-2"
+                ></fa-icon
+                >Última actualización: v1.4.0 - 13/10/2024 - 15:59hs
+              </p>
+              <div class="mt-4">
+                <div class="flex items-center mb-2">
+                  <fa-icon
+                    [icon]="['fas', 'check-circle']"
+                    class="text-green-500 mr-2"
+                  ></fa-icon>
+                  <h3 class="text-xl font-semibold text-gray-50">
+                    v1.4.0 - Actualización Actual
+                  </h3>
+                </div>
+                <ul class="list-disc list-inside text-gray-50 space-y-4">
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'circle']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Se ajusta el radio de los checks de los gastos para que
+                    abarque todo el tamaño de la circunferencia gris, mejorando
+                    la accesibilidad y precisión.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'trash']"
+                      class="text-red-500 mr-3"
+                    ></fa-icon>
+                    Se hace funcional el check para eliminar gastos
+                    seleccionados.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'bug']"
+                      class="text-red-500 mr-2"
+                    ></fa-icon>
+                    Corrección de bug que hacía que la fecha de ingreso se ponga
+                    vacía si el gasto no era del mes actual.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'coins']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Se agrega la opción para marcar gastos como pagados/no
+                    pagados de forma más sencilla y eficiente.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'sort']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Los gastos ahora se ordenan instantáneamente por fecha al
+                    ser modificados o agregados.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'filter']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
+                    Se agrega la funcionalidad de filtrar los gastos por estado,
+                    facilitando la organización de los mismos según pagos
+                    pendientes, pagados o vencidos.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'calendar']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Se agrega una nueva columna "Fecha de Ingreso" para
+                    distinguir entre la fecha de creación del gasto y la fecha
+                    de pago planificada.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'sort']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Se incorpora un select para ordenar los gastos según la
+                    fecha de ingreso o la fecha de pago, mejorando la
+                    flexibilidad de visualización.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'eye']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon
+                    >Se agrega un botón para ver todos los gastos de un mes sin
+                    necesidad de cambiar filtros.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'file-excel']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Se habilita la descarga de gastos en formato Excel para los
+                    gastos seleccionados.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'file-excel']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Se agrega un resumen mensual en el Excel descargable,
+                    generado el primer día de cada mes, para un análisis más
+                    detallado de los gastos.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'coins']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
+                    Se agregan gastos con cuotas, permitiendo gestionar pagos en
+                    varias mensualidades.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'thumbtack']"
+                      class="text-purple-500 mr-3"
+                    ></fa-icon>
+                    Se incluye un botón para marcar un gasto como fijo y
+                    repetirlo en los próximos meses automáticamente.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'chart-pie']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Se implementa una nueva pantalla de estadísticas para
+                    visualizar el desglose de los gastos por categoría y por
+                    mes, con gráficos interactivos y detallados.
+                  </li>
+                </ul>
+              </div>
+
+              <hr class="styled-hr mt-4" />
+
+              <div class="flex items-center mt-4 justify-start">
+                <fa-icon
+                  [icon]="['fas', 'smile']"
+                  class="text-gray-50 cursor-pointer"
+                  (click)="toggleReactionMenu('message_7')"
+                ></fa-icon>
+              </div>
+
+              <div
+                *ngIf="showReactionMenu_7"
+                class="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 flex space-x-4"
+              >
+                <span
+                  *ngFor="let reaction of reactions"
+                  class="reaction-emoji"
+                  (click)="addReaction(reaction, messageId_7)"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+
+              <!-- Mostrando las reacciones actuales -->
+              <div
+                *ngIf="selectedReactions_7.length > 0"
+                class="flex space-x-2 mt-4"
+              >
+                <span
+                  *ngFor="let reaction of selectedReactions_7"
+                  class="reaction-container"
+                >
+                  <div
+                    class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                    [title]="getReactionTitle(reaction)"
+                    (click)="addOrRemoveReaction(reaction, messageId_7)"
                     [ngClass]="{
                       'ring-2 ring-blue-500 bg-blue-400 text-white':
                         isReactionSelectedByUser(reaction),

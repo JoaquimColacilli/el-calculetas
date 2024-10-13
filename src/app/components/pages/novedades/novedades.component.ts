@@ -48,6 +48,7 @@ export class NovedadesComponent implements OnInit {
   messageId_4: string = 'message_4';
   messageId_5: string = 'message_5';
   messageId_6: string = 'message_6';
+  messageId_7: string = 'message_7';
 
   showReactionMenu_1 = false;
   showReactionMenu_2 = false;
@@ -55,6 +56,7 @@ export class NovedadesComponent implements OnInit {
   showReactionMenu_4 = false;
   showReactionMenu_5 = false;
   showReactionMenu_6 = false;
+  showReactionMenu_7 = false;
 
   selectedReactions_1: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_2: { emoji: string; count: number; users: string[] }[] = [];
@@ -62,6 +64,7 @@ export class NovedadesComponent implements OnInit {
   selectedReactions_4: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_5: { emoji: string; count: number; users: string[] }[] = [];
   selectedReactions_6: { emoji: string; count: number; users: string[] }[] = [];
+  selectedReactions_7: { emoji: string; count: number; users: string[] }[] = [];
 
   userIdToUsernameMap: { [uid: string]: string } = {};
 
@@ -131,6 +134,12 @@ export class NovedadesComponent implements OnInit {
 
     this.getReactions('message_6').subscribe((reactions: any[]) => {
       this.selectedReactions_6 = this.groupReactionsByEmoji(reactions);
+      const uids = reactions.map((r) => r.userId);
+      this.fetchUsernames(uids);
+    });
+
+    this.getReactions('message_7').subscribe((reactions: any[]) => {
+      this.selectedReactions_7 = this.groupReactionsByEmoji(reactions);
       const uids = reactions.map((r) => r.userId);
       this.fetchUsernames(uids);
 
@@ -268,6 +277,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_5 = false;
     } else if (messageId === 'message_6') {
       this.showReactionMenu_6 = false;
+    } else if (messageId === 'message_7') {
+      this.showReactionMenu_7 = false;
     }
   }
 
@@ -284,6 +295,8 @@ export class NovedadesComponent implements OnInit {
       this.showReactionMenu_5 = !this.showReactionMenu_5;
     } else if (messageId === 'message_6') {
       this.showReactionMenu_6 = !this.showReactionMenu_6;
+    } else if (messageId === 'message_7') {
+      this.showReactionMenu_7 = !this.showReactionMenu_7;
     }
   }
 
