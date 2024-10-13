@@ -1,5 +1,4 @@
-<app-pantalla-en-construccion></app-pantalla-en-construccion>
-<!-- <div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h-screen bg-gray-50">
   <app-aside></app-aside>
   <div class="flex-1 flex flex-col">
     <app-navbar></app-navbar>
@@ -13,12 +12,6 @@
           <h2 class="text-2xl font-semibold text-gray-800">Ahorros Totales</h2>
           <div class="text-gray-600 mt-4">
             <p>
-              Total ARS:
-              <span class="font-bold text-blue-600">{{
-                totalAhorrosARS | currency : "ARS"
-              }}</span>
-            </p>
-            <p>
               Total USD:
               <span class="font-bold text-green-600">{{
                 totalAhorrosUSD | currency : "USD"
@@ -28,7 +21,7 @@
           <p class="mt-2 text-gray-500">
             Ahorros del Mes:
             <span class="font-bold text-indigo-600">{{
-              ahorrosDelMes | currency : "ARS"
+              ahorrosDelMes | currency : "USD"
             }}</span>
           </p>
         </div>
@@ -54,7 +47,6 @@
           <h2 class="text-2xl font-semibold text-gray-800">
             Progreso de Ahorros
           </h2>
-
           <div
             class="w-full bg-gray-200 rounded-full h-4 mt-2 relative overflow-visible"
           >
@@ -65,11 +57,6 @@
                   ? 100
                   : calcularPorcentajeAhorro()
               "
-            ></div>
-
-            <div
-              *ngIf="calcularPorcentajeAhorro() > 100"
-              class="particles"
             ></div>
           </div>
           <div class="flex justify-between text-gray-600 mt-2">
@@ -100,32 +87,56 @@
             Últimas Conversiones
           </h3>
         </div>
-        <table class="min-w-full leading-normal">
+        <table class="min-w-full table-fixed leading-normal">
           <thead>
             <tr
               class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal"
             >
-              <th class="px-6 py-3 text-left">Fecha</th>
-              <th class="px-6 py-3 text-left">Monto ARS</th>
-              <th class="px-6 py-3 text-left">Monto USD</th>
-              <th class="px-6 py-3 text-left">Tasa de Conversión</th>
+              <th class="px-6 py-3 text-center align-middle w-1/5">Fecha</th>
+              <th class="px-6 py-3 text-center align-middle w-1/5">
+                Monto USD
+              </th>
+              <th class="px-6 py-3 text-center align-middle w-1/5">
+                Monto ARS
+              </th>
+              <th class="px-6 py-3 text-center align-middle w-1/5">
+                Tasa de Conversión
+              </th>
+              <th class="px-6 py-3 text-center align-middle w-1/5">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
             <tr
               *ngFor="let conversion of conversiones"
               class="border-b border-gray-200"
             >
-              <td class="px-6 py-4">
-                {{ conversion.fecha | date : "dd/MM/yyyy" }}
+              <td class="px-6 py-4 text-center align-middle">
+                {{ convertTimestampToDate(conversion.timestamp) }}
               </td>
-              <td class="px-6 py-4">
-                {{ conversion.montoARS | currency : "ARS" }}
+              <td class="px-6 py-4 text-center align-middle">
+                ${{ conversion.montoUsd | numberFormat }} USD
               </td>
-              <td class="px-6 py-4">
-                {{ conversion.montoUSD | currency : "USD" }}
+              <td class="px-6 py-4 text-center align-middle">
+                ${{ conversion.montoArs | numberFormat }} USD
               </td>
-              <td class="px-6 py-4">{{ conversion.tasaConversion }}</td>
+              <td class="px-6 py-4 text-center align-middle">
+                ${{ conversion.valorUsdActual | numberFormat }} ARS
+              </td>
+              <td class="px-6 py-4 text-center align-middle whitespace-nowrap">
+                <button
+                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition mr-1"
+                  (click)="editarConversion(conversion)"
+                >
+                  <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                </button>
+                <button
+                  class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
+                  (click)="eliminarConversion(conversion)"
+                >
+                  <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -136,6 +147,7 @@
         </div>
       </div>
 
+      <!-- Modal para Comprar Dólares -->
       <div
         *ngIf="isModalCompraOpen"
         class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
@@ -184,6 +196,7 @@
         </div>
       </div>
 
+      <!-- Modal para Vender Dólares -->
       <div
         *ngIf="isModalVentaOpen"
         class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
@@ -233,4 +246,4 @@
       </div>
     </main>
   </div>
-</div> -->
+</div>

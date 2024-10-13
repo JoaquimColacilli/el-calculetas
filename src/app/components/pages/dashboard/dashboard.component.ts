@@ -80,6 +80,8 @@ import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { ModalWalletComponent } from './modal-wallet/modal-wallet.component';
 import { Timestamp, writeBatch } from 'firebase/firestore';
+import { AhorroInterface } from '../../../interfaces/ahorro.interface';
+import { AhorrosService } from '../../../services/ahorros.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -206,6 +208,7 @@ export class DashboardComponent implements OnInit {
   numCuotas: number = 1;
   cuotasArray: number[] = Array.from({ length: 23 }, (_, i) => i + 2);
   selectedExpenses: FinanceInterface[] = [];
+  public conversiones: AhorroInterface[] = [];
 
   constructor(
     private router: Router,
@@ -219,7 +222,8 @@ export class DashboardComponent implements OnInit {
     private financeService: FinanceService,
     private categoryService: CategoryService,
     private sueldoService: SueldoService,
-    private cardService: CardService
+    private cardService: CardService,
+    private ahorrosService: AhorrosService
   ) {
     library.addIconPacks(fas);
   }
@@ -297,6 +301,8 @@ export class DashboardComponent implements OnInit {
     this.getCriteriasFromLs();
 
     this.checkForMonthlySummary();
+
+    this.loadAhorros();
 
     registerLocaleData(localeEs, 'es-ES');
   }
@@ -1567,57 +1573,80 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateDineroRestante(): number {
-    const now = new Date();
-    const dolarBolsaVenta = this.dolarBolsaVenta;
-
-    // Filtra los gastos pagados en ARS de este mes
+    // Filtrar los gastos pagados en ARS desde la colección de items
     const gastosPagadosEsteMes = this.financeItems.filter((item) => {
-      const itemDate = this.parseDate(item.date);
-      return (
-        item.status === 'Pagado' && item.currency === 'ARS'
-        // &&
-        // itemDate.getFullYear() === now.getFullYear() &&
-        // itemDate.getMonth() === now.getMonth()
-      );
+      return item.status === 'Pagado' && item.currency === 'ARS';
     });
 
-    // Suma el total de los gastos pagados en ARS para este mes
+    // Sumar los gastos pagados en ARS
     const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
       (acc, item) => acc + parseFloat(String(item.value)),
       0
     );
 
-    // Calcula el dinero restante basado en los ingresos en ARS menos los gastos en ARS
-    this.dineroRestante = this.totalIngresos - totalPagadoEsteMes;
+    // Sumar o restar según si fue compra o venta en ARS desde la colección de ahorros
+    const totalAhorrosArs = this.conversiones.reduce((acc, ahorro) => {
+      if (ahorro.isCompra) {
+        // Si fue compra, se restan los ARS gastados
+        return acc - (ahorro.montoArs || 0);
+      } else if (ahorro.isVenta) {
+        // Si fue venta, se suman los ARS obtenidos
+        return acc + (ahorro.montoArs || 0);
+      }
+      return acc;
+    }, 0);
 
-    // Devuelve el dinero restante en ARS
+    // Calcular el dinero restante restando los gastos pagados y considerando las conversiones
+    this.dineroRestante =
+      this.totalIngresos - totalPagadoEsteMes + totalAhorrosArs;
+
     return this.dineroRestante;
+  }
+
+  loadAhorros(): void {
+    this.ahorrosService.getAhorros().subscribe({
+      next: (ahorros: any) => {
+        this.conversiones = ahorros;
+        this.calculateDineroRestanteUsd(); // Calcular después de cargar los ahorros
+      },
+      error: (error: any) => {
+        console.error('Error al cargar ahorros:', error);
+      },
+    });
   }
 
   calculateDineroRestanteUsd(): number {
     const now = new Date();
 
-    // Filtra los gastos pagados en USD de este mes
-    const gastosPagadosUsd = this.financeItems.filter((item) => {
-      const itemDate = this.parseDate(item.date);
-      return (
-        item.status === 'Pagado' &&
-        item.currency === 'USD' &&
-        itemDate.getFullYear() === now.getFullYear() &&
-        itemDate.getMonth() === now.getMonth()
-      );
-    });
+    // Sumar los gastos en USD filtrados
+    const totalGastosUsd = this.financeItems
+      .filter((item) => {
+        const itemDate = this.parseDate(item.date);
+        return (
+          item.status === 'Pagado' &&
+          item.currency === 'USD' &&
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth()
+        );
+      })
+      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
 
-    // Suma los gastos pagados en USD
-    const totalGastosUsd = gastosPagadosUsd.reduce(
-      (acc, item) => acc + parseFloat(String(item.value)),
-      0
-    );
+    // Ajustar según las compras y ventas en USD desde la colección de ahorros
+    const totalAhorrosUsd = this.conversiones.reduce((acc, ahorro) => {
+      if (ahorro.isCompra) {
+        // Si fue compra, sumamos los USD comprados
+        return acc + (ahorro.montoUsd || 0);
+      } else if (ahorro.isVenta) {
+        // Si fue venta, restamos los USD vendidos
+        return acc - Math.abs(ahorro.montoUsd || 0); // Asegurarnos de restar el valor absoluto de los USD vendidos
+      }
+      return acc;
+    }, 0);
 
-    // Calcula el dinero restante en USD restando los gastos pagados en USD de los ingresos en USD
-    this.dineroRestanteUSD = this.totalIngresosUSD - totalGastosUsd;
+    // El dinero restante en USD es la suma de los ingresos más los ahorros, menos los gastos
+    this.dineroRestanteUSD =
+      this.totalIngresosUSD + totalAhorrosUsd - totalGastosUsd;
 
-    // Devuelve el dinero restante en USD
     return this.dineroRestanteUSD;
   }
 
