@@ -1,0 +1,42 @@
+.particles {
+  position: absolute;
+  top: -40px; /* Posición por encima de la barra */
+  right: -20px; /* Justo en la punta de la barra */
+  width: 60px; /* Ajusta el ancho para que las partículas salgan del borde derecho */
+  height: 60px;
+  pointer-events: none; /* Evitar interacción con el mouse */
+}
+
+.particles::before,
+.particles::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: yellow;
+  border-radius: 50%;
+  animation: fly 0.8s ease-out infinite;
+}
+
+.particles::before {
+  top: 0;
+  left: 50%;
+  animation-delay: 0.1s;
+}
+
+.particles::after {
+  bottom: 0;
+  right: 50%;
+  animation-delay: 0.3s;
+}
+
+@keyframes fly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(40px, -40px) scale(2); /* Hacia afuera */
+    opacity: 0;
+  }
+}

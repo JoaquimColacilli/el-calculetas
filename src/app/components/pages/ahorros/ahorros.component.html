@@ -1,1 +1,246 @@
-<app-pantalla-en-construccion></app-pantalla-en-construccion>
+<div class="flex min-h-screen bg-gray-50">
+  <app-aside></app-aside>
+  <div class="flex-1 flex flex-col">
+    <app-navbar></app-navbar>
+    <main class="p-6 flex-1 overflow-y-auto">
+      <!-- Loading spinner -->
+      <div *ngIf="isLoadingData" class="overlay">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Resumen General de Ahorros -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Ahorros Totales -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h2 class="text-2xl font-semibold text-gray-800">Ahorros Totales</h2>
+          <div class="text-gray-600 mt-4">
+            <p>
+              Total ARS:
+              <span class="font-bold text-blue-600">{{
+                totalAhorrosARS | currency : "ARS"
+              }}</span>
+            </p>
+            <p>
+              Total USD:
+              <span class="font-bold text-green-600">{{
+                totalAhorrosUSD | currency : "USD"
+              }}</span>
+            </p>
+          </div>
+          <p class="mt-2 text-gray-500">
+            Ahorros del Mes:
+            <span class="font-bold text-indigo-600">{{
+              ahorrosDelMes | currency : "ARS"
+            }}</span>
+          </p>
+        </div>
+
+        <!-- Consejo del Día -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <div class="flex items-start">
+            <div class="text-yellow-500 text-3xl mr-4">
+              <fa-icon [icon]="['fas', 'lightbulb']"></fa-icon>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">
+                Consejo del Día
+              </h3>
+              <p class="text-gray-600 mt-2 italic">
+                "Diversifica tus ahorros en diferentes monedas y activos para
+                minimizar riesgos financieros."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progreso de Ahorros -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            Progreso de Ahorros
+          </h2>
+
+          <div
+            class="w-full bg-gray-200 rounded-full h-4 mt-2 relative overflow-visible"
+          >
+            <!-- Barra de progreso -->
+            <div
+              class="bg-green-500 h-4 rounded-full transition-all duration-300"
+              [style.width.%]="
+                calcularPorcentajeAhorro() > 100
+                  ? 100
+                  : calcularPorcentajeAhorro()
+              "
+            ></div>
+
+            <!-- Contenedor de partículas -->
+            <div
+              *ngIf="calcularPorcentajeAhorro() > 100"
+              class="particles"
+            ></div>
+          </div>
+          <div class="flex justify-between text-gray-600 mt-2">
+            <span>Meta: ${{ metaAhorro }}</span>
+            <span>{{ calcularPorcentajeAhorro() }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones para Comprar y Vender Dólares -->
+      <div class="flex justify-end mb-6 space-x-4">
+        <button
+          class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition-all"
+          (click)="abrirModalCompra()"
+        >
+          Comprar Dólares
+        </button>
+        <button
+          class="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-all"
+          (click)="abrirModalVenta()"
+        >
+          Vender Dólares
+        </button>
+      </div>
+
+      <!-- Tabla de Últimas Conversiones -->
+      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="p-4">
+          <h3 class="text-xl font-bold text-gray-700 mb-4">
+            Últimas Conversiones
+          </h3>
+        </div>
+        <table class="min-w-full leading-normal">
+          <thead>
+            <tr
+              class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal"
+            >
+              <th class="px-6 py-3 text-left">Fecha</th>
+              <th class="px-6 py-3 text-left">Monto ARS</th>
+              <th class="px-6 py-3 text-left">Monto USD</th>
+              <th class="px-6 py-3 text-left">Tasa de Conversión</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let conversion of conversiones"
+              class="border-b border-gray-200"
+            >
+              <td class="px-6 py-4">
+                {{ conversion.fecha | date : "dd/MM/yyyy" }}
+              </td>
+              <td class="px-6 py-4">
+                {{ conversion.montoARS | currency : "ARS" }}
+              </td>
+              <td class="px-6 py-4">
+                {{ conversion.montoUSD | currency : "USD" }}
+              </td>
+              <td class="px-6 py-4">{{ conversion.tasaConversion }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="conversiones.length === 0" class="text-center p-4">
+          <p class="text-gray-500 text-xl">
+            No hay conversiones registradas aún.
+          </p>
+        </div>
+      </div>
+
+      <!-- Modal de Compra -->
+      <div
+        *ngIf="isModalCompraOpen"
+        class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
+      >
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+          <h2 class="text-2xl font-bold mb-4">Comprar Dólares</h2>
+          <form (ngSubmit)="convertirAhorro()">
+            <div class="mb-4">
+              <label class="block text-sm font-bold mb-2">Monto en ARS</label>
+              <input
+                type="number"
+                class="w-full p-3 border border-gray-300 rounded"
+                [(ngModel)]="montoARS"
+                name="montoARS"
+                required
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-bold mb-2"
+                >Tasa de Conversión</label
+              >
+              <input
+                type="number"
+                class="w-full p-3 border border-gray-300 rounded"
+                [(ngModel)]="tasaConversion"
+                name="tasaConversion"
+                required
+              />
+            </div>
+            <div class="flex justify-end space-x-2">
+              <button
+                type="button"
+                class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-all"
+                (click)="cerrarModalCompra()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+              >
+                Comprar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal de Venta -->
+      <div
+        *ngIf="isModalVentaOpen"
+        class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
+      >
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+          <h2 class="text-2xl font-bold mb-4">Vender Dólares</h2>
+          <form (ngSubmit)="venderAhorro()">
+            <div class="mb-4">
+              <label class="block text-sm font-bold mb-2">Monto en USD</label>
+              <input
+                type="number"
+                class="w-full p-3 border border-gray-300 rounded"
+                [(ngModel)]="montoUSD"
+                name="montoUSD"
+                required
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-bold mb-2"
+                >Tasa de Conversión</label
+              >
+              <input
+                type="number"
+                class="w-full p-3 border border-gray-300 rounded"
+                [(ngModel)]="tasaConversion"
+                name="tasaConversion"
+                required
+              />
+            </div>
+            <div class="flex justify-end space-x-2">
+              <button
+                type="button"
+                class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-all"
+                (click)="cerrarModalVenta()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all"
+              >
+                Vender
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
