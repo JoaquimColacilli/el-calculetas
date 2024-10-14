@@ -118,10 +118,10 @@
                 ${{ conversion.montoUsd | numberFormat }} USD
               </td>
               <td class="px-6 py-4 text-center align-middle">
-                ${{ conversion.montoArs | numberFormat }} USD
+                ${{ conversion.montoArs | numberFormat }} ARS
               </td>
               <td class="px-6 py-4 text-center align-middle">
-                ${{ conversion.valorUsdActual | numberFormat }} ARS
+                ${{ conversion.valorUsdActual | numberFormat }} ARS x 1 USD
               </td>
               <td class="px-6 py-4 text-center align-middle whitespace-nowrap">
                 <button
@@ -159,7 +159,7 @@
           <p class="text-gray-700 font-bold mb-2">
             Dinero en cuenta:
             <span class="text-green-600">{{
-              dineroRestanteARS | currency : "ARS"
+              dineroRestante | numberFormat
             }}</span>
           </p>
 
@@ -193,7 +193,7 @@
             <p class="text-gray-600">
               Monto en USD a comprar:
               <span class="text-blue-600"
-                >{{ montoUSD | number : "1.2-2" }} USD</span
+                >{{ montoUSD | numberFormat }} USD</span
               >
             </p>
 

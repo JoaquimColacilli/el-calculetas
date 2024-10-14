@@ -306,7 +306,7 @@ export class DashboardComponent implements OnInit {
 
     this.checkForMonthlySummary();
 
-    // this.loadAhorros();
+    this.loadAhorros();
 
     registerLocaleData(localeEs, 'es-ES');
   }
@@ -474,6 +474,8 @@ export class DashboardComponent implements OnInit {
       if (isFirstDay) {
         await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
         console.log('Sueldos reiniciados para el nuevo mes.');
+      } else {
+        console.log('Hoy no es el primer día del mes, no se necesita reset.');
       }
     } catch (error) {
       console.error('Error al restablecer sueldos:', error);
@@ -582,10 +584,11 @@ export class DashboardComponent implements OnInit {
 
         this.salaryDetails = salaries;
 
-        // Calcular los totales a partir de los sueldos cargados
+        // Resetear los totales
         this.totalIngresos = 0;
         this.totalIngresosUSD = 0;
 
+        // Recorrer todos los salarios acumulados
         salaries.forEach((salary: any) => {
           if (salary.currency === 'USD') {
             this.totalIngresosUSD += salary.amount;
@@ -594,11 +597,15 @@ export class DashboardComponent implements OnInit {
           }
         });
 
+        // Cálculo de los totales en cuenta
         this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
+
         console.log('Total Ingresos ARS:', this.totalIngresos);
         console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
 
+        // Calcular el dinero restante en ambas monedas
         this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
       },
       error: (error) => {
         console.error('Error al cargar los sueldos desde Firebase:', error);
@@ -1595,10 +1602,9 @@ export class DashboardComponent implements OnInit {
       return acc;
     }, 0);
 
+    // Dinero restante se calcula sumando los ingresos totales acumulados y restando los gastos pagados
     this.dineroRestante =
       this.totalIngresos - totalPagadoEsteMes + totalAhorrosArs;
-
-    // this.dineroEnCuentaService.actualizarDineroARS(this.dineroRestante);
 
     return this.dineroRestante;
   }
@@ -1619,6 +1625,7 @@ export class DashboardComponent implements OnInit {
   calculateDineroRestanteUsd(): number {
     const now = new Date();
 
+    // Filtrar los gastos pagados en USD de este mes
     const totalGastosUsd = this.financeItems
       .filter((item) => {
         const itemDate = this.parseDate(item.date);
@@ -1631,6 +1638,7 @@ export class DashboardComponent implements OnInit {
       })
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
 
+    // Calcular los ahorros o compras en USD
     const totalAhorrosUsd = this.conversiones.reduce((acc, ahorro) => {
       if (ahorro.isCompra) {
         return acc + (ahorro.montoUsd || 0);
@@ -1640,10 +1648,9 @@ export class DashboardComponent implements OnInit {
       return acc;
     }, 0);
 
+    // Dinero restante se calcula sumando los ingresos acumulados en USD y restando los gastos pagados en USD
     this.dineroRestanteUSD =
       this.totalIngresosUSD + totalAhorrosUsd - totalGastosUsd;
-
-    // this.dineroEnCuentaService.actualizarDineroUSD(this.dineroRestante);
 
     return this.dineroRestanteUSD;
   }

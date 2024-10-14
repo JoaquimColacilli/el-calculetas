@@ -9,6 +9,9 @@ import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NumberFormatPipe } from '../../../pipes/number-format.pipe';
 import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
+import { FinanceInterface } from '../../../interfaces/finance.interface';
+import { FinanceService } from '../../../services/finance.service';
+import { SueldoService } from '../../../services/sueldo.service';
 
 @Component({
   selector: 'app-ahorros',
@@ -31,48 +34,79 @@ export class AhorrosComponent implements OnInit {
   public totalAhorrosUSD: number = 0;
   public ahorrosDelMes: number = 0;
   public metaAhorro: number = 10;
-  public totalIngresos: number = 0; // Inicializar con un valor de ejemplo
-  public totalIngresosUSD: number = 0; // Inicializar con un valor de ejemplo
+  public totalIngresos: number = 0;
+  public totalIngresosUSD: number = 0;
   public dineroRestante: number = 0;
   public dineroRestanteUSD: number = 0;
   public dineroRestanteARS: number = 0;
-  // Controlar los modales
   public isModalCompraOpen: boolean = false;
   public isModalVentaOpen: boolean = false;
-
+  previousMontoARS: number = 0;
   public montoARS: number = 0;
   public montoUSD: number = 0;
   public tasaConversion: number = 0;
 
+  salaryDetails: Array<{
+    amount: number;
+    currency: string;
+    validForNextMonth: boolean;
+    lastModified?: Date;
+  }> = [];
+  financeItems: FinanceInterface[] = [];
+
   constructor(
     private ahorrosService: AhorrosService,
-    private dineroEnCuentaService: DineroEnCuentaService
+    private financeService: FinanceService,
+    private sueldoService: SueldoService
   ) {}
+  totalDineroEnCuentaUSD: number = 0;
 
   ngOnInit(): void {
-    this.loadDineroEnCuenta();
+    this.loadSalaries();
     this.loadAhorros();
-    this.calcularDineroRestante();
-    this.calcularDineroRestanteUsd();
+    this.loadExpenses();
+    this.calculateDineroRestante();
+    this.calculateDineroRestanteUsd();
     this.calcularTotales();
   }
 
-  loadDineroEnCuenta(): void {
-    this.dineroEnCuentaService.obtenerDineroEnCuenta().then((data) => {
-      if (data) {
-        this.dineroRestante = data.dineroEnCuentaARS;
-        this.dineroRestanteUSD = data.dineroEnCuentaUSD;
-      }
+  loadSalaries(): void {
+    this.sueldoService.getSalaries().subscribe({
+      next: (salariesData) => {
+        const salaries = salariesData?.salaries || [];
+
+        this.salaryDetails = salaries;
+
+        this.totalIngresos = 0;
+        this.totalIngresosUSD = 0;
+
+        salaries.forEach((salary: any) => {
+          if (salary.currency === 'USD') {
+            this.totalIngresosUSD += salary.amount;
+          } else if (salary.currency === 'ARS') {
+            this.totalIngresos += salary.amount;
+          }
+        });
+
+        this.totalDineroEnCuentaUSD = this.totalIngresosUSD;
+
+        console.log('Total Ingresos ARS:', this.totalIngresos);
+        console.log('Total Dinero en Cuenta USD:', this.totalDineroEnCuentaUSD);
+
+        this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
+      },
+      error: (error) => {
+        console.error('Error al cargar los sueldos desde Firebase:', error);
+      },
     });
   }
-
-  // Cargar los ahorros desde el servicio
   loadAhorros(): void {
     this.isLoadingData = true;
     this.ahorrosService.getAhorros().subscribe({
       next: (ahorros) => {
         this.conversiones = ahorros;
-        this.calcularTotales(); // Calcular totales después de cargar
+        this.calcularTotales();
         this.isLoadingData = false;
       },
       error: (error) => {
@@ -82,7 +116,65 @@ export class AhorrosComponent implements OnInit {
     });
   }
 
-  // Calcular los totales de USD y los ahorros del mes
+  calculateDineroRestante(): number {
+    const gastosPagadosEsteMes = this.financeItems.filter((item) => {
+      return item.status === 'Pagado' && item.currency === 'ARS';
+    });
+
+    const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
+      (acc, item) => acc + parseFloat(String(item.value)),
+      0
+    );
+
+    const totalAhorrosArs = this.conversiones.reduce((acc, ahorro) => {
+      if (ahorro.isCompra) {
+        return acc - (ahorro.montoArs || 0);
+      } else if (ahorro.isVenta) {
+        return acc + (ahorro.montoArs || 0);
+      }
+      return acc;
+    }, 0);
+
+    this.dineroRestante =
+      this.totalIngresos - totalPagadoEsteMes + totalAhorrosArs;
+
+    console.log('Dinero restante en ARS:', this.dineroRestante);
+
+    return this.dineroRestante;
+  }
+
+  calculateDineroRestanteUsd(): number {
+    const now = new Date();
+
+    const totalGastosUsd = this.financeItems
+      .filter((item) => {
+        const itemDate = this.parseDate(item.date);
+        return (
+          item.status === 'Pagado' &&
+          item.currency === 'USD' &&
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth()
+        );
+      })
+      .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
+
+    const totalAhorrosUsd = this.conversiones.reduce((acc, ahorro) => {
+      if (ahorro.isCompra) {
+        return acc + (ahorro.montoUsd || 0);
+      } else if (ahorro.isVenta) {
+        return acc - Math.abs(ahorro.montoUsd || 0);
+      }
+      return acc;
+    }, 0);
+
+    this.dineroRestanteUSD =
+      this.totalIngresosUSD + totalAhorrosUsd - totalGastosUsd;
+
+    console.log('Dinero restante en USD:', this.dineroRestanteUSD);
+
+    return this.dineroRestanteUSD;
+  }
+
   calcularTotales(): void {
     this.totalAhorrosUSD = this.conversiones.reduce(
       (acc, ahorro) => acc + ahorro.montoUsd,
@@ -100,42 +192,33 @@ export class AhorrosComponent implements OnInit {
       .reduce((acc, ahorro) => acc + ahorro.montoUsd, 0);
   }
 
-  // Progreso hacia la meta de ahorro
+  loadExpenses(): void {
+    this.isLoadingData = true;
+    this.financeService.getExpenses().subscribe({
+      next: (expenses: any) => {
+        this.financeItems = expenses.map((expense: any) => {
+          const numericValue = parseFloat(String(expense.value));
+          return {
+            ...expense,
+            value: String(numericValue),
+          };
+        });
+        this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
+
+        this.isLoadingData = false;
+      },
+      error: (error: any) => {
+        console.error('Error cargando los gastos:', error);
+        this.isLoadingData = false;
+      },
+    });
+  }
+
   calcularPorcentajeAhorro(): number {
     return (this.totalAhorrosUSD / this.metaAhorro) * 100;
   }
 
-  // Lógica para calcular dinero restante en ARS
-  calcularDineroRestante(): number {
-    const gastosPagadosEsteMes = this.conversiones.filter((item) => {
-      return item.montoArs > 0;
-    });
-
-    const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
-      (acc, item) => acc + item.montoArs,
-      0
-    );
-
-    this.dineroRestante = this.totalIngresos - totalPagadoEsteMes;
-    return this.dineroRestante;
-  }
-
-  // Lógica para calcular dinero restante en USD
-  calcularDineroRestanteUsd(): number {
-    const gastosPagadosUsd = this.conversiones.filter((item) => {
-      return item.montoUsd < 0;
-    });
-
-    const totalGastosUsd = gastosPagadosUsd.reduce(
-      (acc, item) => acc + Math.abs(item.montoUsd),
-      0
-    );
-
-    this.dineroRestanteUSD = this.totalIngresosUSD - totalGastosUsd;
-    return this.dineroRestanteUSD;
-  }
-
-  // Modal de compra
   abrirModalCompra(): void {
     this.isModalCompraOpen = true;
     this.montoARS = 0;
@@ -146,7 +229,6 @@ export class AhorrosComponent implements OnInit {
     this.isModalCompraOpen = false;
   }
 
-  // Modal de venta
   abrirModalVenta(): void {
     this.isModalVentaOpen = true;
     this.montoUSD = 0;
@@ -157,19 +239,30 @@ export class AhorrosComponent implements OnInit {
     this.isModalVentaOpen = false;
   }
 
-  // Convertir ahorro en la compra de dólares
+  parseDate(dateString: string): Date {
+    let date;
+    if (dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      date = new Date(year, month - 1, day);
+    } else if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/').map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date('Invalid Date');
+    }
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
   convertirAhorro(): void {
     if (!this.isCompraValida()) {
-      // Si no es válida la compra, evitamos continuar
       return;
     }
 
     const montoUSD = this.montoARS / this.tasaConversion;
 
-    // Descontar monto en ARS del dinero restante
     this.dineroRestante -= this.montoARS;
 
-    // Aumentar el monto en USD en dineroRestanteUSD
     this.dineroRestanteUSD += montoUSD;
 
     const nuevoAhorro: AhorroInterface = {
@@ -181,13 +274,12 @@ export class AhorrosComponent implements OnInit {
       isVenta: false,
     };
 
-    // Guardar el ahorro en Firebase
     this.ahorrosService.addAhorro(nuevoAhorro).subscribe({
       next: (docRef) => {
         this.conversiones.unshift(nuevoAhorro);
         this.calcularTotales();
-        this.calcularDineroRestante();
-        this.calcularDineroRestanteUsd();
+        this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
         this.cerrarModalCompra();
       },
       error: (error) => {
@@ -196,29 +288,26 @@ export class AhorrosComponent implements OnInit {
     });
   }
 
-  // Vender dólares
   venderAhorro(): void {
     const montoARS = this.montoUSD * this.tasaConversion;
 
-    // Aumentar monto en ARS en el dinero restante (porque es una venta)
     this.dineroRestante += montoARS;
 
     const nuevoAhorro: AhorroInterface = {
       timestamp: new Date(),
       montoArs: montoARS,
-      montoUsd: -this.montoUSD, // Deducimos los dólares vendidos
+      montoUsd: -this.montoUSD,
       valorUsdActual: this.tasaConversion,
-      isCompra: false, // No es una compra
-      isVenta: true, // Indicamos que es una venta
+      isCompra: false,
+      isVenta: true,
     };
 
-    // Guardar la venta en Firebase
     this.ahorrosService.addAhorro(nuevoAhorro).subscribe({
       next: (docRef) => {
         this.conversiones.unshift(nuevoAhorro);
         this.calcularTotales();
-        this.calcularDineroRestante(); // Recalculamos ARS después de la venta
-        this.calcularDineroRestanteUsd(); // Recalculamos USD después de la venta
+        this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
         this.cerrarModalVenta();
       },
       error: (error) => {
@@ -232,21 +321,19 @@ export class AhorrosComponent implements OnInit {
   }
 
   actualizarMontoUSD(): void {
-    if (this.montoARS > 0 && this.tasaConversion > 0) {
-      this.montoUSD = this.montoARS / this.tasaConversion;
+    this.montoUSD = this.montoARS / this.tasaConversion;
+
+    if (this.montoARS > this.previousMontoARS) {
+      this.dineroRestante -= this.montoARS - this.previousMontoARS;
     } else {
-      this.montoUSD = 0;
+      this.dineroRestante += this.previousMontoARS - this.montoARS;
     }
-  }
 
-  // Editar y eliminar conversiones
-  editarConversion(conversion: AhorroInterface): void {
-    // Aquí puedes agregar la lógica de edición
+    this.previousMontoARS = this.montoARS;
   }
+  editarConversion(conversion: AhorroInterface): void {}
 
-  eliminarConversion(conversion: AhorroInterface): void {
-    // Aquí puedes agregar la lógica de eliminación
-  }
+  eliminarConversion(conversion: AhorroInterface): void {}
 
   convertTimestampToDate(timestamp: any): string {
     if (timestamp && timestamp.seconds) {

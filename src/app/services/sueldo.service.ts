@@ -74,7 +74,7 @@ export class SueldoService {
           throw new Error('Usuario no autenticado');
         }
 
-        // Reference the 'currentSalaries' document
+        // Referencia al documento de sueldos actuales
         const currentSalariesDocRef = doc(
           this.firestore,
           `users/${uid}/salaries/currentSalaries`
@@ -82,10 +82,11 @@ export class SueldoService {
 
         const snapshot = await getDoc(currentSalariesDocRef);
         if (!snapshot.exists()) {
+          console.warn('No se encontraron sueldos actuales.');
           return;
         }
 
-        // Check for the reset
+        // Verificar si ya se hizo el reset este mes
         const lastResetDate = snapshot.data()?.['lastResetDate'];
         const currentDate = new Date();
         const firstDayOfMonth = new Date(
@@ -99,7 +100,7 @@ export class SueldoService {
           return;
         }
 
-        // Get current salaries
+        // Obtener los sueldos actuales
         const currentSalaries = snapshot.data()?.['salaries'] || [];
 
         const totalARS = currentSalaries
@@ -110,7 +111,7 @@ export class SueldoService {
           .filter((s: any) => s.currency === 'USD')
           .reduce((acc: number, salary: any) => acc + salary.amount, 0);
 
-        // Save history
+        // Guardar el historial de sueldos
         const historyCollectionRef = collection(
           currentSalariesDocRef,
           'history'
@@ -123,12 +124,12 @@ export class SueldoService {
           timestamp: Timestamp.fromDate(new Date()),
         });
 
-        // Reset current salaries and update lastResetDate
+        // Resetear los sueldos actuales y actualizar la fecha de reset
         await setDoc(
           currentSalariesDocRef,
           {
-            salaries: [],
-            lastResetDate: Timestamp.fromDate(new Date()),
+            salaries: [], // Vaciar los sueldos actuales
+            lastResetDate: Timestamp.fromDate(new Date()), // Actualizar la fecha del último reset
           },
           { merge: true }
         );
