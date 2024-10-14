@@ -83,6 +83,8 @@ import { Timestamp, writeBatch } from 'firebase/firestore';
 import { AhorroInterface } from '../../../interfaces/ahorro.interface';
 import { AhorrosService } from '../../../services/ahorros.service';
 
+import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -223,7 +225,8 @@ export class DashboardComponent implements OnInit {
     private categoryService: CategoryService,
     private sueldoService: SueldoService,
     private cardService: CardService,
-    private ahorrosService: AhorrosService
+    private ahorrosService: AhorrosService,
+    private dineroEnCuentaService: DineroEnCuentaService
   ) {
     library.addIconPacks(fas);
   }
@@ -270,6 +273,8 @@ export class DashboardComponent implements OnInit {
   // Mover la carga de datos iniciales a un método separado
   loadInitialData(): void {
     this.calculateTotals();
+    this.dineroRestante = this.calculateDineroRestante();
+
     this.calculateCounts();
     this.calculateDayOrNight();
 
@@ -302,7 +307,7 @@ export class DashboardComponent implements OnInit {
 
     this.checkForMonthlySummary();
 
-    this.loadAhorros();
+    // this.loadAhorros();
 
     registerLocaleData(localeEs, 'es-ES');
   }
@@ -1573,32 +1578,28 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateDineroRestante(): number {
-    // Filtrar los gastos pagados en ARS desde la colección de items
     const gastosPagadosEsteMes = this.financeItems.filter((item) => {
       return item.status === 'Pagado' && item.currency === 'ARS';
     });
 
-    // Sumar los gastos pagados en ARS
     const totalPagadoEsteMes = gastosPagadosEsteMes.reduce(
       (acc, item) => acc + parseFloat(String(item.value)),
       0
     );
 
-    // Sumar o restar según si fue compra o venta en ARS desde la colección de ahorros
     const totalAhorrosArs = this.conversiones.reduce((acc, ahorro) => {
       if (ahorro.isCompra) {
-        // Si fue compra, se restan los ARS gastados
         return acc - (ahorro.montoArs || 0);
       } else if (ahorro.isVenta) {
-        // Si fue venta, se suman los ARS obtenidos
         return acc + (ahorro.montoArs || 0);
       }
       return acc;
     }, 0);
 
-    // Calcular el dinero restante restando los gastos pagados y considerando las conversiones
     this.dineroRestante =
       this.totalIngresos - totalPagadoEsteMes + totalAhorrosArs;
+
+    // this.dineroEnCuentaService.actualizarDineroARS(this.dineroRestante);
 
     return this.dineroRestante;
   }
@@ -1607,6 +1608,7 @@ export class DashboardComponent implements OnInit {
     this.ahorrosService.getAhorros().subscribe({
       next: (ahorros: any) => {
         this.conversiones = ahorros;
+        this.calculateDineroRestante();
         this.calculateDineroRestanteUsd(); // Calcular después de cargar los ahorros
       },
       error: (error: any) => {
@@ -1618,7 +1620,6 @@ export class DashboardComponent implements OnInit {
   calculateDineroRestanteUsd(): number {
     const now = new Date();
 
-    // Sumar los gastos en USD filtrados
     const totalGastosUsd = this.financeItems
       .filter((item) => {
         const itemDate = this.parseDate(item.date);
@@ -1631,21 +1632,19 @@ export class DashboardComponent implements OnInit {
       })
       .reduce((acc, item) => acc + parseFloat(String(item.value)), 0);
 
-    // Ajustar según las compras y ventas en USD desde la colección de ahorros
     const totalAhorrosUsd = this.conversiones.reduce((acc, ahorro) => {
       if (ahorro.isCompra) {
-        // Si fue compra, sumamos los USD comprados
         return acc + (ahorro.montoUsd || 0);
       } else if (ahorro.isVenta) {
-        // Si fue venta, restamos los USD vendidos
-        return acc - Math.abs(ahorro.montoUsd || 0); // Asegurarnos de restar el valor absoluto de los USD vendidos
+        return acc - Math.abs(ahorro.montoUsd || 0);
       }
       return acc;
     }, 0);
 
-    // El dinero restante en USD es la suma de los ingresos más los ahorros, menos los gastos
     this.dineroRestanteUSD =
       this.totalIngresosUSD + totalAhorrosUsd - totalGastosUsd;
+
+    // this.dineroEnCuentaService.actualizarDineroUSD(this.dineroRestante);
 
     return this.dineroRestanteUSD;
   }

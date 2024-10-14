@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AhorrosService } from '../../../services/ahorros.service';
 import { AhorroInterface } from '../../../interfaces/ahorro.interface';
-import { Timestamp } from '@angular/fire/firestore';
 import { NavbarComponent } from '../../navbar/navbar.component';
 import { AsideComponent } from '../../aside/aside.component';
 import { RouterModule } from '@angular/router';
@@ -9,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NumberFormatPipe } from '../../../pipes/number-format.pipe';
+import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
 
 @Component({
   selector: 'app-ahorros',
@@ -30,12 +30,12 @@ export class AhorrosComponent implements OnInit {
   public conversiones: AhorroInterface[] = [];
   public totalAhorrosUSD: number = 0;
   public ahorrosDelMes: number = 0;
-  public metaAhorro: number = 100000;
-  public totalIngresos: number = 200000; // Inicializar con un valor de ejemplo
-  public totalIngresosUSD: number = 1000; // Inicializar con un valor de ejemplo
+  public metaAhorro: number = 10;
+  public totalIngresos: number = 0; // Inicializar con un valor de ejemplo
+  public totalIngresosUSD: number = 0; // Inicializar con un valor de ejemplo
   public dineroRestante: number = 0;
   public dineroRestanteUSD: number = 0;
-
+  public dineroRestanteARS: number = 0;
   // Controlar los modales
   public isModalCompraOpen: boolean = false;
   public isModalVentaOpen: boolean = false;
@@ -44,12 +44,26 @@ export class AhorrosComponent implements OnInit {
   public montoUSD: number = 0;
   public tasaConversion: number = 0;
 
-  constructor(private ahorrosService: AhorrosService) {}
+  constructor(
+    private ahorrosService: AhorrosService,
+    private dineroEnCuentaService: DineroEnCuentaService
+  ) {}
 
   ngOnInit(): void {
-    this.loadAhorros(); // Cargar ahorros al iniciar
+    this.loadDineroEnCuenta();
+    this.loadAhorros();
     this.calcularDineroRestante();
     this.calcularDineroRestanteUsd();
+    this.calcularTotales();
+  }
+
+  loadDineroEnCuenta(): void {
+    this.dineroEnCuentaService.obtenerDineroEnCuenta().then((data) => {
+      if (data) {
+        this.dineroRestante = data.dineroEnCuentaARS;
+        this.dineroRestanteUSD = data.dineroEnCuentaUSD;
+      }
+    });
   }
 
   // Cargar los ahorros desde el servicio
@@ -145,9 +159,14 @@ export class AhorrosComponent implements OnInit {
 
   // Convertir ahorro en la compra de dólares
   convertirAhorro(): void {
+    if (!this.isCompraValida()) {
+      // Si no es válida la compra, evitamos continuar
+      return;
+    }
+
     const montoUSD = this.montoARS / this.tasaConversion;
 
-    // Descontar monto en ARS del dinero restante (porque es una compra)
+    // Descontar monto en ARS del dinero restante
     this.dineroRestante -= this.montoARS;
 
     // Aumentar el monto en USD en dineroRestanteUSD
@@ -158,8 +177,8 @@ export class AhorrosComponent implements OnInit {
       montoArs: this.montoARS,
       montoUsd: montoUSD,
       valorUsdActual: this.tasaConversion,
-      isCompra: true, // Indicamos que es una compra
-      isVenta: false, // No es una venta
+      isCompra: true,
+      isVenta: false,
     };
 
     // Guardar el ahorro en Firebase
@@ -206,6 +225,18 @@ export class AhorrosComponent implements OnInit {
         console.error('Error al registrar la venta:', error);
       },
     });
+  }
+
+  isCompraValida(): boolean {
+    return this.montoARS <= this.dineroRestante && this.montoARS > 0;
+  }
+
+  actualizarMontoUSD(): void {
+    if (this.montoARS > 0 && this.tasaConversion > 0) {
+      this.montoUSD = this.montoARS / this.tasaConversion;
+    } else {
+      this.montoUSD = 0;
+    }
   }
 
   // Editar y eliminar conversiones

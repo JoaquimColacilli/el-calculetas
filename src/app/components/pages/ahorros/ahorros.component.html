@@ -154,6 +154,15 @@
       >
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
           <h2 class="text-2xl font-bold mb-4">Comprar Dólares</h2>
+
+          <!-- Mostrar el dinero disponible en ARS -->
+          <p class="text-gray-700 font-bold mb-2">
+            Dinero en cuenta:
+            <span class="text-green-600">{{
+              dineroRestanteARS | currency : "ARS"
+            }}</span>
+          </p>
+
           <form (ngSubmit)="convertirAhorro()">
             <div class="mb-4">
               <label class="block text-sm font-bold mb-2">Monto en ARS</label>
@@ -162,6 +171,7 @@
                 class="w-full p-3 border border-gray-300 rounded"
                 [(ngModel)]="montoARS"
                 name="montoARS"
+                (input)="actualizarMontoUSD()"
                 required
               />
             </div>
@@ -174,10 +184,20 @@
                 class="w-full p-3 border border-gray-300 rounded"
                 [(ngModel)]="tasaConversion"
                 name="tasaConversion"
+                (input)="actualizarMontoUSD()"
                 required
               />
             </div>
-            <div class="flex justify-end space-x-2">
+
+            <!-- Mostrar el monto estimado en USD -->
+            <p class="text-gray-600">
+              Monto en USD a comprar:
+              <span class="text-blue-600"
+                >{{ montoUSD | number : "1.2-2" }} USD</span
+              >
+            </p>
+
+            <div class="flex justify-end space-x-2 mt-4">
               <button
                 type="button"
                 class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-all"
@@ -188,6 +208,7 @@
               <button
                 type="submit"
                 class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+                [disabled]="!isCompraValida()"
               >
                 Comprar
               </button>
@@ -195,7 +216,6 @@
           </form>
         </div>
       </div>
-
       <!-- Modal para Vender Dólares -->
       <div
         *ngIf="isModalVentaOpen"
