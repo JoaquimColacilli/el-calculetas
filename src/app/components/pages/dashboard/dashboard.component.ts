@@ -273,7 +273,6 @@ export class DashboardComponent implements OnInit {
   // Mover la carga de datos iniciales a un método separado
   loadInitialData(): void {
     this.calculateTotals();
-    this.dineroRestante = this.calculateDineroRestante();
 
     this.calculateCounts();
     this.calculateDayOrNight();
