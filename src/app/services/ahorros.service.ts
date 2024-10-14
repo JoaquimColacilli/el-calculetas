@@ -14,7 +14,7 @@ import { Observable, throwError } from 'rxjs';
 import { AhorroInterface } from '../interfaces/ahorro.interface';
 import { AuthService } from '../services/auth.service';
 import { switchMap, catchError } from 'rxjs/operators';
-import { DocumentReference } from 'firebase/firestore';
+import { deleteDoc, DocumentReference } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -22,8 +22,6 @@ import { DocumentReference } from 'firebase/firestore';
 export class AhorrosService {
   constructor(private firestore: Firestore, private authService: AuthService) {}
 
-  // Método para obtener los ahorros del usuario autenticado
-  // AhorrosService
   getAhorros(): Observable<AhorroInterface[]> {
     return this.authService.getUserData().pipe(
       switchMap((userData) => {
@@ -64,10 +62,9 @@ export class AhorrosService {
           `users/${uid}/ahorros`
         );
 
-        // Guardar el ahorro con el timestamp del servidor
         const docRef = await addDoc(ahorrosCollection, {
           ...ahorro,
-          timestamp: serverTimestamp(), // Timestamp generado por Firebase
+          timestamp: serverTimestamp(),
         });
 
         return docRef;
@@ -79,7 +76,6 @@ export class AhorrosService {
     );
   }
 
-  // Método para actualizar un ahorro existente
   updateAhorro(
     id: string,
     updatedAhorro: Partial<AhorroInterface>
@@ -93,14 +89,32 @@ export class AhorrosService {
 
         const ahorroDocRef = doc(this.firestore, `users/${uid}/ahorros/${id}`);
 
-        // Actualizar el ahorro
         await updateDoc(ahorroDocRef, updatedAhorro);
-
         return;
       }),
       catchError((error) => {
         console.error('Error al actualizar el ahorro:', error);
         return throwError(() => new Error('No se pudo actualizar el ahorro'));
+      })
+    );
+  }
+
+  deleteAhorro(id: string): Observable<void> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        const ahorroDocRef = doc(this.firestore, `users/${uid}/ahorros/${id}`);
+
+        await deleteDoc(ahorroDocRef);
+        return;
+      }),
+      catchError((error) => {
+        console.error('Error al eliminar el ahorro:', error);
+        return throwError(() => new Error('No se pudo eliminar el ahorro'));
       })
     );
   }

@@ -12,6 +12,10 @@ import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.servic
 import { FinanceInterface } from '../../../interfaces/finance.interface';
 import { FinanceService } from '../../../services/finance.service';
 import { SueldoService } from '../../../services/sueldo.service';
+import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
+import { MatDialog } from '@angular/material/dialog';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-ahorros',
@@ -41,11 +45,17 @@ export class AhorrosComponent implements OnInit {
   public dineroRestanteARS: number = 0;
   public isModalCompraOpen: boolean = false;
   public isModalVentaOpen: boolean = false;
-  previousMontoARS: number = 0;
+  public previousMontoARS: number = 0;
   public montoARS: number = 0;
   public montoUSD: number = 0;
   public tasaConversion: number = 0;
+  public dineroPrevio: number = 0;
+  public dineroPrevioUSD: number = 0;
+  public totalDineroEnCuentaUSD: number = 0;
+  public isDeleteModalOpen = false;
+  public conversionEditadaId: string | null = null;
 
+  public conversionAEliminar: AhorroInterface | null = null;
   salaryDetails: Array<{
     amount: number;
     currency: string;
@@ -55,11 +65,14 @@ export class AhorrosComponent implements OnInit {
   financeItems: FinanceInterface[] = [];
 
   constructor(
+    library: FaIconLibrary,
     private ahorrosService: AhorrosService,
     private financeService: FinanceService,
-    private sueldoService: SueldoService
-  ) {}
-  totalDineroEnCuentaUSD: number = 0;
+    private sueldoService: SueldoService,
+    private dialog: MatDialog
+  ) {
+    library.addIconPacks(fas);
+  }
 
   ngOnInit(): void {
     this.loadSalaries();
@@ -107,6 +120,8 @@ export class AhorrosComponent implements OnInit {
       next: (ahorros) => {
         this.conversiones = ahorros;
         this.calcularTotales();
+        this.calculateDineroRestante();
+        this.calculateDineroRestanteUsd();
         this.isLoadingData = false;
       },
       error: (error) => {
@@ -222,21 +237,27 @@ export class AhorrosComponent implements OnInit {
   abrirModalCompra(): void {
     this.isModalCompraOpen = true;
     this.montoARS = 0;
+    this.montoUSD = 0;
     this.tasaConversion = 0;
-  }
-
-  cerrarModalCompra(): void {
-    this.isModalCompraOpen = false;
+    this.dineroPrevio = this.dineroRestante;
   }
 
   abrirModalVenta(): void {
     this.isModalVentaOpen = true;
     this.montoUSD = 0;
+    this.montoARS = 0;
     this.tasaConversion = 0;
+    this.dineroPrevioUSD = this.dineroRestanteUSD;
+  }
+
+  cerrarModalCompra(): void {
+    this.isModalCompraOpen = false;
+    this.loadAhorros();
   }
 
   cerrarModalVenta(): void {
     this.isModalVentaOpen = false;
+    this.loadAhorros();
   }
 
   parseDate(dateString: string): Date {
@@ -262,7 +283,6 @@ export class AhorrosComponent implements OnInit {
     const montoUSD = this.montoARS / this.tasaConversion;
 
     this.dineroRestante -= this.montoARS;
-
     this.dineroRestanteUSD += montoUSD;
 
     const nuevoAhorro: AhorroInterface = {
@@ -281,6 +301,16 @@ export class AhorrosComponent implements OnInit {
         this.calculateDineroRestante();
         this.calculateDineroRestanteUsd();
         this.cerrarModalCompra();
+        Swal.fire({
+          position: 'top',
+          icon: 'success',
+          text: `Has comprado ${montoUSD.toFixed(
+            2
+          )} USD por ${this.montoARS.toFixed(2)} ARS`,
+          showConfirmButton: false,
+          timer: 3000,
+          toast: true,
+        });
       },
       error: (error) => {
         console.error('Error al agregar ahorro:', error);
@@ -289,8 +319,13 @@ export class AhorrosComponent implements OnInit {
   }
 
   venderAhorro(): void {
+    if (!this.isVentaValida()) {
+      return;
+    }
+
     const montoARS = this.montoUSD * this.tasaConversion;
 
+    this.dineroRestanteUSD -= this.montoUSD;
     this.dineroRestante += montoARS;
 
     const nuevoAhorro: AhorroInterface = {
@@ -303,12 +338,22 @@ export class AhorrosComponent implements OnInit {
     };
 
     this.ahorrosService.addAhorro(nuevoAhorro).subscribe({
-      next: (docRef) => {
+      next: () => {
         this.conversiones.unshift(nuevoAhorro);
         this.calcularTotales();
         this.calculateDineroRestante();
         this.calculateDineroRestanteUsd();
         this.cerrarModalVenta();
+        Swal.fire({
+          position: 'top',
+          icon: 'success',
+          text: `Has vendido ${this.montoUSD.toFixed(
+            2
+          )} USD por ${montoARS.toFixed(2)} ARS`,
+          showConfirmButton: false,
+          timer: 3000,
+          toast: true,
+        });
       },
       error: (error) => {
         console.error('Error al registrar la venta:', error);
@@ -316,8 +361,45 @@ export class AhorrosComponent implements OnInit {
     });
   }
 
+  guardarConversionEditada(id: string | null, isCompra: boolean): void {
+    if (!id) return;
+
+    const updatedAhorro: Partial<AhorroInterface> = {
+      montoArs: this.montoARS,
+      montoUsd: this.montoUSD,
+      valorUsdActual: this.tasaConversion,
+    };
+
+    this.ahorrosService.updateAhorro(id, updatedAhorro).subscribe({
+      next: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Actualización exitosa',
+          text: 'La conversión ha sido actualizada correctamente.',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        this.loadAhorros();
+        this.cerrarModalCompra();
+        this.cerrarModalVenta();
+      },
+      error: (error) => {
+        console.error('Error al actualizar el ahorro:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo actualizar el ahorro.',
+        });
+      },
+    });
+  }
+
   isCompraValida(): boolean {
-    return this.montoARS <= this.dineroRestante && this.montoARS > 0;
+    return this.montoARS <= this.dineroPrevio && this.montoARS > 0;
+  }
+
+  isVentaValida(): boolean {
+    return this.montoUSD <= this.dineroPrevioUSD && this.montoUSD > 0;
   }
 
   actualizarMontoUSD(): void {
@@ -331,9 +413,94 @@ export class AhorrosComponent implements OnInit {
 
     this.previousMontoARS = this.montoARS;
   }
-  editarConversion(conversion: AhorroInterface): void {}
 
-  eliminarConversion(conversion: AhorroInterface): void {}
+  actualizarMontoARS(): void {
+    this.montoARS = this.montoUSD * this.tasaConversion;
+
+    if (this.montoUSD > this.dineroPrevioUSD) {
+      this.dineroRestanteUSD -= this.montoUSD - this.dineroPrevioUSD;
+    } else {
+      this.dineroRestanteUSD += this.dineroPrevioUSD - this.montoUSD;
+    }
+
+    this.dineroRestanteUSD = this.dineroPrevioUSD - this.montoUSD;
+  }
+
+  getSaldoRestanteClass(): string {
+    const porcentaje = (this.dineroRestante / this.dineroPrevio) * 100;
+
+    if (porcentaje >= 75) {
+      return 'text-green-600 bg-green-50';
+    } else if (porcentaje >= 25) {
+      return 'text-yellow-600 bg-yellow-50';
+    } else {
+      return 'text-red-600 bg-red-50';
+    }
+  }
+
+  getSaldoRestanteUSDClass(): string {
+    const porcentaje = (this.dineroRestanteUSD / this.dineroPrevioUSD) * 100;
+
+    if (porcentaje >= 75) {
+      return 'text-green-600 bg-green-50';
+    } else if (porcentaje >= 25) {
+      return 'text-yellow-600 bg-yellow-50';
+    } else {
+      return 'text-red-600 bg-red-50';
+    }
+  }
+
+  editarConversion(conversion: AhorroInterface): void {
+    // Asigna el id de la conversión editada
+    this.conversionEditadaId = conversion.id ?? null;
+
+    if (conversion.isCompra) {
+      // Abre el modal de compra y carga los valores
+      this.isModalCompraOpen = true;
+      this.montoARS = conversion.montoArs || 0;
+      this.montoUSD = conversion.montoUsd || 0;
+      this.tasaConversion = conversion.valorUsdActual || 0;
+      this.dineroPrevio = this.dineroRestante;
+    } else if (conversion.isVenta) {
+      // Abre el modal de venta y carga los valores
+      this.isModalVentaOpen = true;
+      this.montoARS = conversion.montoArs || 0;
+      this.montoUSD = conversion.montoUsd || 0;
+      this.tasaConversion = conversion.valorUsdActual || 0;
+      this.dineroPrevioUSD = this.dineroRestanteUSD;
+    }
+  }
+
+  eliminarConversion(conversion: AhorroInterface): void {
+    this.isDeleteModalOpen = true;
+    this.conversionAEliminar = conversion;
+  }
+
+  // Método para confirmar la eliminación
+  confirmarEliminarConversion(): void {
+    if (this.conversionAEliminar?.id) {
+      this.ahorrosService.deleteAhorro(this.conversionAEliminar.id).subscribe({
+        next: () => {
+          Swal.fire(
+            'Eliminado',
+            'La conversión ha sido eliminada con éxito',
+            'success'
+          );
+          this.loadAhorros();
+          this.cerrarModalEliminar(); // Cierra el modal de eliminación
+        },
+        error: (error) => {
+          console.error('Error al eliminar la conversión:', error);
+          Swal.fire('Error', 'No se pudo eliminar la conversión', 'error');
+        },
+      });
+    }
+  }
+
+  cerrarModalEliminar(): void {
+    this.isDeleteModalOpen = false;
+    this.conversionAEliminar = null; // Limpia la conversión seleccionada
+  }
 
   convertTimestampToDate(timestamp: any): string {
     if (timestamp && timestamp.seconds) {

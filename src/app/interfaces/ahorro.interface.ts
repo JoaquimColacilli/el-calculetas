@@ -1,4 +1,5 @@
 export interface AhorroInterface {
+  id?: string;
   timestamp: Date;
   montoUsd: number;
   montoArs: number;
