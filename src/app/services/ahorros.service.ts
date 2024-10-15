@@ -13,8 +13,9 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { AhorroInterface } from '../interfaces/ahorro.interface';
 import { AuthService } from '../services/auth.service';
-import { switchMap, catchError } from 'rxjs/operators';
+import { switchMap, catchError, map } from 'rxjs/operators';
 import { deleteDoc, DocumentReference } from 'firebase/firestore';
+import moment from 'moment';
 
 @Injectable({
   providedIn: 'root',
@@ -115,6 +116,25 @@ export class AhorrosService {
       catchError((error) => {
         console.error('Error al eliminar el ahorro:', error);
         return throwError(() => new Error('No se pudo eliminar el ahorro'));
+      })
+    );
+  }
+
+  getAhorrosPorMes(month: string): Observable<AhorroInterface[]> {
+    return this.getAhorros().pipe(
+      map((ahorros: AhorroInterface[]) => {
+        const filteredAhorros = ahorros.filter((ahorro: any) => {
+          const ahorroDate = new Date(ahorro.timestamp.seconds * 1000);
+          const ahorroMonth = moment(ahorroDate).format('MMMM, YYYY');
+          return ahorroMonth === month;
+        });
+        return filteredAhorros;
+      }),
+      catchError((error) => {
+        console.error('Error al obtener los ahorros por mes:', error);
+        return throwError(
+          () => new Error('Error al filtrar los ahorros por mes')
+        );
       })
     );
   }

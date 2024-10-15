@@ -71,3 +71,47 @@
     transform: rotate(360deg);
   }
 }
+
+/* Animación para el fondo */
+@keyframes gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 5s ease infinite;
+}
+
+.wave {
+  position: absolute;
+  left: 0%;
+  width: 500%;
+  bottom: 0;
+  background: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg")
+    repeat-x;
+  background-size: 50% 100%;
+  animation: wave 7s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+}
+
+.wave.wave1 {
+  opacity: 0.5;
+}
+
+.wave.wave2 {
+  opacity: 0.5;
+  animation-direction: reverse;
+}
+
+@keyframes wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

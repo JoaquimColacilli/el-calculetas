@@ -16,6 +16,26 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { MatDialog } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
+import moment from 'moment';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+
+registerLocaleData(localeEs, 'es');
+
+const monthTranslations: { [key: string]: string } = {
+  January: 'Enero',
+  February: 'Febrero',
+  March: 'Marzo',
+  April: 'Abril',
+  May: 'Mayo',
+  June: 'Junio',
+  July: 'Julio',
+  August: 'Agosto',
+  September: 'Septiembre',
+  October: 'Octubre',
+  November: 'Noviembre',
+  December: 'Diciembre',
+};
 
 @Component({
   selector: 'app-ahorros',
@@ -54,6 +74,7 @@ export class AhorrosComponent implements OnInit {
   public totalDineroEnCuentaUSD: number = 0;
   public isDeleteModalOpen = false;
   public conversionEditadaId: string | null = null;
+  currentMonth: string = moment().format('MMMM, YYYY');
 
   public conversionAEliminar: AhorroInterface | null = null;
   salaryDetails: Array<{
@@ -76,7 +97,7 @@ export class AhorrosComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSalaries();
-    this.loadAhorros();
+    this.loadAhorrosPorMes(this.currentMonth);
     this.loadExpenses();
     this.calculateDineroRestante();
     this.calculateDineroRestanteUsd();
@@ -114,9 +135,10 @@ export class AhorrosComponent implements OnInit {
       },
     });
   }
-  loadAhorros(): void {
+
+  loadAhorrosPorMes(month: string): void {
     this.isLoadingData = true;
-    this.ahorrosService.getAhorros().subscribe({
+    this.ahorrosService.getAhorrosPorMes(month).subscribe({
       next: (ahorros) => {
         this.conversiones = ahorros;
         this.calcularTotales();
@@ -125,7 +147,7 @@ export class AhorrosComponent implements OnInit {
         this.isLoadingData = false;
       },
       error: (error) => {
-        console.error('Error al cargar ahorros:', error);
+        console.error('Error al cargar ahorros por mes:', error);
         this.isLoadingData = false;
       },
     });
@@ -156,6 +178,10 @@ export class AhorrosComponent implements OnInit {
     console.log('Dinero restante en ARS:', this.dineroRestante);
 
     return this.dineroRestante;
+  }
+
+  calculateWaveTop() {
+    return `${100 - this.calcularPorcentajeAhorro()}%`;
   }
 
   calculateDineroRestanteUsd(): number {
@@ -252,12 +278,12 @@ export class AhorrosComponent implements OnInit {
 
   cerrarModalCompra(): void {
     this.isModalCompraOpen = false;
-    this.loadAhorros();
+    this.loadAhorrosPorMes(this.currentMonth);
   }
 
   cerrarModalVenta(): void {
     this.isModalVentaOpen = false;
-    this.loadAhorros();
+    this.loadAhorrosPorMes(this.currentMonth);
   }
 
   parseDate(dateString: string): Date {
@@ -379,7 +405,7 @@ export class AhorrosComponent implements OnInit {
           timer: 2000,
           showConfirmButton: false,
         });
-        this.loadAhorros();
+        this.loadAhorrosPorMes(this.currentMonth);
         this.cerrarModalCompra();
         this.cerrarModalVenta();
       },
@@ -486,8 +512,8 @@ export class AhorrosComponent implements OnInit {
             'La conversión ha sido eliminada con éxito',
             'success'
           );
-          this.loadAhorros();
-          this.cerrarModalEliminar(); // Cierra el modal de eliminación
+          this.loadAhorrosPorMes(this.currentMonth);
+          this.cerrarModalEliminar();
         },
         error: (error) => {
           console.error('Error al eliminar la conversión:', error);
@@ -512,5 +538,26 @@ export class AhorrosComponent implements OnInit {
       });
     }
     return '';
+  }
+
+  previousMonth() {
+    const newDate = moment(this.currentMonth, 'MMMM, YYYY').subtract(
+      1,
+      'months'
+    );
+    this.currentMonth = newDate.format('MMMM, YYYY');
+    this.loadAhorrosPorMes(this.currentMonth);
+  }
+
+  nextMonth() {
+    const newDate = moment(this.currentMonth, 'MMMM, YYYY').add(1, 'months');
+    this.currentMonth = newDate.format('MMMM, YYYY');
+    this.loadAhorrosPorMes(this.currentMonth);
+  }
+
+  translateMonthToSpanish(month: string): string {
+    const [englishMonth, year] = month.split(', ');
+    const spanishMonth = monthTranslations[englishMonth];
+    return `${spanishMonth}, ${year}`;
   }
 }

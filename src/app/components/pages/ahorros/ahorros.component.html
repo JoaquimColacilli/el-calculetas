@@ -6,401 +6,485 @@
       <div *ngIf="isLoadingData" class="overlay">
         <div class="spinner"></div>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white shadow-md rounded-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800">Ahorros Totales</h2>
-          <div class="text-gray-600 mt-4">
-            <p>
-              Total USD:
-              <span class="font-bold text-green-600">{{
-                totalAhorrosUSD | currency : "USD"
+      <div class="p-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div class="bg-white shadow-md rounded-lg p-4">
+            <h2 class="text-xl font-semibold text-gray-800">Ahorros Totales</h2>
+            <div class="text-gray-600 mt-2">
+              <p>
+                Total USD:
+                <span class="font-bold text-green-600">{{
+                  totalAhorrosUSD | currency : "USD"
+                }}</span>
+              </p>
+            </div>
+            <p class="mt-1 text-gray-500">
+              Ahorros del Mes:
+              <span class="font-bold text-indigo-600">{{
+                ahorrosDelMes | currency : "USD"
               }}</span>
             </p>
           </div>
-          <p class="mt-2 text-gray-500">
-            Ahorros del Mes:
-            <span class="font-bold text-indigo-600">{{
-              ahorrosDelMes | currency : "USD"
-            }}</span>
-          </p>
-        </div>
 
-        <div class="bg-white shadow-md rounded-lg p-6">
-          <div class="flex items-start">
-            <div class="text-yellow-500 text-3xl mr-4">
-              <fa-icon [icon]="['fas', 'lightbulb']"></fa-icon>
+          <!-- PORCENTAJE -->
+
+          <div
+            class="relative bg-gray-100 shadow-lg rounded-lg p-6 overflow-hidden"
+          >
+            <div
+              class="absolute inset-0 animate-gradient bg-gradient-to-r"
+              [ngClass]="{
+                'from-green-400 to-green-200': calcularPorcentajeAhorro() >= 75,
+                'from-yellow-400 to-yellow-200':
+                  calcularPorcentajeAhorro() >= 25 &&
+                  calcularPorcentajeAhorro() < 75,
+                'from-red-400 to-red-200': calcularPorcentajeAhorro() < 25
+              }"
+              [style.opacity]="0.7 + calcularPorcentajeAhorro() / 200"
+            ></div>
+
+            <div class="relative text-center mb-4">
+              <p class="text-xl font-semibold text-gray-900">
+                Progreso de Ahorros
+              </p>
             </div>
-            <div>
+
+            <div class="relative flex flex-col items-center">
+              <div
+                class="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-white shadow-md mb-4 relative overflow-hidden"
+              >
+                <!-- Olas aquí -->
+                <div
+                  class="wave wave1"
+                  [ngStyle]="{ top: calculateWaveTop() }"
+                ></div>
+                <div
+                  class="wave wave2"
+                  [ngStyle]="{ top: calculateWaveTop() }"
+                ></div>
+
+                <!-- Texto del porcentaje -->
+                <span class="text-2xl font-bold text-gray-800 relative">
+                  {{ calcularPorcentajeAhorro() }}%
+                </span>
+              </div>
+
+              <div
+                class="flex justify-between items-center max-w-xs p-3 rounded-lg shadow bg-gray-50"
+              >
+                <div
+                  class="flex-1 text-gray-700 text-sm font-medium text-center border-r border-gray-300 pr-4"
+                >
+                  <p class="mb-2">
+                    <span class="inline-block w-24">Meta</span>
+                  </p>
+                  <p class="font-bold text-lg">${{ metaAhorro }}</p>
+                </div>
+                <div
+                  class="flex-1 text-gray-700 text-sm font-medium text-center pl-4"
+                >
+                  <p class="mb-2">
+                    <span class="inline-block w-24">Alcanzado</span>
+                  </p>
+                  <p class="font-bold text-lg">${{ totalAhorrosUSD }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONSEJO -->
+
+          <div
+            class="bg-white shadow-md rounded-lg p-4 flex flex-col justify-between"
+          >
+            <div class="flex items-start mb-2">
+              <div
+                class="bg-yellow-500 rounded-full w-8 h-8 flex items-center justify-center mr-2"
+              >
+                <fa-icon
+                  [icon]="['fas', 'lightbulb']"
+                  class="text-white"
+                ></fa-icon>
+              </div>
               <h3 class="text-lg font-semibold text-gray-800">
                 Consejo del Día
               </h3>
-              <p class="text-gray-600 mt-2 italic">
-                "Diversifica tus ahorros en diferentes monedas y activos para
-                minimizar riesgos financieros."
+            </div>
+            <blockquote class="text-gray-800 font-medium text-sm">
+              <p>
+                <span class="text-xl text-yellow-500 leading-none pr-1">“</span>
+                Porque raíz de todos los males es el amor al dinero, el cual
+                codiciando algunos, se extraviaron de la fe, y fueron
+                traspasados de muchos dolores.
+                <span class="text-xl text-yellow-500 leading-none pl-1">”</span>
               </p>
-            </div>
+            </blockquote>
+            <p class="text-right text-gray-600 mt-2 text-sm font-medium">
+              — 1 Timoteo 6:10
+            </p>
           </div>
         </div>
-
-        <div class="bg-white shadow-md rounded-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800">
-            Progreso de Ahorros
-          </h2>
-          <div
-            class="w-full bg-gray-200 rounded-full h-4 mt-2 relative overflow-visible"
-          >
-            <div
-              class="bg-green-500 h-4 rounded-full transition-all duration-300"
-              [style.width.%]="
-                calcularPorcentajeAhorro() > 100
-                  ? 100
-                  : calcularPorcentajeAhorro()
-              "
-            ></div>
-          </div>
-          <div class="flex justify-between text-gray-600 mt-2">
-            <span>Meta: ${{ metaAhorro }}</span>
-            <span>{{ calcularPorcentajeAhorro() }}%</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex justify-end mb-6 space-x-4">
-        <button
-          class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition-all flex items-center space-x-4"
-          (click)="abrirModalCompra()"
-        >
-          <fa-icon [icon]="['fas', 'dollar-sign']" class="text-white"></fa-icon>
-          <div class="h-6 w-px bg-gray-200"></div>
-          <span>Comprar Dólares</span>
-        </button>
-
-        <button
-          class="bg-gray-500 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-600 transition-all flex items-center space-x-4"
-          (click)="abrirModalVenta()"
-        >
+        <div class="flex justify-between items-center mb-8">
           <fa-icon
-            [icon]="['fas', 'exchange-alt']"
-            class="text-white"
+            [icon]="['fas', 'chevron-left']"
+            (click)="previousMonth()"
+            class="cursor-pointer fa-2x"
           ></fa-icon>
-          <div class="h-6 w-px bg-gray-200"></div>
-          <span>Vender Dólares</span>
-        </button>
-      </div>
-
-      <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
-        <div class="p-4">
-          <h3 class="text-xl font-bold text-gray-700 mb-4">
-            Últimas Conversiones
-          </h3>
+          <h1 class="text-4xl font-bold">
+            {{ translateMonthToSpanish(currentMonth) }}
+          </h1>
+          <fa-icon
+            [icon]="['fas', 'chevron-right']"
+            (click)="nextMonth()"
+            class="cursor-pointer fa-2x"
+          ></fa-icon>
         </div>
-        <table class="min-w-full table-fixed leading-normal">
-          <thead>
-            <tr
-              class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal"
-            >
-              <th class="px-6 py-3 text-center align-middle w-1/5">Fecha</th>
-              <th class="px-6 py-3 text-center align-middle w-1/5">
-                Monto USD
-              </th>
-              <th class="px-6 py-3 text-center align-middle w-1/5">
-                Monto ARS
-              </th>
-              <th class="px-6 py-3 text-center align-middle w-1/5">
-                Tasa de Conversión
-              </th>
-              <th class="px-6 py-3 text-center align-middle w-1/5">Acciones</th>
-            </tr>
-          </thead>
 
-          <tbody>
-            <tr
-              *ngFor="let conversion of conversiones"
-              class="border-b border-gray-200"
-            >
-              <td class="px-6 py-4 text-center align-middle">
-                {{ convertTimestampToDate(conversion.timestamp) }}
-              </td>
-              <td class="px-6 py-4 text-center align-middle">
-                ${{ conversion.montoUsd | numberFormat }} USD
-              </td>
-              <td class="px-6 py-4 text-center align-middle">
-                ${{ conversion.montoArs | numberFormat }} ARS
-              </td>
-              <td class="px-6 py-4 text-center align-middle">
-                ${{ conversion.valorUsdActual | numberFormat }} ARS x 1 USD
-              </td>
-              <td class="px-6 py-4 text-center align-middle whitespace-nowrap">
-                <button
-                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition mr-1"
-                  (click)="editarConversion(conversion)"
-                >
-                  <fa-icon [icon]="['fas', 'edit']"></fa-icon>
-                </button>
-                <button
-                  class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
-                  (click)="eliminarConversion(conversion)"
-                >
-                  <fa-icon [icon]="['fas', 'trash']"></fa-icon>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div *ngIf="conversiones.length === 0" class="text-center p-4">
-          <p class="text-gray-500 text-xl">
-            No hay conversiones registradas aún.
-          </p>
-        </div>
-      </div>
-
-      <!-- Modal para Comprar Dólares -->
-      <div
-        *ngIf="isModalCompraOpen"
-        class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
-      >
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-          <h2 class="text-2xl font-bold mb-6 text-gray-900">Comprar Dólares</h2>
-
-          <!-- Mostrar el dinero disponible en ARS -->
-          <div class="flex items-center justify-between mb-6">
-            <div class="w-1/2 pr-2">
-              <div
-                class="p-4 rounded-lg shadow-sm"
-                [ngClass]="getSaldoRestanteClass()"
-              >
-                <p class="text-sm font-semibold text-gray-700">
-                  Saldo restante
-                </p>
-                <p class="text-xl font-bold">
-                  {{ dineroRestante | numberFormat }}
-                </p>
-              </div>
-            </div>
-
-            <div class="w-1/2 pl-2">
-              <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
-                <p class="text-sm text-gray-700 font-semibold">
-                  Saldo disponible
-                </p>
-                <p class="text-xl font-bold text-blue-600">
-                  {{ dineroPrevio | numberFormat }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <form
-            (ngSubmit)="
-              conversionEditadaId
-                ? guardarConversionEditada(conversionEditadaId, true)
-                : convertirAhorro()
-            "
+        <div class="flex justify-end mb-6 space-x-4">
+          <button
+            class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition-all flex items-center space-x-4"
+            (click)="abrirModalCompra()"
           >
-            <!-- Monto en ARS -->
-            <div class="mb-4">
-              <label class="block text-sm font-bold mb-2">Monto en ARS</label>
-              <input
-                type="number"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                [(ngModel)]="montoARS"
-                name="montoARS"
-                (input)="actualizarMontoUSD()"
-                required
-              />
+            <fa-icon
+              [icon]="['fas', 'dollar-sign']"
+              class="text-white"
+            ></fa-icon>
+            <div class="h-6 w-px bg-gray-200"></div>
+            <span>Comprar Dólares</span>
+          </button>
+
+          <button
+            class="bg-gray-500 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-600 transition-all flex items-center space-x-4"
+            (click)="abrirModalVenta()"
+          >
+            <fa-icon
+              [icon]="['fas', 'exchange-alt']"
+              class="text-white"
+            ></fa-icon>
+            <div class="h-6 w-px bg-gray-200"></div>
+            <span>Vender Dólares</span>
+          </button>
+        </div>
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">
+              Últimas Conversiones
+            </h3>
+          </div>
+          <table class="min-w-full table-fixed leading-normal">
+            <thead>
+              <tr
+                class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal"
+              >
+                <th class="px-6 py-3 text-center align-middle w-1/5">Fecha</th>
+                <th class="px-6 py-3 text-center align-middle w-1/5">
+                  Monto USD
+                </th>
+                <th class="px-6 py-3 text-center align-middle w-1/5">
+                  Monto ARS
+                </th>
+                <th class="px-6 py-3 text-center align-middle w-1/5">
+                  Tasa de Conversión
+                </th>
+                <th class="px-6 py-3 text-center align-middle w-1/5">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let conversion of conversiones"
+                class="border-b border-gray-200"
+              >
+                <td class="px-6 py-4 text-center align-middle">
+                  {{ convertTimestampToDate(conversion.timestamp) }}
+                </td>
+                <td class="px-6 py-4 text-center align-middle">
+                  ${{ conversion.montoUsd | numberFormat }} USD
+                </td>
+                <td class="px-6 py-4 text-center align-middle">
+                  ${{ conversion.montoArs | numberFormat }} ARS
+                </td>
+                <td class="px-6 py-4 text-center align-middle">
+                  ${{ conversion.valorUsdActual | numberFormat }} ARS x 1 USD
+                </td>
+                <td
+                  class="px-6 py-4 text-center align-middle whitespace-nowrap"
+                >
+                  <button
+                    class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition mr-1"
+                    (click)="editarConversion(conversion)"
+                  >
+                    <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                  </button>
+                  <button
+                    class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
+                    (click)="eliminarConversion(conversion)"
+                  >
+                    <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="conversiones.length === 0" class="text-center p-4">
+            <p class="text-gray-500 text-xl">
+              No hay conversiones registradas aún.
+            </p>
+          </div>
+        </div>
+
+        <!-- Modal para Comprar Dólares -->
+        <div
+          *ngIf="isModalCompraOpen"
+          class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
+        >
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-6 text-gray-900">
+              Comprar Dólares
+            </h2>
+
+            <!-- Mostrar el dinero disponible en ARS -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="w-1/2 pr-2">
+                <div
+                  class="p-4 rounded-lg shadow-sm"
+                  [ngClass]="getSaldoRestanteClass()"
+                >
+                  <p class="text-sm font-semibold text-gray-700">
+                    Saldo restante
+                  </p>
+                  <p class="text-xl font-bold">
+                    {{ dineroRestante | numberFormat }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="w-1/2 pl-2">
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <p class="text-sm text-gray-700 font-semibold">
+                    Saldo disponible
+                  </p>
+                  <p class="text-xl font-bold text-blue-600">
+                    {{ dineroPrevio | numberFormat }}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <!-- Tasa de Conversión -->
-            <div class="mb-4">
-              <label class="block text-sm font-bold mb-2"
-                >Tasa de Conversión</label
-              >
-              <input
-                type="number"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                [(ngModel)]="tasaConversion"
-                name="tasaConversion"
-                (input)="actualizarMontoUSD()"
-                required
-              />
+            <form
+              (ngSubmit)="
+                conversionEditadaId
+                  ? guardarConversionEditada(conversionEditadaId, true)
+                  : convertirAhorro()
+              "
+            >
+              <!-- Monto en ARS -->
+              <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">Monto en ARS</label>
+                <input
+                  type="number"
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                  [(ngModel)]="montoARS"
+                  name="montoARS"
+                  (input)="actualizarMontoUSD()"
+                  required
+                />
+              </div>
+
+              <!-- Tasa de Conversión -->
+              <div class="mb-4">
+                <label class="block text-sm font-bold mb-2"
+                  >Tasa de Conversión</label
+                >
+                <input
+                  type="number"
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                  [(ngModel)]="tasaConversion"
+                  name="tasaConversion"
+                  (input)="actualizarMontoUSD()"
+                  required
+                />
+              </div>
+
+              <!-- Monto estimado en USD -->
+              <p class="text-gray-600 mb-4">
+                Monto en USD a comprar:
+                <span
+                  class="text-blue-600 font-bold"
+                  *ngIf="montoARS > 0 && tasaConversion > 0"
+                >
+                  {{ montoUSD | numberFormat }} USD
+                </span>
+                <span
+                  class="text-blue-600 font-bold"
+                  *ngIf="montoARS <= 0 || tasaConversion <= 0"
+                >
+                  0
+                </span>
+              </p>
+
+              <!-- Botones -->
+              <div class="flex justify-end mt-6">
+                <button
+                  type="button"
+                  class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 mr-3 transition-colors"
+                  (click)="cerrarModalCompra()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  [disabled]="!isCompraValida()"
+                >
+                  Comprar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal para Vender Dólares -->
+        <div
+          *ngIf="isModalVentaOpen"
+          class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
+        >
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-4">Vender Dólares</h2>
+
+            <!-- Mostrar el saldo en USD antes y después de la venta -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="w-1/2 pr-2">
+                <div
+                  class="p-4 rounded-lg shadow-sm"
+                  [ngClass]="getSaldoRestanteUSDClass()"
+                >
+                  <p class="text-sm font-semibold text-gray-700">
+                    Saldo restante
+                  </p>
+                  <p class="text-xl font-bold">
+                    {{ dineroRestanteUSD | numberFormat }}
+                  </p>
+                  <!-- Este valor reacciona dinámicamente -->
+                </div>
+              </div>
+
+              <div class="w-1/2 pl-2">
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <p class="text-sm font-semibold text-gray-700">
+                    Saldo disponible
+                  </p>
+                  <p class="text-xl font-bold text-blue-600">
+                    {{ dineroPrevioUSD | numberFormat }}
+                  </p>
+                  <!-- Este valor no cambia -->
+                </div>
+              </div>
             </div>
 
-            <!-- Monto estimado en USD -->
-            <p class="text-gray-600 mb-4">
-              Monto en USD a comprar:
-              <span
-                class="text-blue-600 font-bold"
-                *ngIf="montoARS > 0 && tasaConversion > 0"
-              >
-                {{ montoUSD | numberFormat }} USD
-              </span>
-              <span
-                class="text-blue-600 font-bold"
-                *ngIf="montoARS <= 0 || tasaConversion <= 0"
-              >
-                0
-              </span>
+            <form
+              (ngSubmit)="
+                conversionEditadaId
+                  ? guardarConversionEditada(conversionEditadaId, false)
+                  : venderAhorro()
+              "
+            >
+              <!-- Monto en USD -->
+              <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">Monto en USD</label>
+                <input
+                  type="number"
+                  class="w-full p-3 border border-gray-300 rounded"
+                  [(ngModel)]="montoUSD"
+                  name="montoUSD"
+                  (input)="actualizarMontoARS()"
+                  required
+                />
+              </div>
+
+              <!-- Tasa de conversión -->
+              <div class="mb-4">
+                <label class="block text-sm font-bold mb-2"
+                  >Tasa de Conversión</label
+                >
+                <input
+                  type="number"
+                  class="w-full p-3 border border-gray-300 rounded"
+                  [(ngModel)]="tasaConversion"
+                  name="tasaConversion"
+                  (input)="actualizarMontoARS()"
+                  required
+                />
+              </div>
+
+              <p class="text-gray-600 mb-4">
+                Monto ARS en conversión:
+                <span
+                  class="text-blue-600 font-bold"
+                  *ngIf="montoUSD > 0 && tasaConversion > 0"
+                >
+                  {{ montoARS | numberFormat }} ARS
+                </span>
+                <span
+                  class="text-blue-600 font-bold"
+                  *ngIf="montoUSD <= 0 || tasaConversion <= 0"
+                >
+                  0
+                </span>
+              </p>
+
+              <div class="flex justify-end mt-6">
+                <button
+                  type="button"
+                  class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 mr-3 transition-colors"
+                  (click)="cerrarModalVenta()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  [disabled]="!isVentaValida()"
+                >
+                  Vender
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal para Confirmar Eliminación -->
+        <div
+          *ngIf="isDeleteModalOpen"
+          class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
+        >
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-4 text-red-600">
+              Eliminar Conversión
+            </h2>
+            <p class="text-gray-700 mb-6">
+              ¿Estás seguro de que deseas eliminar esta conversión?
             </p>
 
-            <!-- Botones -->
-            <div class="flex justify-end mt-6">
+            <div class="flex justify-end space-x-4">
               <button
                 type="button"
-                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 mr-3 transition-colors"
-                (click)="cerrarModalCompra()"
+                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
+                (click)="cerrarModalEliminar()"
               >
                 Cancelar
               </button>
               <button
-                type="submit"
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-                [disabled]="!isCompraValida()"
-              >
-                Comprar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Modal para Vender Dólares -->
-      <div
-        *ngIf="isModalVentaOpen"
-        class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
-      >
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-          <h2 class="text-2xl font-bold mb-4">Vender Dólares</h2>
-
-          <!-- Mostrar el saldo en USD antes y después de la venta -->
-          <div class="flex items-center justify-between mb-6">
-            <div class="w-1/2 pr-2">
-              <div
-                class="p-4 rounded-lg shadow-sm"
-                [ngClass]="getSaldoRestanteUSDClass()"
-              >
-                <p class="text-sm font-semibold text-gray-700">
-                  Saldo restante
-                </p>
-                <p class="text-xl font-bold">
-                  {{ dineroRestanteUSD | numberFormat }}
-                </p>
-                <!-- Este valor reacciona dinámicamente -->
-              </div>
-            </div>
-
-            <div class="w-1/2 pl-2">
-              <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
-                <p class="text-sm font-semibold text-gray-700">
-                  Saldo disponible
-                </p>
-                <p class="text-xl font-bold text-blue-600">
-                  {{ dineroPrevioUSD | numberFormat }}
-                </p>
-                <!-- Este valor no cambia -->
-              </div>
-            </div>
-          </div>
-
-          <form
-            (ngSubmit)="
-              conversionEditadaId
-                ? guardarConversionEditada(conversionEditadaId, false)
-                : venderAhorro()
-            "
-          >
-            <!-- Monto en USD -->
-            <div class="mb-4">
-              <label class="block text-sm font-bold mb-2">Monto en USD</label>
-              <input
-                type="number"
-                class="w-full p-3 border border-gray-300 rounded"
-                [(ngModel)]="montoUSD"
-                name="montoUSD"
-                (input)="actualizarMontoARS()"
-                required
-              />
-            </div>
-
-            <!-- Tasa de conversión -->
-            <div class="mb-4">
-              <label class="block text-sm font-bold mb-2"
-                >Tasa de Conversión</label
-              >
-              <input
-                type="number"
-                class="w-full p-3 border border-gray-300 rounded"
-                [(ngModel)]="tasaConversion"
-                name="tasaConversion"
-                (input)="actualizarMontoARS()"
-                required
-              />
-            </div>
-
-            <p class="text-gray-600 mb-4">
-              Monto ARS en conversión:
-              <span
-                class="text-blue-600 font-bold"
-                *ngIf="montoUSD > 0 && tasaConversion > 0"
-              >
-                {{ montoARS | numberFormat }} ARS
-              </span>
-              <span
-                class="text-blue-600 font-bold"
-                *ngIf="montoUSD <= 0 || tasaConversion <= 0"
-              >
-                0
-              </span>
-            </p>
-
-            <div class="flex justify-end mt-6">
-              <button
                 type="button"
-                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 mr-3 transition-colors"
-                (click)="cerrarModalVenta()"
+                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                (click)="confirmarEliminarConversion()"
               >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-                [disabled]="!isVentaValida()"
-              >
-                Vender
+                Eliminar
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Modal para Confirmar Eliminación -->
-      <div
-        *ngIf="isDeleteModalOpen"
-        class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
-      >
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-          <h2 class="text-2xl font-bold mb-4 text-red-600">
-            Eliminar Conversión
-          </h2>
-          <p class="text-gray-700 mb-6">
-            ¿Estás seguro de que deseas eliminar esta conversión?
-          </p>
-
-          <div class="flex justify-end space-x-4">
-            <button
-              type="button"
-              class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
-              (click)="cerrarModalEliminar()"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              (click)="confirmarEliminarConversion()"
-            >
-              Eliminar
-            </button>
           </div>
         </div>
       </div>
