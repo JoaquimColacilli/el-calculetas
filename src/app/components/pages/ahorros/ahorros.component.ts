@@ -20,6 +20,7 @@ import moment from 'moment';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { MetaAhorroInterface } from '../../../interfaces/meta.ahorro.interface';
+import { AhorroApiService } from '../../../services/ahorro-api.service';
 
 registerLocaleData(localeEs, 'es');
 
@@ -83,6 +84,9 @@ export class AhorrosComponent implements OnInit {
 
   public allConversiones: AhorroInterface[] = [];
 
+  quote: string = '';
+  author: string = '';
+
   public isMetaModalOpen: boolean = false;
   public conversionAEliminar: AhorroInterface | null = null;
   salaryDetails: Array<{
@@ -98,7 +102,7 @@ export class AhorrosComponent implements OnInit {
     private ahorrosService: AhorrosService,
     private financeService: FinanceService,
     private sueldoService: SueldoService,
-    private dialog: MatDialog
+    private ahorroApiService: AhorroApiService
   ) {
     library.addIconPacks(fas);
   }
@@ -112,6 +116,48 @@ export class AhorrosComponent implements OnInit {
     this.calculateDineroRestanteUsd();
     this.calcularTotales();
     this.loadMetaAhorroPorMes(this.currentMonth);
+    this.obtenerYTraducirCita();
+  }
+
+  obtenerYTraducirCita() {
+    this.ahorroApiService.getQuote('money').subscribe(
+      (response: any) => {
+        if (response.length > 0) {
+          const originalQuote = response[0].quote;
+          console.log(originalQuote);
+          this.author = response[0].author;
+
+          this.ahorroApiService.translateText(originalQuote, 'ES').subscribe(
+            (translateResponse: any) => {
+              if (
+                translateResponse.translations &&
+                translateResponse.translations.length > 0
+              ) {
+                this.quote = translateResponse.translations[0].text;
+              } else {
+                this.quote = originalQuote;
+              }
+              console.log('Cita traducida:', this.quote);
+            },
+            (error) => {
+              console.error('Error al traducir la cita:', error);
+              this.quote = originalQuote;
+            }
+          );
+        } else {
+          console.error('No se encontraron citas en la respuesta.');
+        }
+
+        console.log('Autor:', this.author);
+      },
+      (error) => {
+        console.error('Error al obtener la cita:', error);
+      }
+    );
+  }
+
+  reloadQuote() {
+    this.obtenerYTraducirCita();
   }
 
   loadSalaries(): void {
