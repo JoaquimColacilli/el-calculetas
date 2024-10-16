@@ -16,6 +16,8 @@ import { AuthService } from '../services/auth.service';
 import { switchMap, catchError, map } from 'rxjs/operators';
 import { deleteDoc, DocumentReference } from 'firebase/firestore';
 import moment from 'moment';
+import { where, limit } from 'firebase/firestore';
+import { MetaAhorroInterface } from '../interfaces/meta.ahorro.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -135,6 +137,124 @@ export class AhorrosService {
         return throwError(
           () => new Error('Error al filtrar los ahorros por mes')
         );
+      })
+    );
+  }
+
+  getMetaAhorroPorMes(month: string): Observable<MetaAhorroInterface | null> {
+    return this.authService.getUserData().pipe(
+      switchMap((userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const metasCollection = collection(
+          this.firestore,
+          `users/${uid}/metas`
+        );
+        const metaQuery = query(
+          metasCollection,
+          where('month', '==', month),
+          limit(1)
+        );
+        return collectionData(metaQuery, { idField: 'id' }).pipe(
+          map((metas: any) =>
+            metas.length > 0 ? (metas[0] as MetaAhorroInterface) : null
+          )
+        );
+      }),
+      catchError((error) => {
+        console.error('Error al obtener la meta:', error);
+        return throwError(() => new Error('No se pudo obtener la meta'));
+      })
+    );
+  }
+
+  // Agregar una nueva meta
+  addMetaAhorro(meta: MetaAhorroInterface): Observable<DocumentReference> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const metasCollection = collection(
+          this.firestore,
+          `users/${uid}/metas`
+        );
+        const docRef = await addDoc(metasCollection, meta);
+        return docRef;
+      }),
+      catchError((error) => {
+        console.error('Error al agregar la meta:', error);
+        return throwError(() => new Error('No se pudo agregar la meta'));
+      })
+    );
+  }
+
+  // Actualizar una meta existente
+  updateMetaAhorro(
+    id: string,
+    meta: Partial<MetaAhorroInterface>
+  ): Observable<void> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const metaDocRef = doc(this.firestore, `users/${uid}/metas/${id}`);
+        await updateDoc(metaDocRef, meta);
+        return;
+      }),
+      catchError((error) => {
+        console.error('Error al actualizar la meta:', error);
+        return throwError(() => new Error('No se pudo actualizar la meta'));
+      })
+    );
+  }
+
+  // Eliminar una meta
+  deleteMetaAhorro(id: string): Observable<void> {
+    return this.authService.getUserData().pipe(
+      switchMap(async (userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const metaDocRef = doc(this.firestore, `users/${uid}/metas/${id}`);
+        await deleteDoc(metaDocRef);
+        return;
+      }),
+      catchError((error) => {
+        console.error('Error al eliminar la meta:', error);
+        return throwError(() => new Error('No se pudo eliminar la meta'));
+      })
+    );
+  }
+
+  getAllAhorros(): Observable<AhorroInterface[]> {
+    return this.authService.getUserData().pipe(
+      switchMap((userData) => {
+        const uid = userData?.uid;
+        if (!uid) {
+          throw new Error('Usuario no autenticado');
+        }
+        const ahorrosCollection = collection(
+          this.firestore,
+          `users/${uid}/ahorros`
+        );
+        const ahorrosQuery = query(
+          ahorrosCollection,
+          orderBy('timestamp', 'asc') // Ordenar ascendentemente por fecha
+        );
+        return collectionData(ahorrosQuery, { idField: 'id' }) as Observable<
+          AhorroInterface[]
+        >;
+      }),
+      catchError((error) => {
+        console.error('Error al obtener todos los ahorros:', error);
+        return throwError(() => new Error('No se pudo obtener los ahorros'));
       })
     );
   }

@@ -19,6 +19,7 @@ import Swal from 'sweetalert2';
 import moment from 'moment';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
+import { MetaAhorroInterface } from '../../../interfaces/meta.ahorro.interface';
 
 registerLocaleData(localeEs, 'es');
 
@@ -57,7 +58,6 @@ export class AhorrosComponent implements OnInit {
   public conversiones: AhorroInterface[] = [];
   public totalAhorrosUSD: number = 0;
   public ahorrosDelMes: number = 0;
-  public metaAhorro: number = 10;
   public totalIngresos: number = 0;
   public totalIngresosUSD: number = 0;
   public dineroRestante: number = 0;
@@ -76,6 +76,14 @@ export class AhorrosComponent implements OnInit {
   public conversionEditadaId: string | null = null;
   currentMonth: string = moment().format('MMMM, YYYY');
 
+  public metaAhorro: number | null = null;
+  public metaAhorroId: string | null = null;
+
+  public isDeleteMetaModalOpen: boolean = false;
+
+  public allConversiones: AhorroInterface[] = [];
+
+  public isMetaModalOpen: boolean = false;
   public conversionAEliminar: AhorroInterface | null = null;
   salaryDetails: Array<{
     amount: number;
@@ -96,12 +104,14 @@ export class AhorrosComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadAllAhorros();
     this.loadSalaries();
     this.loadAhorrosPorMes(this.currentMonth);
     this.loadExpenses();
     this.calculateDineroRestante();
     this.calculateDineroRestanteUsd();
     this.calcularTotales();
+    this.loadMetaAhorroPorMes(this.currentMonth);
   }
 
   loadSalaries(): void {
@@ -132,6 +142,23 @@ export class AhorrosComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar los sueldos desde Firebase:', error);
+      },
+    });
+  }
+
+  loadMetaAhorroPorMes(month: string): void {
+    this.ahorrosService.getMetaAhorroPorMes(month).subscribe({
+      next: (meta) => {
+        if (meta) {
+          this.metaAhorro = meta.value;
+          this.metaAhorroId = meta.id || null;
+        } else {
+          this.metaAhorro = null;
+          this.metaAhorroId = null;
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar la meta de ahorro:', error);
       },
     });
   }
@@ -217,20 +244,15 @@ export class AhorrosComponent implements OnInit {
   }
 
   calcularTotales(): void {
-    this.totalAhorrosUSD = this.conversiones.reduce(
-      (acc, ahorro) => acc + ahorro.montoUsd,
-      0
-    );
-    this.ahorrosDelMes = this.conversiones
-      .filter((ahorro) => {
-        const ahorroDate = new Date(ahorro.timestamp);
-        const currentDate = new Date();
-        return (
-          ahorroDate.getMonth() === currentDate.getMonth() &&
-          ahorroDate.getFullYear() === currentDate.getFullYear()
-        );
-      })
-      .reduce((acc, ahorro) => acc + ahorro.montoUsd, 0);
+    // Total acumulado de ahorros en USD (todas las conversiones)
+    this.totalAhorrosUSD = this.allConversiones.reduce((acc, ahorro) => {
+      return acc + (ahorro.montoUsd || 0);
+    }, 0);
+
+    // Total de ahorros del mes seleccionado
+    this.ahorrosDelMes = this.conversiones.reduce((acc, ahorro) => {
+      return acc + (ahorro.montoUsd || 0);
+    }, 0);
   }
 
   loadExpenses(): void {
@@ -246,7 +268,7 @@ export class AhorrosComponent implements OnInit {
         });
         this.calculateDineroRestante();
         this.calculateDineroRestanteUsd();
-
+        this.calcularTotales();
         this.isLoadingData = false;
       },
       error: (error: any) => {
@@ -256,8 +278,36 @@ export class AhorrosComponent implements OnInit {
     });
   }
 
+  loadAllAhorros(): void {
+    this.isLoadingData = true;
+    this.ahorrosService.getAllAhorros().subscribe({
+      next: (ahorros) => {
+        this.allConversiones = ahorros;
+        this.calcularTotales();
+        this.isLoadingData = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar todos los ahorros:', error);
+        this.isLoadingData = false;
+      },
+    });
+  }
+
+  abrirModalMeta(): void {
+    this.isMetaModalOpen = true;
+  }
+
+  cerrarModalMeta(): void {
+    this.isMetaModalOpen = false;
+  }
+
   calcularPorcentajeAhorro(): number {
-    return (this.totalAhorrosUSD / this.metaAhorro) * 100;
+    if (!this.metaAhorro || this.metaAhorro === 0) {
+      return 0;
+    }
+    return parseFloat(
+      ((this.totalAhorrosUSD / this.metaAhorro) * 100).toFixed(2)
+    );
   }
 
   abrirModalCompra(): void {
@@ -547,17 +597,97 @@ export class AhorrosComponent implements OnInit {
     );
     this.currentMonth = newDate.format('MMMM, YYYY');
     this.loadAhorrosPorMes(this.currentMonth);
+    this.loadMetaAhorroPorMes(this.currentMonth); // Agrega esta línea
   }
 
   nextMonth() {
     const newDate = moment(this.currentMonth, 'MMMM, YYYY').add(1, 'months');
     this.currentMonth = newDate.format('MMMM, YYYY');
     this.loadAhorrosPorMes(this.currentMonth);
+    this.loadMetaAhorroPorMes(this.currentMonth); // Agrega esta línea
   }
 
   translateMonthToSpanish(month: string): string {
     const [englishMonth, year] = month.split(', ');
     const spanishMonth = monthTranslations[englishMonth];
     return `${spanishMonth}, ${year}`;
+  }
+
+  guardarMetaAhorro(): void {
+    if (this.metaAhorro != null) {
+      if (this.metaAhorroId) {
+        // Actualizar meta existente
+        this.ahorrosService
+          .updateMetaAhorro(this.metaAhorroId, { value: this.metaAhorro! })
+          .subscribe({
+            next: () => {
+              Swal.fire('Éxito', 'Meta actualizada correctamente', 'success');
+              this.cerrarModalMeta();
+            },
+            error: (error) => {
+              console.error('Error al actualizar la meta:', error);
+              Swal.fire('Error', 'No se pudo actualizar la meta', 'error');
+            },
+          });
+      } else {
+        // Agregar nueva meta
+        const nuevaMeta: MetaAhorroInterface = {
+          month: this.currentMonth,
+          value: this.metaAhorro!,
+        };
+        this.ahorrosService.addMetaAhorro(nuevaMeta).subscribe({
+          next: (docRef) => {
+            this.metaAhorroId = docRef.id; // Asignar el ID de la meta guardada
+            Swal.fire('Éxito', 'Meta guardada correctamente', 'success');
+            this.cerrarModalMeta();
+          },
+          error: (error) => {
+            console.error('Error al guardar la meta:', error);
+            Swal.fire('Error', 'No se pudo guardar la meta', 'error');
+          },
+        });
+      }
+    }
+  }
+
+  eliminarMetaAhorro(): void {
+    if (this.metaAhorroId) {
+      this.ahorrosService.deleteMetaAhorro(this.metaAhorroId).subscribe({
+        next: () => {
+          Swal.fire('Éxito', 'Meta eliminada correctamente', 'success');
+          this.metaAhorro = null;
+          this.metaAhorroId = null; // Restablecer metaAhorroId
+        },
+        error: (error) => {
+          console.error('Error al eliminar la meta:', error);
+          Swal.fire('Error', 'No se pudo eliminar la meta', 'error');
+        },
+      });
+    }
+  }
+
+  abrirModalEliminarMeta(): void {
+    this.isDeleteMetaModalOpen = true;
+  }
+
+  cerrarModalEliminarMeta(): void {
+    this.isDeleteMetaModalOpen = false;
+  }
+
+  confirmarEliminarMetaAhorro(): void {
+    if (this.metaAhorroId) {
+      this.ahorrosService.deleteMetaAhorro(this.metaAhorroId).subscribe({
+        next: () => {
+          Swal.fire('Éxito', 'Meta eliminada correctamente', 'success');
+          this.metaAhorro = null;
+          this.metaAhorroId = null;
+          this.isDeleteMetaModalOpen = false;
+        },
+        error: (error) => {
+          console.error('Error al eliminar la meta:', error);
+          Swal.fire('Error', 'No se pudo eliminar la meta', 'error');
+        },
+      });
+    }
   }
 }

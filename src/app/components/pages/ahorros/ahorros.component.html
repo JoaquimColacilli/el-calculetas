@@ -8,42 +8,76 @@
       </div>
       <div class="p-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div class="bg-white shadow-md rounded-lg p-4">
-            <h2 class="text-xl font-semibold text-gray-800">Ahorros Totales</h2>
-            <div class="text-gray-600 mt-2">
-              <p>
+          <!-- Ahorros Totales -->
+          <div
+            class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow-lg p-4 flex flex-col justify-center"
+          >
+            <div class="flex items-center">
+              <div class="mr-4">
+                <svg
+                  class="h-10 w-10 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 26 26"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6 0a9 9 0 11-6.219-8.789"
+                  />
+                </svg>
+              </div>
+              <h2 class="text-xl font-bold">Ahorros Totales</h2>
+            </div>
+            <div class="mt-4">
+              <p class="text-lg">
+                Ahorros del Mes:
+                <span class="font-extrabold text-white">{{
+                  ahorrosDelMes | currency : "USD"
+                }}</span>
+              </p>
+              <p class="mt-2 text-lg">
                 Total USD:
-                <span class="font-bold text-green-600">{{
+                <span class="font-extrabold text-white">{{
                   totalAhorrosUSD | currency : "USD"
                 }}</span>
               </p>
             </div>
-            <p class="mt-1 text-gray-500">
-              Ahorros del Mes:
-              <span class="font-bold text-indigo-600">{{
-                ahorrosDelMes | currency : "USD"
-              }}</span>
-            </p>
           </div>
 
-          <!-- PORCENTAJE -->
-
+          <!-- Progreso de Ahorros -->
           <div
-            class="relative bg-gray-100 shadow-lg rounded-lg p-6 overflow-hidden"
+            *ngIf="metaAhorroId; else sinMeta"
+            class="relative bg-gray-100 shadow-lg rounded-lg p-4 overflow-hidden"
           >
+            <div class="absolute top-2 right-2 flex space-x-2 z-10">
+              <button
+                (click)="abrirModalMeta()"
+                class="text-gray-600 hover:text-gray-800"
+                title="Editar Meta"
+              >
+                <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+              </button>
+              <!-- Botón de Eliminar Meta -->
+              <button
+                (click)="abrirModalEliminarMeta()"
+                class="text-gray-600 hover:text-gray-800"
+                title="Eliminar Meta"
+              >
+                <fa-icon [icon]="['fas', 'trash']"></fa-icon>
+              </button>
+            </div>
             <div
               class="absolute inset-0 animate-gradient bg-gradient-to-r"
               [ngClass]="{
-                'from-green-400 to-green-200': calcularPorcentajeAhorro() >= 75,
-                'from-yellow-400 to-yellow-200':
-                  calcularPorcentajeAhorro() >= 25 &&
-                  calcularPorcentajeAhorro() < 75,
-                'from-red-400 to-red-200': calcularPorcentajeAhorro() < 25
+                'from-blue-500 to-purple-500': true
               }"
               [style.opacity]="0.7 + calcularPorcentajeAhorro() / 200"
             ></div>
 
-            <div class="relative text-center mb-4">
+            <div class="relative text-center mb-2">
               <p class="text-xl font-semibold text-gray-900">
                 Progreso de Ahorros
               </p>
@@ -51,7 +85,7 @@
 
             <div class="relative flex flex-col items-center">
               <div
-                class="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-white shadow-md mb-4 relative overflow-hidden"
+                class="w-24 h-24 rounded-full border-4 border-white flex items-center justify-center bg-white shadow-md mb-2 relative overflow-hidden"
               >
                 <!-- Olas aquí -->
                 <div
@@ -64,73 +98,108 @@
                 ></div>
 
                 <!-- Texto del porcentaje -->
-                <span class="text-2xl font-bold text-gray-800 relative">
+                <span class="text-xl font-bold text-gray-800 relative">
                   {{ calcularPorcentajeAhorro() }}%
                 </span>
               </div>
 
               <div
-                class="flex justify-between items-center max-w-xs p-3 rounded-lg shadow bg-gray-50"
+                class="flex justify-between items-center max-w-xs p-2 rounded-lg shadow bg-gray-50"
               >
                 <div
-                  class="flex-1 text-gray-700 text-sm font-medium text-center border-r border-gray-300 pr-4"
+                  class="flex-1 text-gray-700 text-sm font-medium text-center border-r border-gray-300 pr-2"
                 >
-                  <p class="mb-2">
-                    <span class="inline-block w-24">Meta</span>
+                  <p class="mb-1">
+                    <span class="inline-block w-20">Meta</span>
                   </p>
-                  <p class="font-bold text-lg">${{ metaAhorro }}</p>
+                  <p class="font-bold text-base">${{ metaAhorro }}</p>
                 </div>
                 <div
-                  class="flex-1 text-gray-700 text-sm font-medium text-center pl-4"
+                  class="flex-1 text-gray-700 text-sm font-medium text-center pl-2"
                 >
-                  <p class="mb-2">
-                    <span class="inline-block w-24">Alcanzado</span>
+                  <p class="mb-1">
+                    <span class="inline-block w-20">Alcanzado</span>
                   </p>
-                  <p class="font-bold text-lg">${{ totalAhorrosUSD }}</p>
+                  <p class="font-bold text-base">${{ totalAhorrosUSD }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- CONSEJO -->
-
-          <div
-            class="bg-white shadow-md rounded-lg p-4 flex flex-col justify-between"
-          >
-            <div class="flex items-start mb-2">
-              <div
-                class="bg-yellow-500 rounded-full w-8 h-8 flex items-center justify-center mr-2"
-              >
-                <fa-icon
-                  [icon]="['fas', 'lightbulb']"
-                  class="text-white"
-                ></fa-icon>
+          <!-- Si no hay Meta -->
+          <ng-template #sinMeta>
+            <div
+              class="bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg rounded-lg p-6 text-center flex flex-col justify-center"
+            >
+              <div class="mb-4">
+                <svg
+                  class="mx-auto h-12 w-12 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v5h3l-4 4-4-4h3V7z"
+                  />
+                </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-800">
-                Consejo del Día
-              </h3>
-            </div>
-            <blockquote class="text-gray-800 font-medium text-sm">
-              <p>
-                <span class="text-xl text-yellow-500 leading-none pr-1">“</span>
-                Porque raíz de todos los males es el amor al dinero, el cual
-                codiciando algunos, se extraviaron de la fe, y fueron
-                traspasados de muchos dolores.
-                <span class="text-xl text-yellow-500 leading-none pl-1">”</span>
+              <h2 class="text-xl font-bold mb-2">
+                ¡Establecé una Meta de Ahorro!
+              </h2>
+              <p class="mb-4 text-base">
+                Aún no estableciste una meta para este mes. ¡Comenzá ahora para
+                seguir tu progreso!
               </p>
-            </blockquote>
-            <p class="text-right text-gray-600 mt-2 text-sm font-medium">
-              — 1 Timoteo 6:10
-            </p>
+              <button
+                (click)="abrirModalMeta()"
+                class="px-4 py-2 bg-white text-purple-600 font-semibold rounded-full hover:bg-gray-100 transition"
+              >
+                Ingresar Meta
+              </button>
+            </div>
+          </ng-template>
+
+          <!-- Consejo del Día -->
+          <div
+            class="relative bg-gradient-to-r from-purple-500 to-teal-500 rounded-lg shadow-lg overflow-hidden flex flex-col justify-center p-4"
+          >
+            <div class="relative">
+              <div class="flex items-center mb-2">
+                <div
+                  class="bg-green-600 rounded-full w-8 h-8 flex items-center justify-center mr-2"
+                >
+                  <fa-icon
+                    [icon]="['fas', 'chart-line']"
+                    class="text-white"
+                  ></fa-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-white">
+                  Consejo Financiero
+                </h3>
+              </div>
+              <blockquote class="text-white italic text-sm">
+                <p>
+                  <span class="text-2xl text-white leading-none pr-1">“</span>
+                  El ahorro es el primer paso hacia la libertad financiera.
+                  Comienza hoy mismo a construir tu futuro.
+                  <span class="text-2xl text-white leading-none pl-1">”</span>
+                </p>
+              </blockquote>
+              <p class="text-right text-white mt-2 text-xs font-medium">
+                — Autor Desconocido
+              </p>
+            </div>
           </div>
         </div>
+
+        <!-- Navegación de Meses -->
         <div class="flex justify-between items-center mb-8">
           <fa-icon
             [icon]="['fas', 'chevron-left']"
             (click)="previousMonth()"
             class="cursor-pointer fa-2x"
           ></fa-icon>
-          <h1 class="text-4xl font-bold">
+          <h1 class="text-2xl font-bold">
             {{ translateMonthToSpanish(currentMonth) }}
           </h1>
           <fa-icon
@@ -481,6 +550,76 @@
                 type="button"
                 class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                 (click)="confirmarEliminarConversion()"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          *ngIf="isMetaModalOpen"
+          class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
+        >
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-4">
+              {{ metaAhorroId ? "Editar Meta" : "Ingresar Meta" }}
+            </h2>
+            <form (ngSubmit)="guardarMetaAhorro()">
+              <div class="mb-4">
+                <label class="block text-sm font-bold mb-2"
+                  >Meta de Ahorro en USD</label
+                >
+                <input
+                  type="number"
+                  [(ngModel)]="metaAhorro"
+                  name="metaAhorro"
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none"
+                  required
+                />
+              </div>
+              <div class="flex justify-end">
+                <button
+                  type="button"
+                  (click)="cerrarModalMeta()"
+                  class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 mr-3"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal para Confirmar Eliminación de Meta -->
+        <div
+          *ngIf="isDeleteMetaModalOpen"
+          class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-4 text-red-600">Eliminar Meta</h2>
+            <p class="text-gray-700 mb-6">
+              ¿Estás seguro de que deseas eliminar tu meta de ahorro para este
+              mes?
+            </p>
+            <div class="flex justify-end space-x-4">
+              <button
+                type="button"
+                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
+                (click)="cerrarModalEliminarMeta()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                (click)="confirmarEliminarMetaAhorro()"
               >
                 Eliminar
               </button>
