@@ -14,7 +14,7 @@ export class AhorroApiService {
 
   constructor(private http: HttpClient) {}
 
-  getQuote(category: string = 'business'): Observable<any> {
+  getQuote(category: string = 'businessgi'): Observable<any> {
     const url = `${this.apiUrl}?category=${category}`;
     const headers = new HttpHeaders().set('X-Api-Key', this.apiKey);
     return this.http.get(url, { headers });

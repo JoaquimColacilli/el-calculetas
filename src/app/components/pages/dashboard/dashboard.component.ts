@@ -530,6 +530,7 @@ export class DashboardComponent implements OnInit {
 
         // Ordenar según el criterio seleccionado
         this.sortExpenses(this.selectedSortCriteria);
+        this.createEmptyExpense();
 
         this.updateExpensesStatus();
         this.isLoadingData = false;
@@ -767,7 +768,9 @@ export class DashboardComponent implements OnInit {
           .subscribe({
             next: () => {
               console.log('Gasto actualizado exitosamente');
-              this.loadExpenses(); // Recargar los gastos
+              this.createEmptyExpense();
+
+              this.loadExpenses();
             },
             error: (error) => {
               console.error('Error al actualizar el gasto:', error);
@@ -795,6 +798,7 @@ export class DashboardComponent implements OnInit {
       this.cancelAddingExpense();
       this.toggleTodayDate();
       this.loadExpenses(); // Recargar los gastos
+      this.createEmptyExpense();
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
     }
