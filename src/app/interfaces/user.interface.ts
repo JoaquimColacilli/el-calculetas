@@ -5,4 +5,5 @@ export interface UserInterface {
   profilePicture?: string;
   providerId?: string;
   ubicacion?: string;
+  isFirstTime?: boolean;
 }

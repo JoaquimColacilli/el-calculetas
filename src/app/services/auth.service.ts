@@ -118,13 +118,12 @@ export class AuthService {
               email: response.user.email,
               username: response.user.displayName || username,
               profilePicture: '',
+              isFirstTime: false,
             });
-            // Crear la colección de categorías por defecto para el usuario
             const categoriesCollection = collection(
               this.firestore,
               `users/${response.user.uid}/categories`
             );
-            // Añadir categorías por defecto
             for (const category of DefaultCategories) {
               await addDoc(categoriesCollection, category);
             }
@@ -186,7 +185,9 @@ export class AuthService {
             email: response.user.email,
             username: response.user.displayName || '',
             profilePicture: response.user.photoURL || '',
+            isFirstTime: false,
           });
+
           const categoriesCollection = collection(
             this.firestore,
             `users/${response.user.uid}/categories`

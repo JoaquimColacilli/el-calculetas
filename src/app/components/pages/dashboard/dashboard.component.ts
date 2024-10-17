@@ -84,6 +84,7 @@ import { AhorroInterface } from '../../../interfaces/ahorro.interface';
 import { AhorrosService } from '../../../services/ahorros.service';
 
 import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
+import { UserInterface } from '../../../interfaces/user.interface';
 
 @Component({
   selector: 'app-dashboard',
@@ -210,6 +211,11 @@ export class DashboardComponent implements OnInit {
   numCuotas: number = 1;
   cuotasArray: number[] = Array.from({ length: 23 }, (_, i) => i + 2);
   selectedExpenses: FinanceInterface[] = [];
+
+  currentUser: UserInterface | null = null;
+
+  isWelcomeModal: boolean = false;
+
   public conversiones: AhorroInterface[] = [];
 
   constructor(
@@ -238,12 +244,19 @@ export class DashboardComponent implements OnInit {
         if (user) {
           // Solo carga los datos cuando hay un usuario autenticado
           this.loadUserData();
+
           this.loadInitialData();
 
           const userUid = user.uid;
 
           this.authService.getUserByUid(userUid).subscribe({
             next: (userData: any) => {
+              this.currentUser = userData;
+
+              if (this.currentUser?.isFirstTime === false) {
+                this.showWelcomeModal();
+              }
+
               if (userData && userData.ubicacion) {
                 this.userLocation = userData.ubicacion;
                 this.getWeatherData();
@@ -309,6 +322,24 @@ export class DashboardComponent implements OnInit {
     this.loadAhorros();
 
     registerLocaleData(localeEs, 'es-ES');
+  }
+
+  showWelcomeModal() {
+    this.isWelcomeModal = true;
+    if (this.currentUser && this.currentUser.uid) {
+      this.authService
+        .updateUserProfile(this.currentUser.uid, { isFirstTime: true })
+        .then(() => {
+          console.log('isFirstTime actualizado a true');
+        })
+        .catch((error) => {
+          console.error('Error al actualizar isFirstTime:', error);
+        });
+    }
+  }
+
+  closeModal() {
+    this.isWelcomeModal = false;
   }
 
   descargarExcel(): void {
