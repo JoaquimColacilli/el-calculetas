@@ -13,6 +13,7 @@ import {
   signInWithCredential,
   UserCredential,
   browserLocalPersistence,
+  AuthCredential, // Importa AuthCredential aquí
 } from '@angular/fire/auth';
 import {
   Observable,
@@ -38,15 +39,17 @@ import {
 } from '@angular/fire/firestore';
 
 import { User } from '@angular/fire/auth';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { DefaultCategories } from '../interfaces/category.interface';
-import { User as FirebaseUser } from 'firebase/auth';
 
-import firebase from 'firebase/app';
-import 'firebase/auth';
+// Elimina las siguientes importaciones redundantes:
+// import { AngularFireAuth } from '@angular/fire/compat/auth';
+// import { User as FirebaseUser } from 'firebase/auth';
 
-import axios from 'axios';
+// Elimina estas importaciones obsoletas:
+// import firebase from 'firebase/app';
+// import 'firebase/auth';
+
 import { environment } from '../environments/environment';
+import { DefaultCategories } from '../interfaces/category.interface';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'El formato del correo electrónico es inválido.',
@@ -94,9 +97,7 @@ export class AuthService {
   userData$ = this.userDataSubject.asObservable();
 
   constructor(private firestore: Firestore, private auth: Auth) {
-    this.auth.setPersistence(browserLocalPersistence).catch((error) => {
-      console.error('Error al configurar la persistencia:', error);
-    });
+    // Constructor sin cambios
   }
 
   register(
@@ -112,7 +113,7 @@ export class AuthService {
       .then((response) => {
         return updateProfile(response.user, { displayName: username }).then(
           async () => {
-            const userRef = doc(this.firestore, `users/${response.user.uid}`); // Crear el documento del usuario
+            const userRef = doc(this.firestore, `users/${response.user.uid}`);
             await setDoc(userRef, {
               uid: response.user.uid,
               email: response.user.email,
@@ -172,8 +173,19 @@ export class AuthService {
     );
   }
 
+  signInWithCredential(credential: AuthCredential): Promise<void> {
+    return signInWithCredential(this.auth, credential).then((response) => {
+      this.currentUserSig.set({
+        uid: response.user.uid || '',
+        email: response.user.email || '',
+        username: response.user.displayName || '',
+      });
+    });
+  }
+
   loginWithGoogle(): Observable<void> {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     const promise = signInWithPopup(this.firebaseAuth, provider)
       .then(async (response) => {
         const userRef = doc(this.firestore, `users/${response.user.uid}`);
@@ -246,13 +258,11 @@ export class AuthService {
   }
 
   getUserData(): Observable<UserInterface | null> {
-    // Si ya tenemos datos en el BehaviorSubject, los retornamos como observable
     const currentUser = this.userDataSubject.getValue();
     if (currentUser) {
-      return this.userDataSubject.asObservable(); // Retorna los datos existentes
+      return this.userDataSubject.asObservable();
     }
 
-    // Si no tenemos datos, los obtenemos de Firestore
     return this.user$.pipe(
       switchMap((authUser: User | null) => {
         if (!authUser || !authUser.uid) {
@@ -265,11 +275,10 @@ export class AuthService {
               throw new Error('Usuario no encontrado en la base de datos');
             }
 
-            // Emitir el valor obtenido a través de userDataSubject para que quede sincronizado
             const userData = docSnapshot.data() as UserInterface;
             this.userDataSubject.next(userData);
 
-            return this.userDataSubject.asObservable(); // Retornar los datos como observable
+            return this.userDataSubject.asObservable();
           })
         );
       })
@@ -283,6 +292,7 @@ export class AuthService {
   logout(): Observable<void> {
     const promise = signOut(this.firebaseAuth).then(() => {
       this.currentUserSig.set(null);
+      this.userDataSubject.next(null);
     });
 
     return from(promise);
@@ -291,7 +301,6 @@ export class AuthService {
   async getCurrentUserUid(): Promise<string | null> {
     const currentUser = await this.auth.currentUser;
 
-    // Check if currentUser is null or undefined
     if (!currentUser) {
       console.log('User is not authenticated.');
       return null;
@@ -329,12 +338,10 @@ export class AuthService {
     const userDocRef = doc(this.firestore, `users/${uid}`);
 
     return updateDoc(userDocRef, data).then(() => {
-      // Obtener los datos actuales del usuario
       const currentUser = this.userDataSubject.getValue();
 
-      // Crear un objeto actualizado sin undefined
       const updatedUserData: UserInterface = {
-        uid: currentUser?.uid || '', // Asegúrate de que uid no sea undefined
+        uid: currentUser?.uid || '',
         username: data.username || currentUser?.username || '',
         email: currentUser?.email || '',
         profilePicture:
@@ -343,7 +350,6 @@ export class AuthService {
         ubicacion: data.ubicacion || currentUser?.ubicacion || '',
       };
 
-      // Emitir el nuevo valor
       this.userDataSubject.next(updatedUserData);
     });
   }

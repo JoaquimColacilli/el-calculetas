@@ -246,34 +246,12 @@ export class DashboardComponent implements OnInit {
     this.authService.user$.subscribe({
       next: (user: any) => {
         if (user) {
-          // Solo carga los datos cuando hay un usuario autenticado
-          this.loadUserData();
+          // Reiniciar datos y mostrar el spinner
+          this.resetData();
+          this.isLoadingData = true;
 
-          this.loadInitialData();
-
-          const userUid = user.uid;
-
-          this.authService.getUserByUid(userUid).subscribe({
-            next: (userData: any) => {
-              this.currentUser = userData;
-              if (this.currentUser?.isFirstTime === false) {
-                this.showWelcomeModal();
-              }
-
-              if (userData && userData.ubicacion) {
-                this.userLocation = userData.ubicacion;
-                this.getWeatherData();
-              } else {
-                console.log('Ubicación no configurada en el perfil');
-              }
-            },
-            error: (error: any) => {
-              console.error(
-                'Error obteniendo datos del usuario desde Firestore:',
-                error
-              );
-            },
-          });
+          // Cargar datos para el usuario autenticado
+          this.loadInitialData(user.uid);
         } else {
           // Redirigir al login si no hay usuario
           this.router.navigate(['/login']);
@@ -286,45 +264,75 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Mover la carga de datos iniciales a un método separado
-  loadInitialData(): void {
-    this.calculateTotals();
+  private resetData(): void {
+    // Reiniciar todos los datos específicos del usuario
+    this.financeItems = [];
+    this.userData = null;
+    this.totalAmount = 0;
+    this.totalVencidos = 0;
+    this.totalPagados = 0;
+    this.totalPorPagar = 0;
+    this.vencidosCount = 0;
+    this.pagadosCount = 0;
+    this.porPagarCount = 0;
+    this.sueldoIngresado = 0;
+    this.dineroRestante = 0;
+    this.dineroRestanteUSD = 0;
+    this.totalIngresos = 0;
+    this.categories = [];
+    this.weatherData = null;
+    this.isDay = false;
+    this.isNight = false;
+    this.cardsWithDate = [];
+    this.salaryDetails = [];
+    this.conversiones = [];
+    this.currentUser = null;
+    // Reiniciar cualquier otro dato específico del usuario
 
-    this.calculateCounts();
-    this.calculateDayOrNight();
+    // Cancelar intervalos o subscripciones si es necesario
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
 
-    this.loadDollarRates();
+  async loadInitialData(userUid: string): Promise<void> {
+    try {
+      // Cargar datos del usuario
+      await this.loadUserData(userUid);
 
-    this.updateDateTime();
-    this.intervalId = setInterval(() => this.updateDateTime(), 1000);
+      // Cargar otros datos necesarios
+      await Promise.all([
+        this.loadExpenses(),
+        this.loadSalaries(),
+        this.loadUserCategories(),
+        this.loadUserCards(),
+        this.loadAhorros(),
+        // Agrega aquí otros métodos de carga de datos si es necesario
+      ]);
 
-    this.checkAndUpdateExpensesStatus();
-    setInterval(() => {
-      this.checkAndUpdateExpensesStatus();
-    }, 24 * 60 * 60 * 1000);
+      // Realizar cálculos y actualizaciones después de cargar los datos
+      this.calculateTotals();
+      this.calculateCounts();
+      this.calculateDineroRestante();
+      this.calculateDineroRestanteUsd();
+      this.sortFinanceItems();
+      this.updateGroupedExpenses();
 
-    this.setTodayDate();
+      // Cargar datos no específicos del usuario
+      this.loadDollarRates();
+      this.updateDateTime();
+      this.intervalId = setInterval(() => this.updateDateTime(), 1000);
+      this.setTodayDate();
+      this.calculateDayOrNight();
 
-    this.sortFinanceItems();
-    this.updateGroupedExpenses();
-
-    this.loadSalaries();
-
-    this.loadExpenses();
-
-    this.loadUserCategories();
-
-    this.resetSalariesIfNeeded();
-
-    this.loadUserCards();
-
-    this.getCriteriasFromLs();
-
-    this.checkForMonthlySummary();
-
-    this.loadAhorros();
-
-    registerLocaleData(localeEs, 'es-ES');
+      // Después de cargar todos los datos, ocultar el spinner
+      this.isLoadingData = false;
+    } catch (error) {
+      console.error('Error al cargar los datos iniciales:', error);
+      // Manejar el error según sea necesario
+      this.isLoadingData = false;
+    }
   }
 
   checkPendingExpensesWithoutCardDates(): void {
@@ -1846,20 +1854,31 @@ export class DashboardComponent implements OnInit {
     this.calculateDineroRestante();
   }
 
-  loadUserData(): void {
-    this.authService.getUserData().subscribe({
-      next: (data: any) => {
-        this.userData = data;
-        this.saldoAcumulado = data.saldoAcumulado || 0;
-        this.saldoAcumuladoUsd = data.saldoAcumuladoUsd || 0;
+  loadUserData(userUid: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.authService.getUserByUid(userUid).subscribe({
+        next: (userData: any) => {
+          this.currentUser = userData;
+          if (this.currentUser?.isFirstTime === false) {
+            this.showWelcomeModal();
+          }
 
-        console.log(data);
-      },
-      error: (error: any) => {
-        console.error(error);
-        console.log(this.userData);
-        // this.router.navigate(['/login']);
-      },
+          if (userData && userData.ubicacion) {
+            this.userLocation = userData.ubicacion;
+            this.getWeatherData();
+          } else {
+            console.log('Ubicación no configurada en el perfil');
+          }
+          resolve();
+        },
+        error: (error: any) => {
+          console.error(
+            'Error obteniendo datos del usuario desde Firestore:',
+            error
+          );
+          reject(error);
+        },
+      });
     });
   }
 

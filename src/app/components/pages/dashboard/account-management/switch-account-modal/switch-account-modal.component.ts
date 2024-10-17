@@ -8,8 +8,7 @@ import {
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
-import { firstValueFrom } from 'rxjs';
+import { AuthCredential, GoogleAuthProvider } from '@angular/fire/auth'; // Importa AuthCredential aquí
 import { environment } from '../../../../../environments/environment';
 import {
   addDoc,
@@ -29,7 +28,7 @@ import { DefaultCategories } from '../../../../../interfaces/category.interface'
   imports: [CommonModule, FontAwesomeModule, FormsModule],
 })
 export class SwitchAccountModalComponent implements OnInit {
-  accounts: FirebaseUser[] = [];
+  accounts: any[] = [];
 
   constructor(
     private dialogRef: MatDialogRef<SwitchAccountModalComponent>,
@@ -52,47 +51,22 @@ export class SwitchAccountModalComponent implements OnInit {
 
   async switchAccount(account: any): Promise<void> {
     try {
-      const newAccessToken = await this.authService.refreshAccessToken(
-        account.refreshToken
+      const credentialData = account.credential;
+
+      if (!credentialData) {
+        console.error('No se encontró la credencial para esta cuenta.');
+        return;
+      }
+
+      const credential = GoogleAuthProvider.credential(
+        credentialData.idToken,
+        credentialData.accessToken
       );
 
-      account.accessToken = newAccessToken;
-
-      const apiKey = environment.apiKey;
-      const authUserKey = `firebase:authUser:${apiKey}:[DEFAULT]`;
-
-      const authUser = {
-        uid: account.uid,
-        email: account.email,
-        emailVerified: true,
-        displayName: account.displayName,
-        isAnonymous: false,
-        providerData: [
-          {
-            providerId: 'google.com',
-            uid: account.uid,
-            displayName: account.displayName,
-            email: account.email,
-            phoneNumber: null,
-            photoURL: account.photoURL,
-          },
-        ],
-        stsTokenManager: {
-          refreshToken: account.refreshToken,
-          accessToken: newAccessToken,
-          expirationTime: Date.now() + 3600 * 1000,
-        },
-        createdAt: Date.now().toString(),
-        lastLoginAt: Date.now().toString(),
-        apiKey: apiKey,
-        appName: '[DEFAULT]',
-      };
-
-      localStorage.setItem(authUserKey, JSON.stringify(authUser));
+      await this.authService.signInWithCredential(credential);
 
       console.log(`Cuenta cambiada a: ${account.displayName || account.email}`);
       this.dialogRef.close();
-      window.location.reload();
     } catch (error: any) {
       console.error('Error al cambiar de cuenta:', error.message);
     }
@@ -100,13 +74,16 @@ export class SwitchAccountModalComponent implements OnInit {
 
   addNewAccount(): void {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
     this.authService
       .signInWithPopup(provider)
       .then(async (result) => {
         const user = result.user;
+        const credential = GoogleAuthProvider.credentialFromResult(result);
         const tokenResult = await user?.getIdTokenResult();
 
-        if (!user || !tokenResult) {
+        if (!user || !tokenResult || !credential) {
           console.error('Error al obtener la información del usuario.');
           return;
         }
@@ -137,24 +114,16 @@ export class SwitchAccountModalComponent implements OnInit {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          accessToken: tokenResult.token,
-          idToken: tokenResult.token,
-          refreshToken: user.refreshToken,
+          credential: {
+            accessToken: credential.accessToken,
+            idToken: credential.idToken,
+          },
         });
         localStorage.setItem('accounts', JSON.stringify(accounts));
         this.loadAccounts();
 
-        // Realiza el cambio de cuenta automáticamente a la nueva
-        await this.switchAccount({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          refreshToken: user.refreshToken,
-        });
-
-        this.dialogRef.close();
-        window.location.reload();
+        // Cambiar a la nueva cuenta
+        await this.switchAccount(accounts[accounts.length - 1]);
       })
       .catch((err) => {
         console.error('Error al agregar nueva cuenta:', err.message);
