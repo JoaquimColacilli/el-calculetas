@@ -198,6 +198,9 @@ export class DashboardComponent implements OnInit {
 
   userLocation: string | null = null;
 
+  saldoAcumulado: number = 0;
+  saldoAcumuladoUsd: number = 0;
+
   cardsWithDate: Card[] = [];
 
   pagoFilterState: 'Todos' | 'Pagado' | 'Por pagar' | 'Vencido' = 'Todos';
@@ -213,6 +216,7 @@ export class DashboardComponent implements OnInit {
   selectedExpenses: FinanceInterface[] = [];
 
   currentUser: UserInterface | null = null;
+  hasPendingExpensesWithoutCardDates: boolean = false;
 
   isWelcomeModal: boolean = false;
 
@@ -252,7 +256,6 @@ export class DashboardComponent implements OnInit {
           this.authService.getUserByUid(userUid).subscribe({
             next: (userData: any) => {
               this.currentUser = userData;
-
               if (this.currentUser?.isFirstTime === false) {
                 this.showWelcomeModal();
               }
@@ -324,6 +327,52 @@ export class DashboardComponent implements OnInit {
     registerLocaleData(localeEs, 'es-ES');
   }
 
+  checkPendingExpensesWithoutCardDates(): void {
+    // Verificar si hay tarjetas sin fecha de vencimiento
+    const cardsWithoutDate = this.cardsWithDate.filter(
+      (card) => !card.selectedDay || !card.selectedMonth
+    );
+
+    // Verificar si hay gastos con cuotas pendientes (currentCuota < numCuotas)
+    const expensesWithPendingCuotas = this.financeItems.filter(
+      (expense) =>
+        expense.numCuotas &&
+        expense.currentCuota &&
+        expense.currentCuota < expense.numCuotas
+    );
+
+    // Si hay tarjetas sin fecha y gastos con cuotas pendientes, mostrar el mensaje
+    this.hasPendingExpensesWithoutCardDates =
+      cardsWithoutDate.length > 0 && expensesWithPendingCuotas.length > 0;
+  }
+
+  private async resetSalariesIfNeeded(): Promise<void> {
+    try {
+      const isFirstDay = new Date().getDate() === 1;
+      if (isFirstDay) {
+        await this.updateSaldoAcumulado();
+
+        await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
+        console.log('Sueldos reiniciados para el nuevo mes.');
+
+        // Resetear las fechas de vencimiento de las tarjetas
+        await this.cardService.resetCardExpirationDates().toPromise();
+        console.log('Fechas de vencimiento de tarjetas reseteadas.');
+
+        // Importar los gastos para el nuevo mes
+        await this.financeService.importExpensesForNewMonth().toPromise();
+        console.log('Gastos fijos y de cuotas importados para el nuevo mes.');
+      } else {
+        console.log('Hoy no es el primer día del mes, no se necesita reset.');
+      }
+    } catch (error) {
+      console.error(
+        'Error al restablecer sueldos o importar gastos fijos:',
+        error
+      );
+    }
+  }
+
   showWelcomeModal() {
     this.isWelcomeModal = true;
     if (this.currentUser && this.currentUser.uid) {
@@ -357,6 +406,7 @@ export class DashboardComponent implements OnInit {
       Proveedor: item.provider,
       Categoria: this.getCategoryName(item.category),
       Observaciones: item.obs,
+      Cuota: item.currentCuota ? `${item.currentCuota}/${item.numCuotas}` : '', // Mostrar cuota actual y total si aplica
     }));
 
     // Calcular el total gastado
@@ -374,6 +424,7 @@ export class DashboardComponent implements OnInit {
       Proveedor: '',
       Categoria: '',
       Observaciones: '',
+      Cuota: '',
     });
 
     // Crear una hoja de trabajo de Excel
@@ -421,7 +472,7 @@ export class DashboardComponent implements OnInit {
   }
 
   descargarResumenMensual(): void {
-    // Obtener los gastos del mes actual utilizando tu método
+    // Obtener los gastos del mes anterior utilizando tu método
     const monthlyExpenses = this.getExpensesForPreviousMonth();
 
     if (monthlyExpenses.length === 0) {
@@ -437,6 +488,7 @@ export class DashboardComponent implements OnInit {
       Proveedor: item.provider,
       Categoria: this.getCategoryName(item.category),
       Observaciones: item.obs,
+      Cuota: item.currentCuota ? `${item.currentCuota}/${item.numCuotas}` : '', // Mostrar cuota actual y total si aplica
     }));
 
     // Calcular el total gastado
@@ -454,20 +506,52 @@ export class DashboardComponent implements OnInit {
       Proveedor: '',
       Categoria: '',
       Observaciones: '',
+      Cuota: '',
     });
 
     // Crear la hoja de trabajo de Excel
     const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
     const workbook: XLSX.WorkBook = XLSX.utils.book_new();
 
+    // Aplicar estilo a los encabezados (negrita)
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref'] || '');
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = { font: { bold: true } };
+    }
+
+    // Formato de moneda para la columna "Valor"
+    for (let i = 1; i < excelData.length; i++) {
+      const cellAddress = `B${i + 1}`;
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].z = '"$"#,##0.00'; // Formato moneda
+      }
+    }
+
     // Agregar la hoja al libro de trabajo
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Gastos');
 
-    // Obtener el mes actual en español (reutilizamos tu lógica de formato de fecha)
+    // Obtener el mes anterior en español
     const now = new Date();
-    const formattedMonth = formatDate(now, 'MMMM', 'es-ES');
+    const previousMonthIndex = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const monthNames = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    const formattedMonth = monthNames[previousMonthIndex];
 
-    // Generar y descargar el archivo Excel con el nombre del mes actual
+    // Generar y descargar el archivo Excel con el nombre del mes anterior
     XLSX.writeFile(workbook, `resumen-gastos-${formattedMonth}.xlsx`);
   }
 
@@ -499,20 +583,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  private async resetSalariesIfNeeded(): Promise<void> {
-    try {
-      const isFirstDay = new Date().getDate() === 1;
-      if (isFirstDay) {
-        await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
-        console.log('Sueldos reiniciados para el nuevo mes.');
-      } else {
-        console.log('Hoy no es el primer día del mes, no se necesita reset.');
-      }
-    } catch (error) {
-      console.error('Error al restablecer sueldos:', error);
-    }
-  }
-
   loadUserCategories(): void {
     this.categoryService.getUserCategories().subscribe({
       next: (categories) => {
@@ -528,6 +598,8 @@ export class DashboardComponent implements OnInit {
     this.cardService.getUserCards().subscribe(
       (cards) => {
         this.cardsWithDate = cards.filter((card) => card.date);
+
+        this.checkPendingExpensesWithoutCardDates();
       },
       (error) => {
         console.error('Error al cargar las tarjetas:', error);
@@ -564,6 +636,8 @@ export class DashboardComponent implements OnInit {
         this.createEmptyExpense();
 
         this.updateExpensesStatus();
+        this.checkPendingExpensesWithoutCardDates();
+
         this.isLoadingData = false;
       },
       error: (error) => {
@@ -1639,7 +1713,10 @@ export class DashboardComponent implements OnInit {
 
     // Dinero restante se calcula sumando los ingresos totales acumulados y restando los gastos pagados
     this.dineroRestante =
-      this.totalIngresos - totalPagadoEsteMes + totalAhorrosArs;
+      this.saldoAcumulado +
+      this.totalIngresos -
+      totalPagadoEsteMes +
+      totalAhorrosArs;
 
     return this.dineroRestante;
   }
@@ -1660,7 +1737,7 @@ export class DashboardComponent implements OnInit {
   calculateDineroRestanteUsd(): number {
     const now = new Date();
 
-    // Filtrar los gastos pagados en USD de este mes
+    // Filtrar los gastos pagados en USD
     const totalGastosUsd = this.financeItems
       .filter((item) => {
         const itemDate = this.parseDate(item.date);
@@ -1683,9 +1760,12 @@ export class DashboardComponent implements OnInit {
       return acc;
     }, 0);
 
-    // Dinero restante se calcula sumando los ingresos acumulados en USD y restando los gastos pagados en USD
+    // Incluir saldoAcumuladoUsd en el cálculo
     this.dineroRestanteUSD =
-      this.totalIngresosUSD + totalAhorrosUsd - totalGastosUsd;
+      (this.saldoAcumuladoUsd || 0) +
+      this.totalIngresosUSD +
+      totalAhorrosUsd -
+      totalGastosUsd;
 
     return this.dineroRestanteUSD;
   }
@@ -1770,6 +1850,9 @@ export class DashboardComponent implements OnInit {
     this.authService.getUserData().subscribe({
       next: (data: any) => {
         this.userData = data;
+        this.saldoAcumulado = data.saldoAcumulado || 0;
+        this.saldoAcumuladoUsd = data.saldoAcumuladoUsd || 0;
+
         console.log(data);
       },
       error: (error: any) => {
@@ -1778,6 +1861,36 @@ export class DashboardComponent implements OnInit {
         // this.router.navigate(['/login']);
       },
     });
+  }
+
+  private async updateSaldoAcumulado(): Promise<void> {
+    // Calcula el dinero restante actual para ARS y USD
+    const dineroRestanteActualArs = this.calculateDineroRestante();
+    const dineroRestanteActualUsd = this.calculateDineroRestanteUsd();
+
+    // Actualiza el saldo acumulado en la base de datos
+    if (this.currentUser && this.currentUser.uid) {
+      await this.authService
+        .updateUserProfile(this.currentUser.uid, {
+          saldoAcumulado: dineroRestanteActualArs,
+          saldoAcumuladoUsd: dineroRestanteActualUsd,
+        })
+        .then(() => {
+          console.log(
+            'Saldo acumulado ARS actualizado:',
+            dineroRestanteActualArs
+          );
+          console.log(
+            'Saldo acumulado USD actualizado:',
+            dineroRestanteActualUsd
+          );
+          this.saldoAcumulado = dineroRestanteActualArs; // Actualizar el saldo ARS localmente
+          this.saldoAcumuladoUsd = dineroRestanteActualUsd; // Actualizar el saldo USD localmente
+        })
+        .catch((error) => {
+          console.error('Error al actualizar saldo acumulado:', error);
+        });
+    }
   }
 
   logout(): void {
@@ -1977,6 +2090,8 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  // En tu componente (por ejemplo, finance.component.ts)
+
   mantenerGastoFijo() {
     const selectedExpenses = this.financeItems.filter((item) => item.selected);
 
@@ -1986,7 +2101,6 @@ export class DashboardComponent implements OnInit {
     );
 
     if (hasCuotas) {
-      // Si algún gasto tiene cuotas, mostrar advertencia y salir de la función
       Swal.fire({
         icon: 'error',
         title: 'No se puede marcar como fijo',
@@ -1996,12 +2110,11 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Si no hay gastos con cuotas, continuar con la lógica de marcar como fijo
     selectedExpenses.forEach((expense) => {
       const fixedExpense = { ...expense };
 
-      // Si el gasto ya es fijo, desmarcarlo y eliminarlo de 'gastosFijos'
       if (fixedExpense.isFinanceFijo) {
+        // Si el gasto ya es fijo, desmarcarlo y eliminarlo de 'gastosFijos'
         fixedExpense.isFinanceFijo = false;
 
         if (expense.id) {
@@ -2030,20 +2143,9 @@ export class DashboardComponent implements OnInit {
             });
         }
       } else {
-        const expenseDate = fixedExpense.date.includes('-')
-          ? new Date(fixedExpense.date) // Asume formato YYYY-MM-DD
-          : (() => {
-              const [day, month, year] = fixedExpense.date
-                .split('/')
-                .map(Number); // Asume formato DD/MM/YYYY
-              return new Date(year, month - 1, day);
-            })();
-
-        // Ahora sí, sumamos un mes correctamente
-        expenseDate.setMonth(expenseDate.getMonth() + 1);
-
-        // Actualizamos el campo 'date' del gasto con el nuevo valor, asegurando el formato YYYY-MM-DD
-        fixedExpense.date = expenseDate.toISOString().split('T')[0];
+        // No modificar la fecha aquí. Dejar 'date' como está o vacía
+        fixedExpense.isFinanceFijo = true;
+        fixedExpense.date = ''; // Asegurarse de que 'date' esté vacío
 
         // Guardar el gasto fijo en la colección 'gastosFijos'
         this.financeService.marcarGastoComoFijo(fixedExpense).subscribe(() => {

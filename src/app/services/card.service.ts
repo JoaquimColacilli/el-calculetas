@@ -12,8 +12,9 @@ import {
   setDoc,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
-import { Observable, switchMap, catchError, throwError, of } from 'rxjs';
+import { Observable, switchMap, catchError, throwError, of, from } from 'rxjs';
 import { Card } from '../interfaces/card.interface';
+import { getDocs } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
@@ -110,5 +111,43 @@ export class CardService {
         name: card.name, // Asegurar que el nombre se guarde
       });
     });
+  }
+
+  resetCardExpirationDates(): Observable<void> {
+    return from(
+      this.authService.getCurrentUserUid().then(async (uid) => {
+        if (!uid) throw new Error('Usuario no autenticado');
+        const cardsCollection = collection(
+          this.firestore,
+          `users/${uid}/tarjetas`
+        );
+        const querySnapshot = await getDocs(cardsCollection);
+
+        for (const docSnapshot of querySnapshot.docs) {
+          const cardDocRef = doc(
+            this.firestore,
+            `users/${uid}/tarjetas/${docSnapshot.id}`
+          );
+          await updateDoc(cardDocRef, {
+            selectedDay: null,
+            selectedMonth: null,
+            date: null,
+          });
+        }
+      })
+    ).pipe(
+      catchError((error) => {
+        console.error(
+          'Error al resetear las fechas de vencimiento de las tarjetas:',
+          error
+        );
+        return throwError(
+          () =>
+            new Error(
+              'Error al resetear las fechas de vencimiento de las tarjetas'
+            )
+        );
+      })
+    );
   }
 }

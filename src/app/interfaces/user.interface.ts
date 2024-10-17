@@ -6,4 +6,6 @@ export interface UserInterface {
   providerId?: string;
   ubicacion?: string;
   isFirstTime?: boolean;
+  saldoAcumulado?: number;
+  saldoAcumuladoUsd?: number;
 }

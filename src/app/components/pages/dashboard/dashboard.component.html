@@ -556,6 +556,22 @@
               </div>
             </div>
           </div>
+
+          <div
+            *ngIf="hasPendingExpensesWithoutCardDates"
+            class="border-l border-gray-300"
+          ></div>
+
+          <div
+            *ngIf="hasPendingExpensesWithoutCardDates"
+            class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
+          >
+            <p class="font-bold">Atención</p>
+            <p>
+              Tenés gastos en cuotas pendientes de importar, pero primero debés
+              ingresar las fechas de vencimiento de tus tarjetas.
+            </p>
+          </div>
         </div>
       </div>
 

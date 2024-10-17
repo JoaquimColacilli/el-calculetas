@@ -54,10 +54,8 @@ export class ModalWalletComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Populate days array with numbers from 1 to 31
     this.days = Array.from({ length: 31 }, (_, i) => i + 1);
 
-    // Cargar las tarjetas del usuario
     this.loadUserCards();
   }
 
