@@ -1236,7 +1236,6 @@
       <div
         id="welcome-modal"
         class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50"
-        *ngIf="isWelcomeModal"
       >
         <div
           class="bg-white rounded-2xl shadow-2xl w-10/12 max-w-md p-6 relative transform transition-all duration-300 ease-out"
@@ -1253,11 +1252,12 @@
           <!-- Contenido del modal -->
           <div class="text-center">
             <!-- Ícono financiero animado -->
-            <fa-icon
-              [icon]="['fas', 'chart-line']"
-              class="text-purple-600 text-6xl mb-4 animate-pulse"
-              aria-hidden="true"
-            ></fa-icon>
+
+            <img
+              src="logo_calculetas.png"
+              alt="Logo El Calculetas"
+              class="mx-auto w-24 h-24 animate-pulse"
+            />
 
             <!-- Título del modal -->
             <h2
