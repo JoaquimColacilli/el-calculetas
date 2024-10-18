@@ -172,7 +172,7 @@ export class DashboardComponent implements OnInit {
 
   isTarjetaChecked: boolean = false;
 
-  groupedExpenses: { [key: string]: number } = {};
+  groupedExpensesFinance: { [key: string]: number } = {};
 
   totalAmountARS = 0;
   totalAmountUSD = 0;
@@ -1184,7 +1184,7 @@ export class DashboardComponent implements OnInit {
   }
 
   updateGroupedExpenses() {
-    this.groupedExpenses = this.financeItems.reduce((acc, item) => {
+    this.groupedExpensesFinance = this.financeItems.reduce((acc, item) => {
       // Convertir item.value a string antes de aplicar replace
       const value = parseFloat(String(item.value).replace(/[\$,]/g, ''));
       if (!acc[item.currency]) {
@@ -1422,7 +1422,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getCountByStatus(status: string): number {
-    return this.getFilteredExpenses().filter((item) => item.status === status)
+    return this.filteredExpenses.filter((item) => item.status === status)
       .length;
   }
 
@@ -1433,7 +1433,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getTotalByStatusAndCurrency(status: string, currency: string): number {
-    return this.getFilteredExpenses()
+    return this.filteredExpenses
       .filter((item) => item.status === status && item.currency === currency)
       .reduce((total, item) => total + parseFloat(String(item.value)), 0);
   }
@@ -1554,13 +1554,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getExpensesForThisWeek(): FinanceInterface[] {
-    const now = new Date();
-    const startOfWeek = this.getStartOfWeek(now);
-    const endOfWeek = this.getEndOfWeek(now);
-
     return this.financeItems.filter((item) => {
       const itemDate = this.parseDate(item.date);
-      return itemDate >= startOfWeek && itemDate <= endOfWeek;
+      return (
+        itemDate >= this.currentWeekStart && itemDate <= this.currentWeekEnd
+      );
     });
   }
 
@@ -1581,16 +1579,13 @@ export class DashboardComponent implements OnInit {
   }
 
   getExpensesForThisYear(): FinanceInterface[] {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-
     return this.financeItems.filter((item) => {
       const itemDate = this.parseDate(item.date);
-      return itemDate.getFullYear() === currentYear;
+      return itemDate.getFullYear() === this.currentYear;
     });
   }
 
-  getFilteredExpenses(): FinanceInterface[] {
+  get filteredExpenses(): FinanceInterface[] {
     let filteredItems: FinanceInterface[] = this.financeItems;
 
     // Filtrar por período seleccionado
@@ -1659,23 +1654,8 @@ export class DashboardComponent implements OnInit {
   }
 
   // Método para calcular los gastos del mes agrupados por moneda
-  getGroupedExpenses(): { [key: string]: number } {
-    let filteredItems: FinanceInterface[];
-
-    // Filtrar los gastos según la vista seleccionada
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        filteredItems = this.getExpensesForThisMonth();
-        break;
-      case 'Esta semana':
-        filteredItems = this.getExpensesForThisWeek();
-        break;
-      case 'Este año':
-        filteredItems = this.getExpensesForThisYear();
-        break;
-      default:
-        filteredItems = this.financeItems;
-    }
+  get groupedExpenses(): { [key: string]: number } {
+    const filteredItems = this.filteredExpenses;
 
     // Agrupar los gastos por moneda
     const grouped = filteredItems.reduce((acc, item) => {
@@ -2023,7 +2003,7 @@ export class DashboardComponent implements OnInit {
   }
 
   hasExpenses(): boolean {
-    const groupedExpenses = this.getGroupedExpenses();
+    const groupedExpenses = this.groupedExpenses;
     return Object.keys(groupedExpenses).length > 0;
   }
 

@@ -114,9 +114,7 @@
 
           <div class="mt-2">
             <ng-container *ngIf="hasExpenses(); else noExpenses">
-              <ng-container
-                *ngFor="let currency of getGroupedExpenses() | keyvalue"
-              >
+              <ng-container *ngFor="let currency of groupedExpenses | keyvalue">
                 <div class="flex items-center space-x-2">
                   <span
                     class="text-lg font-bold text-gray-700"
@@ -446,17 +444,17 @@
           <!-- Total registros -->
           <div class="text-left">
             <span class="text-gray-800 text-sm font-semibold">
-              {{ getFilteredExpenses().length }} total
+              {{ filteredExpenses.length }} total
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getGroupedExpenses()["ARS"] | currency : "" : "symbol" : "1.0-0"
+                groupedExpenses["ARS"] | currency : "" : "symbol" : "1.0-0"
               }}
               ARS
             </span>
             <span class="text-gray-500 block text-base font-medium">
               {{
-                getGroupedExpenses()["USD"] | currency : "" : "symbol" : "1.0-0"
+                groupedExpenses["USD"] | currency : "" : "symbol" : "1.0-0"
               }}
               USD
             </span>
@@ -1038,7 +1036,7 @@
             </div>
             }
 
-            <tr *ngIf="getFilteredExpenses().length === 0">
+            <tr *ngIf="filteredExpenses.length === 0">
               <td colspan="100%" class="text-center py-6">
                 <div
                   class="flex flex-col items-center justify-center text-gray-500"
@@ -1075,7 +1073,7 @@
 
             <!-- Filas de los gastos existentes -->
             <tr
-              *ngFor="let item of getFilteredExpenses(); let i = index"
+              *ngFor="let item of filteredExpenses; let i = index"
               [ngClass]="{
                 'bg-yellow-100': item.nextMonth === true && editingIndex !== i,
                 'bg-blue-100': item.isFinanceFijo === true && editingIndex !== i
