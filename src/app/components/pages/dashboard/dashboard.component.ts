@@ -222,6 +222,25 @@ export class DashboardComponent implements OnInit {
 
   public conversiones: AhorroInterface[] = [];
 
+  currentYear: number = 0;
+  currentMonth: number = 0;
+  currentWeekStart: Date = new Date();
+  currentWeekEnd: Date = new Date();
+  months: string[] = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+
   constructor(
     private router: Router,
     library: FaIconLibrary,
@@ -289,7 +308,6 @@ export class DashboardComponent implements OnInit {
     this.currentUser = null;
     // Reiniciar cualquier otro dato específico del usuario
 
-    // Cancelar intervalos o subscripciones si es necesario
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -298,20 +316,16 @@ export class DashboardComponent implements OnInit {
 
   async loadInitialData(userUid: string): Promise<void> {
     try {
-      // Cargar datos del usuario
       await this.loadUserData(userUid);
 
-      // Cargar otros datos necesarios
       await Promise.all([
         this.loadExpenses(),
         this.loadSalaries(),
         this.loadUserCategories(),
         this.loadUserCards(),
         this.loadAhorros(),
-        // Agrega aquí otros métodos de carga de datos si es necesario
       ]);
 
-      // Realizar cálculos y actualizaciones después de cargar los datos
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
@@ -319,20 +333,99 @@ export class DashboardComponent implements OnInit {
       this.sortFinanceItems();
       this.updateGroupedExpenses();
 
-      // Cargar datos no específicos del usuario
       this.loadDollarRates();
       this.updateDateTime();
       this.intervalId = setInterval(() => this.updateDateTime(), 1000);
       this.setTodayDate();
       this.calculateDayOrNight();
-
-      // Después de cargar todos los datos, ocultar el spinner
+      this.resetSalariesIfNeeded();
+      const today = new Date();
+      this.currentYear = today.getFullYear();
+      this.currentMonth = today.getMonth();
+      this.updateWeek(today);
       this.isLoadingData = false;
     } catch (error) {
       console.error('Error al cargar los datos iniciales:', error);
-      // Manejar el error según sea necesario
       this.isLoadingData = false;
     }
+  }
+
+  previousPeriod() {
+    switch (this.options[this.currentIndex]) {
+      case 'Este año':
+        this.currentYear--;
+        break;
+      case 'Este mes':
+        if (this.currentMonth === 0) {
+          this.currentMonth = 11;
+          this.currentYear--;
+        } else {
+          this.currentMonth--;
+        }
+        break;
+      case 'Esta semana':
+        const previousWeekDate = new Date(this.currentWeekStart);
+        previousWeekDate.setDate(previousWeekDate.getDate() - 7);
+        this.updateWeek(previousWeekDate);
+        break;
+    }
+    this.filterExpensesBySelectedPeriod();
+  }
+
+  nextPeriod() {
+    switch (this.options[this.currentIndex]) {
+      case 'Este año':
+        this.currentYear++;
+        break;
+      case 'Este mes':
+        if (this.currentMonth === 11) {
+          this.currentMonth = 0;
+          this.currentYear++;
+        } else {
+          this.currentMonth++;
+        }
+        break;
+      case 'Esta semana':
+        const nextWeekDate = new Date(this.currentWeekStart);
+        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        this.updateWeek(nextWeekDate);
+        break;
+    }
+    this.filterExpensesBySelectedPeriod();
+  }
+
+  updateWeek(date: Date) {
+    this.currentWeekStart = this.getStartOfWeek(date);
+    this.currentWeekEnd = this.getEndOfWeek(date);
+  }
+
+  getCurrentPeriodLabel(): string {
+    switch (this.options[this.currentIndex]) {
+      case 'Este año':
+        return this.currentYear.toString();
+      case 'Este mes':
+        return `${this.months[this.currentMonth]} ${this.currentYear}`;
+      case 'Esta semana':
+        const start = this.currentWeekStart.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        const end = this.currentWeekEnd.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        return `${start} - ${end}`;
+      default:
+        return '';
+    }
+  }
+
+  filterExpensesBySelectedPeriod() {
+    this.calculateTotals();
+    this.calculateCounts();
+    this.cdr.detectChanges();
   }
 
   checkPendingExpensesWithoutCardDates(): void {
@@ -1498,25 +1591,36 @@ export class DashboardComponent implements OnInit {
   }
 
   getFilteredExpenses(): FinanceInterface[] {
-    let filteredItems: FinanceInterface[] = [];
+    let filteredItems: FinanceInterface[] = this.financeItems;
 
-    if (this.showAllExpenses) {
-      // Mostrar todos los gastos si showAllExpenses es true
-      filteredItems = this.financeItems;
-    } else {
-      // Filtrar por mes, semana o año si showAllExpenses es false
+    // Filtrar por período seleccionado
+    if (!this.showAllExpenses) {
       switch (this.options[this.currentIndex]) {
+        case 'Este año':
+          filteredItems = filteredItems.filter((item) => {
+            const itemDate = this.parseDate(item.date);
+            return itemDate.getFullYear() === this.currentYear;
+          });
+          break;
         case 'Este mes':
-          filteredItems = this.getExpensesForThisMonth();
+          filteredItems = filteredItems.filter((item) => {
+            const itemDate = this.parseDate(item.date);
+            return (
+              itemDate.getFullYear() === this.currentYear &&
+              itemDate.getMonth() === this.currentMonth
+            );
+          });
           break;
         case 'Esta semana':
-          filteredItems = this.getExpensesForThisWeek();
-          break;
-        case 'Este año':
-          filteredItems = this.getExpensesForThisYear();
+          filteredItems = filteredItems.filter((item) => {
+            const itemDate = this.parseDate(item.date);
+            return (
+              itemDate >= this.currentWeekStart &&
+              itemDate <= this.currentWeekEnd
+            );
+          });
           break;
         default:
-          filteredItems = this.financeItems;
           break;
       }
     }
@@ -1541,7 +1645,7 @@ export class DashboardComponent implements OnInit {
       return matchesSearchQuery && matchesCategory;
     });
 
-    // Aplicar filtro por estado de pago si showAllExpenses es false
+    // Aplicar filtro por estado de pago si es necesario
     if (!this.showAllExpenses && this.pagoFilterState !== 'Todos') {
       filteredItems = filteredItems.filter(
         (item) => item.status === this.pagoFilterState
@@ -2476,14 +2580,21 @@ export class DashboardComponent implements OnInit {
         : 'Esta semana'
     );
 
-    const visibleItems = this.getCurrentMonthItems();
-    visibleItems.forEach((item) => {
-      item.selected = false; // Deselecciona cada elemento visible
-    });
+    const today = new Date();
+    switch (view) {
+      case 'year':
+        this.currentYear = today.getFullYear();
+        break;
+      case 'month':
+        this.currentYear = today.getFullYear();
+        this.currentMonth = today.getMonth();
+        break;
+      case 'week':
+        this.updateWeek(today);
+        break;
+    }
 
-    this.selectAll = false; // Asegura que selectAll esté siempre en false al cambiar de vista
-    this.actualizarEstadoSeleccionados(); // Actualiza el estado de selección
-    this.cdr.detectChanges(); // Detecta los cambios
+    this.filterExpensesBySelectedPeriod();
   }
 
   getCategoryName(category: string | { name: string }): string {

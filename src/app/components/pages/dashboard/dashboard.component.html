@@ -331,7 +331,21 @@
           </ng-container>
         </div>
       </div>
-
+      <div class="flex justify-between items-center mb-8">
+        <fa-icon
+          [icon]="['fas', 'chevron-left']"
+          (click)="previousPeriod()"
+          class="cursor-pointer fa-2x"
+        ></fa-icon>
+        <h1 class="text-2xl font-bold">
+          {{ getCurrentPeriodLabel() }}
+        </h1>
+        <fa-icon
+          [icon]="['fas', 'chevron-right']"
+          (click)="nextPeriod()"
+          class="cursor-pointer fa-2x"
+        ></fa-icon>
+      </div>
       <div
         class="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 mt-6"
       >
@@ -380,7 +394,6 @@
             style="width: 250px"
             [notFoundText]="'Categoría no encontrada'"
           ></ng-select>
-          <!-- Nuevo Toggle Switch con Íconos y Estilo Mejorado -->
         </div>
         <div
           class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-2"
