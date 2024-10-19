@@ -87,7 +87,8 @@ export class ProfileComponent implements OnInit {
           this.userEmail = userData?.email || '';
           this.userPhoto = userData?.profilePicture || '';
           this.userLocation = userData?.ubicacion || '';
-          this.updateButtonColors();
+          this.backgroundColor = userData?.themeColor || '#3498db'; // Cargar el color guardado o usar uno por defecto
+          this.updateButtonColors(); // Actualizar los colores de los botones
         }
       },
       (error) => {
@@ -223,6 +224,7 @@ export class ProfileComponent implements OnInit {
       username: this.userName,
       profilePicture: this.userPhoto,
       ubicacion: this.userLocation || '',
+      themeColor: this.backgroundColor, // Guardar el color seleccionado
     };
 
     const currentUser = this.authService.currentUserSig();
@@ -243,6 +245,7 @@ export class ProfileComponent implements OnInit {
                 ...user,
                 displayName: this.userName,
                 photoURL: this.userPhoto,
+                themeColor: this.backgroundColor, // Actualizar el color en el almacenamiento local
               };
             }
             return user;

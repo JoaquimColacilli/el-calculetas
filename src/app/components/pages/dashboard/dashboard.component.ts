@@ -265,14 +265,11 @@ export class DashboardComponent implements OnInit {
     this.authService.user$.subscribe({
       next: (user: any) => {
         if (user) {
-          // Reiniciar datos y mostrar el spinner
           this.resetData();
           this.isLoadingData = true;
 
-          // Cargar datos para el usuario autenticado
           this.loadInitialData(user.uid);
         } else {
-          // Redirigir al login si no hay usuario
           this.router.navigate(['/login']);
         }
       },

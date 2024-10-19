@@ -348,6 +348,7 @@ export class AuthService {
           data.profilePicture || currentUser?.profilePicture || '',
         providerId: currentUser?.providerId || '',
         ubicacion: data.ubicacion || currentUser?.ubicacion || '',
+        themeColor: data.themeColor || currentUser?.themeColor || '#3498db',
       };
 
       this.userDataSubject.next(updatedUserData);

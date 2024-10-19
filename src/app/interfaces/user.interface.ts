@@ -8,4 +8,5 @@ export interface UserInterface {
   isFirstTime?: boolean;
   saldoAcumulado?: number;
   saldoAcumuladoUsd?: number;
+  themeColor?: string;
 }
