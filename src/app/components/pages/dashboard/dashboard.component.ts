@@ -342,6 +342,7 @@ export class DashboardComponent implements OnInit {
       const today = new Date();
       this.currentYear = today.getFullYear();
       this.currentMonth = today.getMonth();
+      this.getCriteriasFromLs();
       this.updateWeek(today);
       this.isLoadingData = false;
     } catch (error) {
