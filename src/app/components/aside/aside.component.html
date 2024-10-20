@@ -1,15 +1,18 @@
-<div class="flex h-full bg-gray-800">
-  <aside class="w-34 bg-gray-800 text-white border-r">
+<div class="flex h-full" [ngStyle]="{ 'background-color': backgroundColor }">
+  <aside class="w-34 text-white border-r">
     <nav class="py-6 space-y-2">
       <!-- Inicio -->
       <a
         [routerLink]="'/dashboard'"
         routerLinkActive="active"
-        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 mb-2 mr-2 ml-2"
+        [ngClass]="{ active: isActive('/dashboard') }"
+        class="group flex flex-col items-center transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 mb-2 mr-2 ml-2"
+        [ngStyle]="{ color: '#ffffff' }"
       >
         <fa-icon
           [icon]="['fas', 'home']"
-          class="mb-2 group-hover:text-blue-500"
+          class="mb-2"
+          [ngStyle]="{ color: '#ffffff' }"
         ></fa-icon>
         <span>Inicio</span>
       </a>
@@ -18,11 +21,14 @@
       <a
         [routerLink]="'/estadisticas'"
         routerLinkActive="active"
-        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngClass]="{ active: isActive('/estadisticas') }"
+        class="group flex flex-col items-center transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngStyle]="{ color: '#ffffff' }"
       >
         <fa-icon
           [icon]="['fas', 'chart-bar']"
-          class="mb-2 group-hover:text-blue-500"
+          class="mb-2"
+          [ngStyle]="{ color: '#ffffff' }"
         ></fa-icon>
         <span>Estadísticas</span>
       </a>
@@ -31,23 +37,30 @@
       <a
         [routerLink]="'/ahorros'"
         routerLinkActive="active"
-        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngClass]="{ active: isActive('/ahorros') }"
+        class="group flex flex-col items-center transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngStyle]="{ color: '#ffffff' }"
       >
         <fa-icon
           [icon]="['fas', 'wallet']"
-          class="mb-2 group-hover:text-blue-500"
+          class="mb-2"
+          [ngStyle]="{ color: '#ffffff' }"
         ></fa-icon>
         <span>Ahorros</span>
       </a>
 
+      <!-- Novedades -->
       <a
         [routerLink]="'/novedades'"
         routerLinkActive="active"
-        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngClass]="{ active: isActive('/novedades') }"
+        class="group flex flex-col items-center transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngStyle]="{ color: '#ffffff' }"
       >
         <fa-icon
           [icon]="['fas', 'bell']"
-          class="mb-2 group-hover:text-blue-500"
+          class="mb-2"
+          [ngStyle]="{ color: '#ffffff' }"
         ></fa-icon>
         <span>Novedades</span>
       </a>
@@ -56,11 +69,14 @@
       <a
         [routerLink]="'/papelera-temporal'"
         routerLinkActive="active"
-        class="group flex flex-col items-center text-white transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngClass]="{ active: isActive('/papelera-temporal') }"
+        class="group flex flex-col items-center transition cursor-pointer hover:bg-gray-700 rounded-lg p-2 m-2 py-4"
+        [ngStyle]="{ color: '#ffffff' }"
       >
         <fa-icon
           [icon]="['fas', 'trash-alt']"
-          class="mb-2 group-hover:text-blue-500"
+          class="mb-2"
+          [ngStyle]="{ color: '#ffffff' }"
         ></fa-icon>
         <span>Papelera</span>
       </a>

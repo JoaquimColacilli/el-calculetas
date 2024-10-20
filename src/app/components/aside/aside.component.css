@@ -1,4 +1,14 @@
 .active {
-  background-color: #4a5568;
-  color: #63b3ed;
+  background-color: var(
+    --active-color,
+    #4a5568
+  ); /* Fallback if no themeColor */
+  color: #ffffff; /* Icons and text always white */
+}
+
+.group:hover {
+  background-color: var(
+    --light-theme-color,
+    #3b3f46
+  ); /* ThemeColor on hover, fallback to darker gray */
 }
