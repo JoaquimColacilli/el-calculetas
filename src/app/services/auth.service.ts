@@ -23,6 +23,7 @@ import {
   switchMap,
   BehaviorSubject,
   map,
+  shareReplay,
 } from 'rxjs';
 import { UserInterface } from '../interfaces/user.interface';
 import {
@@ -36,6 +37,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  docData,
 } from '@angular/fire/firestore';
 
 import { User } from '@angular/fire/auth';
@@ -90,7 +92,7 @@ function getErrorMessage(error: any): string {
 })
 export class AuthService {
   private firebaseAuth = inject(Auth);
-  user$ = user(this.firebaseAuth);
+  user$ = user(this.firebaseAuth).pipe(shareReplay(1));
   currentUserSig = signal<UserInterface | null | undefined>(undefined);
 
   private userDataSubject = new BehaviorSubject<UserInterface | null>(null);
@@ -353,6 +355,21 @@ export class AuthService {
 
       this.userDataSubject.next(updatedUserData);
     });
+  }
+
+  // En AuthService
+  getUserLastImportDate(uid: string): Observable<Date | null> {
+    const userDocRef = doc(this.firestore, `users/${uid}`);
+    return docData(userDocRef).pipe(
+      map((data: any) =>
+        data['lastImportDate'] ? data['lastImportDate'].toDate() : null
+      )
+    );
+  }
+
+  updateUserLastImportDate(uid: string, date: Date): Promise<void> {
+    const userDocRef = doc(this.firestore, `users/${uid}`);
+    return updateDoc(userDocRef, { lastImportDate: date });
   }
 
   getUserByUid(uid: string): Observable<any> {

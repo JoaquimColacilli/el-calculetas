@@ -8,6 +8,7 @@ import {
   NgZone,
   ChangeDetectorRef,
   Directive,
+  OnDestroy,
 } from '@angular/core';
 
 import { registerLocaleData } from '@angular/common';
@@ -85,6 +86,7 @@ import { AhorrosService } from '../../../services/ahorros.service';
 
 import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
 import { UserInterface } from '../../../interfaces/user.interface';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -103,12 +105,13 @@ import { UserInterface } from '../../../interfaces/user.interface';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   @ViewChild('categorySelect', { static: true }) categorySelect!: ElementRef;
 
   authService = inject(AuthService);
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private userSubscription!: Subscription;
 
   financeItems: FinanceInterface[] = [];
   userData: any = null;
@@ -260,14 +263,12 @@ export class DashboardComponent implements OnInit {
     library.addIconPacks(fas);
   }
 
-  async ngOnInit(): Promise<void> {
-    // Suscribirse al estado del usuario
-    this.authService.user$.subscribe({
+  ngOnInit(): void {
+    this.userSubscription = this.authService.user$.subscribe({
       next: (user: any) => {
         if (user) {
           this.resetData();
           this.isLoadingData = true;
-
           this.loadInitialData(user.uid);
         } else {
           this.router.navigate(['/login']);
@@ -341,11 +342,20 @@ export class DashboardComponent implements OnInit {
       this.currentMonth = today.getMonth();
       this.getCriteriasFromLs();
       this.updateWeek(today);
-      this.isLoadingData = false;
     } catch (error) {
       console.error('Error al cargar los datos iniciales:', error);
       this.isLoadingData = false;
     }
+  }
+
+  private resetSelection() {
+    const visibleItems = this.filteredExpenses;
+    visibleItems.forEach((item) => {
+      item.selected = false;
+    });
+
+    this.selectAll = false;
+    this.haySeleccionados = false;
   }
 
   previousPeriod() {
@@ -368,6 +378,8 @@ export class DashboardComponent implements OnInit {
         break;
     }
     this.filterExpensesBySelectedPeriod();
+
+    this.resetSelection();
   }
 
   nextPeriod() {
@@ -390,6 +402,8 @@ export class DashboardComponent implements OnInit {
         break;
     }
     this.filterExpensesBySelectedPeriod();
+
+    this.resetSelection();
   }
 
   updateWeek(date: Date) {
@@ -448,19 +462,31 @@ export class DashboardComponent implements OnInit {
   private async resetSalariesIfNeeded(): Promise<void> {
     try {
       const isFirstDay = new Date().getDate() === 1;
-      if (isFirstDay) {
-        await this.updateSaldoAcumulado();
+      if (isFirstDay && this.currentUser && this.currentUser.uid) {
+        const lastImportDate = await this.authService
+          .getUserLastImportDate(this.currentUser.uid)
+          .toPromise();
+        const today = new Date();
+        const lastImportMonth = lastImportDate
+          ? lastImportDate.getMonth()
+          : null;
+        const currentMonth = today.getMonth();
 
-        await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
-        console.log('Sueldos reiniciados para el nuevo mes.');
-
-        // Resetear las fechas de vencimiento de las tarjetas
-        await this.cardService.resetCardExpirationDates().toPromise();
-        console.log('Fechas de vencimiento de tarjetas reseteadas.');
-
-        // Importar los gastos para el nuevo mes
-        await this.financeService.importExpensesForNewMonth().toPromise();
-        console.log('Gastos fijos y de cuotas importados para el nuevo mes.');
+        if (lastImportMonth !== currentMonth) {
+          await this.updateSaldoAcumulado();
+          await this.sueldoService.resetSalariesAtStartOfMonth().toPromise();
+          console.log('Sueldos reiniciados para el nuevo mes.');
+          await this.cardService.resetCardExpirationDates().toPromise();
+          console.log('Fechas de vencimiento de tarjetas reseteadas.');
+          await this.financeService.importExpensesForNewMonth().toPromise();
+          console.log('Gastos fijos y de cuotas importados para el nuevo mes.');
+          await this.authService.updateUserLastImportDate(
+            this.currentUser.uid,
+            today
+          );
+        } else {
+          console.log('Los gastos ya fueron importados para este mes.');
+        }
       } else {
         console.log('Hoy no es el primer día del mes, no se necesita reset.');
       }
@@ -1195,6 +1221,9 @@ export class DashboardComponent implements OnInit {
 
   ngOnDestroy(): void {
     clearInterval(this.intervalId);
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
   }
 
   get countSelectedItemsThisMonth(): number {
@@ -1235,16 +1264,7 @@ export class DashboardComponent implements OnInit {
   }
 
   get countSelectedItems(): number {
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        return this.countSelectedItemsThisMonth;
-      case 'Esta semana':
-        return this.countSelectedItemsThisWeek;
-      case 'Este año':
-        return this.countSelectedItemsThisYear;
-      default:
-        return this.financeItems.filter((item) => item.selected).length;
-    }
+    return this.filteredExpenses.filter((item) => item.selected).length;
   }
 
   parseDateForComparisonCheck(dateString: string): Date {
@@ -2580,16 +2600,16 @@ export class DashboardComponent implements OnInit {
   }
 
   //
-
   onCheckboxChange() {
-    this.selectAll = this.financeItems.every((item) => item.selected);
+    const visibleItems = this.filteredExpenses;
+    this.selectAll = visibleItems.every((item) => item.selected);
     this.actualizarEstadoSeleccionados();
   }
 
   actualizarEstadoSeleccionados() {
-    const visibleItems = this.getCurrentMonthItems();
+    const visibleItems = this.filteredExpenses;
     this.haySeleccionados = visibleItems.some((item) => item.selected);
-    // Evita cambiar selectAll a true automáticamente al iniciar la vista
+    // Actualizar el estado de selectAll basado en los ítems visibles
     this.selectAll =
       this.haySeleccionados && visibleItems.every((item) => item.selected);
   }
@@ -2597,23 +2617,7 @@ export class DashboardComponent implements OnInit {
   toggleSelectAll() {
     this.selectAll = !this.selectAll;
 
-    let visibleItems: FinanceInterface[] = [];
-
-    // Determina los ítems visibles según la vista seleccionada
-    switch (this.options[this.currentIndex]) {
-      case 'Este mes':
-        visibleItems = this.getExpensesForThisMonth();
-        break;
-      case 'Esta semana':
-        visibleItems = this.getExpensesForThisWeek();
-        break;
-      case 'Este año':
-        visibleItems = this.getExpensesForThisYear();
-        break;
-      default:
-        visibleItems = this.financeItems;
-        break;
-    }
+    const visibleItems = this.filteredExpenses;
 
     // Marca o desmarca todos los ítems visibles
     visibleItems.forEach((item) => {

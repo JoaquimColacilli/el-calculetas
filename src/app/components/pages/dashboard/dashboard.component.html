@@ -5,7 +5,9 @@
     <app-navbar></app-navbar>
 
     <main class="p-6 flex-1 overflow-y-auto">
-      <div class="flex space-x-6 mb-6">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6"
+      >
         <!-- Card Dinero Restante -->
         <div
           [ngClass]="[
@@ -22,9 +24,10 @@
             'transition-transform',
             'duration-300',
             'hover:scale-105',
-            'hover:shadow-xl'
+            'hover:shadow-xl',
+            'w-full',
+            'min-h-32'
           ]"
-          style="width: 250px; height: 130px"
         >
           <fa-icon
             [icon]="['fas', 'wallet']"
@@ -58,8 +61,7 @@
 
         <!-- Card Total de Ingresos -->
         <div
-          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 250px; height: 130px"
+          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl w-full min-h-32"
         >
           <fa-icon
             [icon]="['fas', 'coins']"
@@ -100,8 +102,7 @@
 
         <!-- Card Gastos -->
         <div
-          class="bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 250px; height: 130px"
+          class="bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg rounded-xl p-5 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl w-full min-h-32"
         >
           <fa-icon
             [icon]="['fas', 'chart-line']"
@@ -147,7 +148,7 @@
           </div>
         </div>
 
-        <div
+        <!-- <div
           [ngClass]="{
             'bg-blue-100 ': isDay && weatherData?.weather[0]?.main === 'Clouds',
             'bg-yellow-100': isDay && weatherData?.weather[0]?.main === 'Clear',
@@ -165,8 +166,7 @@
               isNight && weatherData?.weather[0]?.main === 'Drizzle',
             'bg-gray-600': isNight && weatherData?.weather[0]?.main === 'Mist'
           }"
-          class="shadow-lg hover:shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105"
-          style="width: 200px; height: 130px"
+          class="shadow-lg hover:shadow-2xl rounded-xl p-6 flex flex-col items-center justify-center relative transform transition-transform duration-300 hover:scale-105 w-full min-h-32"
         >
           <fa-icon
             [icon]="[
@@ -233,10 +233,9 @@
           <span *ngIf="!weatherData" class="text-gray-500 mt-2 text-sm">
             No se ha configurado ubicación. Configúrala en el perfil.
           </span>
-        </div>
+        </div> -->
         <div
-          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-4 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-          style="width: 300px; height: 130px"
+          class="bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg rounded-xl p-4 flex flex-col items-start relative transform transition-transform duration-300 hover:scale-105 hover:shadow-xl w-full min-h-32"
         >
           <fa-icon
             [icon]="['fas', 'money-bill-wave']"
@@ -447,15 +446,11 @@
               {{ filteredExpenses.length }} total
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{
-                groupedExpenses["ARS"] | currency : "" : "symbol" : "1.0-0"
-              }}
+              {{ groupedExpenses["ARS"] | currency : "" : "symbol" : "1.0-0" }}
               ARS
             </span>
             <span class="text-gray-500 block text-base font-medium">
-              {{
-                groupedExpenses["USD"] | currency : "" : "symbol" : "1.0-0"
-              }}
+              {{ groupedExpenses["USD"] | currency : "" : "symbol" : "1.0-0" }}
               USD
             </span>
           </div>
@@ -631,7 +626,7 @@
         </div>
       </div>
 
-      <div class="bg-gray-50 shadow-md rounded-lg">
+      <div class="bg-gray-50 shadow-md rounded-lg overflow-x-auto">
         <div
           class="sort-controls flex items-center space-x-4 px-6 py-3 mb-4 border-b border-gray-300"
         >
@@ -748,7 +743,7 @@
 
               <th
                 *ngIf="!addingExpense && editingIndex === null"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell"
               >
                 <span>Fecha Ingreso</span>
                 <button
@@ -773,10 +768,9 @@
                 Valor *
               </th>
               <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell"
               >
                 <div class="flex flex-col space-y-2">
-                  <!-- Checkbox de Tarjeta -->
                   <div class="flex items-center justify-between">
                     <span>Tarjeta</span>
                     <label
@@ -828,7 +822,7 @@
                 Categoría *
               </th>
               <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell"
               >
                 Obs
               </th>
@@ -856,7 +850,6 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <!-- Fila editable para agregar un nuevo gasto -->
             <tr *ngIf="addingExpense" class="bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <label class="flex items-center cursor-pointer">
@@ -883,7 +876,7 @@
                   </div>
                 </label>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                 <input
                   type="date"
                   [(ngModel)]="currentExpense.date"
@@ -926,7 +919,6 @@
 
               <td class="px-6 py-4">
                 <div class="flex items-center space-x-2">
-                  <!-- Select de Tarjeta -->
                   <select
                     [(ngModel)]="currentExpense.cardId"
                     (change)="onCardSelectionChange()"
@@ -951,7 +943,6 @@
                     </option>
                   </select>
 
-                  <!-- Select de Cuotas (solo si Cuotas está activado) -->
                   <div *ngIf="isCuotasChecked" class="flex items-center">
                     <select
                       id="cuotas-select"
@@ -1056,7 +1047,6 @@
                     finanzas.
                   </p>
 
-                  <!-- Botón de acción para mejorar la interacción -->
                   <button
                     (click)="addExpense()"
                     class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition duration-300"
@@ -1071,7 +1061,6 @@
               </td>
             </tr>
 
-            <!-- Filas de los gastos existentes -->
             <tr
               *ngFor="let item of filteredExpenses; let i = index"
               [ngClass]="{
@@ -1080,7 +1069,8 @@
               }"
             >
               <ng-container *ngIf="editingIndex !== i">
-                <td class="px-6 py-4 whitespace-nowrap">
+                <!-- Columna de Pago -->
+                <td class="px-6 py-4">
                   <label class="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -1106,8 +1096,8 @@
                   </label>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <!-- Estado del gasto -->
+                <!-- Fecha a Pagar -->
+                <td class="px-6 py-4">
                   <span
                     [ngClass]="{
                       'text-green-600': item.status === 'Pagado',
@@ -1125,16 +1115,13 @@
                     }}
                   </span>
 
-                  <!-- Fecha del gasto -->
                   <div class="text-xs text-gray-500">
                     {{ formatDateDisplay(item.date) }}
                   </div>
 
-                  <!-- Separador vertical y detalles de tarjeta/cuotas -->
                   <div class="flex items-center mt-2">
                     <div *ngIf="item.cardId"></div>
 
-                    <!-- Icono de tarjeta -->
                     <fa-icon
                       *ngIf="item.cardId"
                       [icon]="['fas', 'credit-card']"
@@ -1146,7 +1133,6 @@
                       class="border-l border-gray-300 h-6 mx-2"
                     ></div>
 
-                    <!-- Mostrar "Sin cuotas" o Cuota X/Y -->
                     <div *ngIf="item.cardId" class="text-sm text-gray-700">
                       <p
                         *ngIf="!item.numCuotas"
@@ -1164,12 +1150,15 @@
                   </div>
                 </td>
 
+                <!-- Fecha Ingreso (ocultar en pantallas pequeñas) -->
                 <td
                   *ngIf="!addingExpense && editingIndex === null"
-                  class="px-6 py-4 whitespace-nowrap text-sm font-sans"
+                  class="px-6 py-4 text-sm font-sans hidden lg:table-cell"
                 >
                   {{ formatDateDisplayFor(item.timestamp) }}
                 </td>
+
+                <!-- Valor -->
                 <td class="px-6 py-4">
                   <ng-container *ngIf="item.currency === 'USD'">
                     <span class="mr-2 text-sm font-semibold text-gray-700"
@@ -1182,35 +1171,53 @@
                     >
                   </ng-container>
 
-                  <span class="text-sm font-semibold"
-                    >{{ item.value | numberFormat }}
+                  <span class="text-sm font-semibold">
+                    {{ item.value | numberFormat }}
                   </span>
                 </td>
 
-                <td *ngIf="item.cardId" class="px-6 py-4 whitespace-nowrap">
+                <!-- Tarjeta (ocultar en pantallas pequeñas) -->
+                <td *ngIf="item.cardId" class="px-6 py-4 hidden md:table-cell">
                   {{ getCardNameById(item.cardId) }}
                 </td>
                 <td
                   *ngIf="!item.cardId"
-                  class="px-6 py-4 whitespace-nowrap text-gray-500 italic font-light"
+                  class="px-6 py-4 text-gray-500 italic font-light hidden md:table-cell"
                 >
                   Vacío
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ item.name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ item.provider }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
+
+                <!-- Nombre del gasto -->
+                <td class="px-6 py-4 break-words">
+                  {{ item.name }}
+                </td>
+
+                <!-- Proveedor (ocultar en pantallas pequeñas) -->
+                <td class="px-6 py-4 break-words hidden lg:table-cell">
+                  {{ item.provider }}
+                </td>
+
+                <!-- Categoría -->
+                <td class="px-6 py-4 break-words">
                   {{ getCategoryName(item.category) }}
                 </td>
-                <td *ngIf="item.obs" class="px-6 py-4 whitespace-nowrap">
+
+                <!-- Observaciones (ocultar en pantallas pequeñas) -->
+                <td
+                  *ngIf="item.obs"
+                  class="px-6 py-4 break-words hidden md:table-cell"
+                >
                   {{ item.obs }}
                 </td>
                 <td
                   *ngIf="!item.obs"
-                  class="px-6 py-4 whitespace-nowrap text-gray-500 italic font-light"
+                  class="px-6 py-4 text-gray-500 italic font-light hidden md:table-cell"
                 >
                   Vacío
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
+
+                <!-- Acciones -->
+                <td class="px-6 py-4">
                   <button
                     class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition mr-1"
                     (click)="editExpense(item)"
@@ -1224,10 +1231,12 @@
                     <fa-icon [icon]="['fas', 'trash']"></fa-icon>
                   </button>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
+
+                <!-- Checkbox -->
+                <td class="px-6 py-4 text-center">
                   <label
                     class="checkbox-label cursor-pointer hover:bg-blue-100 transition-colors"
-                    title="Seleccionar todo"
+                    title="Seleccionar"
                   >
                     <input
                       type="checkbox"
@@ -1243,7 +1252,6 @@
           </tbody>
         </table>
       </div>
-      <!-- Modal de Bienvenida con lista de funcionalidades -->
       <div
         id="welcome-modal"
         class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50"

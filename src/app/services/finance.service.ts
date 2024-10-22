@@ -455,8 +455,26 @@ export class FinanceService {
 
       expenseData.date = formattedDate;
 
-      // Agregar el gasto a la colección 'gastos'
-      await this.addExpenseToFirebase(expenseData).toPromise();
+      // Verificar si el gasto ya existe en 'gastos' para este mes
+      const gastosCollection = collection(
+        this.firestore,
+        `users/${uid}/gastos`
+      );
+      const q = query(
+        gastosCollection,
+        where('name', '==', expenseData.name),
+        where('date', '==', expenseData.date)
+      );
+      const existingExpense = await getDocs(q);
+
+      if (existingExpense.empty) {
+        // Agregar el gasto a la colección 'gastos'
+        await this.addExpenseToFirebase(expenseData).toPromise();
+      } else {
+        console.log(
+          `El gasto fijo "${expenseData.name}" ya existe para este mes.`
+        );
+      }
     }
   }
 
