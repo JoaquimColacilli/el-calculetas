@@ -17,9 +17,44 @@
       </div>
 
       <div
+        class="flex items-center space-x-2 text-gray-600 text-sm border-l pl-4"
+        *ngIf="weatherData"
+      >
+        <fa-icon
+          [icon]="[
+            'fas',
+            isNight
+              ? weatherData?.weather[0]?.main === 'Clear'
+                ? 'moon'
+                : 'cloud-moon'
+              : weatherData?.weather[0]?.main === 'Clear'
+              ? 'sun'
+              : 'cloud'
+          ]"
+          class="text-gray-500"
+        ></fa-icon>
+        <span class="font-medium">
+          Clima Actual: {{ weatherData?.main?.temp | number : "1.1-1" }}°C
+        </span>
+      </div>
+      <div
+        *ngIf="!weatherData"
+        class="flex items-center space-x-2 text-gray-600 text-sm border-l pl-4"
+      >
+        <fa-icon
+          [icon]="['fas', 'exclamation-circle']"
+          class="text-gray-500"
+        ></fa-icon>
+        <span class="font-medium">Sin datos de clima</span>
+      </div>
+
+      <div
         class="flex items-center space-x-3 text-gray-700 text-md border-l pl-4"
       >
-        <fa-icon [icon]="['fas', 'code']" class="text-blue-500"></fa-icon>
+        <fa-icon
+          [icon]="['fas', 'code']"
+          class="text-blue-500 text-sm"
+        ></fa-icon>
         <span class="font-semibold">Versión: {{ version }}</span>
       </div>
     </div>

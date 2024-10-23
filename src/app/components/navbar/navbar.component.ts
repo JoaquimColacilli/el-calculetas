@@ -12,13 +12,14 @@ import {
   FontAwesomeModule,
 } from '@fortawesome/angular-fontawesome';
 import { SwitchAccountModalComponent } from '../pages/dashboard/account-management/switch-account-modal/switch-account-modal.component';
+import { WeatherService } from '../../services/weather.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, FontAwesomeModule, FormsModule],
   templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.css',
+  styleUrls: ['./navbar.component.css'],
 })
 export class NavbarComponent implements OnInit {
   @Input() navbarBackgroundColor: string = '#ffffff';
@@ -35,11 +36,17 @@ export class NavbarComponent implements OnInit {
 
   pageTitle: string = '';
 
+  // Variables para el clima
+  weatherData: any = null;
+  isDay: boolean = true;
+  isNight: boolean = false;
+
   constructor(
     library: FaIconLibrary,
     private authService: AuthService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private weatherService: WeatherService // Inyectar WeatherService
   ) {
     library.addIconPacks(fas);
     this.router.events.subscribe((event) => {
@@ -68,6 +75,7 @@ export class NavbarComponent implements OnInit {
       next: (data: any) => {
         this.userData = data;
         console.log(data);
+        this.getWeatherData(); // Obtener datos del clima después de cargar userData
       },
       error: (error: any) => {
         console.error(error);
@@ -131,5 +139,36 @@ export class NavbarComponent implements OnInit {
     this.authService.logout().subscribe(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  // Métodos para el clima
+  getWeatherData() {
+    if (this.userData?.ubicacion) {
+      const [city, countryCode] = this.userData.ubicacion
+        .split(',')
+        .map((s: any) => s.trim());
+      this.weatherService.getWeather(city, countryCode).subscribe({
+        next: (data: any) => {
+          this.weatherData = data;
+          this.calculateDayOrNight();
+        },
+        error: (error: any) => {
+          console.error('Error obteniendo los datos del clima:', error);
+        },
+      });
+    } else {
+      console.log('No hay ubicación configurada.');
+    }
+  }
+
+  calculateDayOrNight() {
+    if (this.weatherData) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      const sunrise = this.weatherData.sys.sunrise;
+      const sunset = this.weatherData.sys.sunset;
+
+      this.isDay = currentTime >= sunrise && currentTime <= sunset;
+      this.isNight = !this.isDay;
+    }
   }
 }

@@ -699,7 +699,7 @@
                     class="text-green-500 mr-2"
                   ></fa-icon>
                   <h3 class="text-xl font-semibold text-gray-50">
-                    v1.4.0 - Actualización Actual
+                    v1.4.0 - Actualización
                   </h3>
                 </div>
                 <ul class="list-disc list-inside text-gray-50 space-y-4">
@@ -860,6 +860,199 @@
                     class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
                     [title]="getReactionTitle(reaction)"
                     (click)="addOrRemoveReaction(reaction, messageId_7)"
+                    [ngClass]="{
+                      'ring-2 ring-blue-500 bg-blue-400 text-white':
+                        isReactionSelectedByUser(reaction),
+                      'ring-0': !isReactionSelectedByUser(reaction)
+                    }"
+                  >
+                    {{ reaction.emoji }} {{ reaction.count }}
+                  </div>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="flex items-start mb-6"
+            [attr.data-message-id]="messageId_8"
+          >
+            <img
+              [src]="userProfilePicture"
+              alt="Foto del Admin"
+              class="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+            <div
+              class="relative border border-gray-300 shadow-lg rounded-lg p-4 flex-1 message-container-msj-8 animate-gradient-x"
+              style="
+                background-image: url('https://pixelify.nyc3.cdn.digitaloceanspaces.com/wp-content/uploads/2020/06/20112726/runnerdesign_2020-3.jpg');
+              "
+            >
+              <div class="flex justify-between items-center">
+                <span class="text-gray-50 font-semibold">Joaquim 😊</span>
+              </div>
+              <p class="mt-2 text-gray-200 text-sm italic">
+                <fa-icon
+                  [icon]="['fas', 'clock']"
+                  class="text-white mr-2"
+                ></fa-icon>
+                Última actualización: v1.5.0 - 22/10/2024 - 21:50hs
+              </p>
+              <div class="mt-4">
+                <div class="flex items-center mb-2">
+                  <fa-icon
+                    [icon]="['fas', 'check-circle']"
+                    class="text-gray-200 mr-2"
+                  ></fa-icon>
+
+                  <h3
+                    class="text-xl font-semibold text-white flex items-center"
+                  >
+                    <span
+                      class="inline-flex items-center px-2 py-1 bg-opacity-40 bg-white text-black text-base font-bold rounded-lg backdrop-blur-lg shadow-md border border-white hover:bg-opacity-60 transition-transform transform hover:scale-105"
+                    >
+                      v1.5.0 - Actualización Actual
+                    </span>
+                  </h3>
+                </div>
+                <ul class="list-disc list-inside text-white space-y-4">
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'coins']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
+                    Mejorada la lógica para acumular correctamente los salarios
+                    ingresados a lo largo del tiempo en la sección de "Dinero en
+                    cuenta".
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'piggy-bank']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Implementada una nueva pantalla de "Ahorros", donde puedes
+                    visualizar y gestionar tus ahorros en ARS y USD.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'file-import']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Añadida la funcionalidad para importar automáticamente los
+                    gastos fijos al comienzo de cada mes.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'calendar-alt']"
+                      class="text-red-500 mr-3"
+                    ></fa-icon>
+                    Creada la lógica que resetea automáticamente la fecha de
+                    vencimiento de las tarjetas al comenzar un nuevo mes.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'credit-card']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Añadida la lógica para gestionar los gastos en cuotas,
+                    permitiendo que se reflejen automáticamente en el mes
+                    siguiente.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'sign-out-alt']"
+                      class="text-gray-500 mr-3"
+                    ></fa-icon>
+                    Corregido un bug que impedía a los usuarios cerrar sesión
+                    correctamente.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'exchange-alt']"
+                      class="text-gray-500 mr-3"
+                    ></fa-icon>
+                    Solucionado el problema que afectaba la funcionalidad del
+                    cambio de cuenta (switch account).
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'filter']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
+                    Añadida la opción para filtrar los gastos según la pantalla
+                    actual, facilitando la gestión en diferentes contextos.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'palette']"
+                      class="text-red-500 mr-3"
+                    ></fa-icon>
+                    Ahora puedes cambiar el color del aside del dashboard,
+                    personalizando aún más la interfaz.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'toggle-on']"
+                      class="text-blue-500 mr-3"
+                    ></fa-icon>
+                    Arreglado el bug relacionado con el toggle de gastos en
+                    diferentes pantallas.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'mobile-alt']"
+                      class="text-green-500 mr-3"
+                    ></fa-icon>
+                    Hecho el dashboard completamente responsive, garantizando
+                    una visualización óptima en cualquier dispositivo.
+                  </li>
+                  <li>
+                    <fa-icon
+                      [icon]="['fas', 'sun']"
+                      class="text-yellow-500 mr-3"
+                    ></fa-icon>
+                    El clima ha sido integrado en el navbar del dashboard,
+                    brindando una mejor experiencia de usuario.
+                  </li>
+                </ul>
+              </div>
+
+              <hr class="styled-hr mt-4" />
+
+              <div class="flex items-center mt-4 justify-start">
+                <fa-icon
+                  [icon]="['fas', 'smile']"
+                  class="text-white cursor-pointer"
+                  (click)="toggleReactionMenu('message_8')"
+                ></fa-icon>
+              </div>
+
+              <div
+                *ngIf="showReactionMenu_8"
+                class="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 flex space-x-4"
+              >
+                <span
+                  *ngFor="let reaction of reactions"
+                  class="reaction-emoji"
+                  (click)="addReaction(reaction, messageId_8)"
+                >
+                  {{ reaction.emoji }}
+                </span>
+              </div>
+
+              <!-- Mostrando las reacciones actuales -->
+              <div
+                *ngIf="selectedReactions_8.length > 0"
+                class="flex space-x-2 mt-4"
+              >
+                <span
+                  *ngFor="let reaction of selectedReactions_8"
+                  class="reaction-container"
+                >
+                  <div
+                    class="border border-blue-300 bg-blue-100 text-blue-800 rounded px-2 py-1"
+                    [title]="getReactionTitle(reaction)"
+                    (click)="addOrRemoveReaction(reaction, messageId_8)"
                     [ngClass]="{
                       'ring-2 ring-blue-500 bg-blue-400 text-white':
                         isReactionSelectedByUser(reaction),
