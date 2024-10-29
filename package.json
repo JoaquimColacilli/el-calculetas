@@ -34,6 +34,7 @@
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.4",
     "cropperjs": "^1.6.2",
+    "date-fns": "^4.1.0",
     "firebase": "^10.13.1",
     "flowbite": "^2.5.1",
     "jquery": "^3.7.1",

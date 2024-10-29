@@ -9,10 +9,10 @@ import {
   updateDoc,
   doc,
 } from '@angular/fire/firestore';
-import { Observable, of, throwError } from 'rxjs';
+import { from, Observable, of, throwError } from 'rxjs';
 import { FinanceInterface } from '../interfaces/finance.interface';
 import { AuthService } from '../services/auth.service';
-import { switchMap, catchError } from 'rxjs/operators';
+import { switchMap, catchError, take } from 'rxjs/operators';
 import {
   deleteDoc,
   DocumentReference,
@@ -22,6 +22,7 @@ import {
   where,
 } from 'firebase/firestore';
 import moment from 'moment';
+import { startOfMonth, isSameMonth } from 'date-fns';
 
 @Injectable({
   providedIn: 'root',
@@ -64,14 +65,17 @@ export class FinanceService {
 
   // FinanceService.ts
 
+  // En FinanceService
+
   addExpenseToFirebase(
     expense: FinanceInterface
   ): Observable<DocumentReference> {
     return this.authService.getUserData().pipe(
-      switchMap(async (userData) => {
+      take(1),
+      switchMap((userData) => {
         const uid = userData?.uid;
         if (!uid) {
-          throw new Error('Usuario no autenticado');
+          return throwError(() => new Error('Usuario no autenticado'));
         }
 
         const gastosCollection = collection(
@@ -79,42 +83,47 @@ export class FinanceService {
           `users/${uid}/gastos`
         );
 
-        // Guardar el gasto en la colección de gastos
-        const docRef = await addDoc(gastosCollection, {
-          ...expense,
-          timestamp: serverTimestamp(),
-        });
-
-        // Asegúrate de que el campo timestamp se resuelva correctamente
-        await updateDoc(docRef, { timestamp: serverTimestamp() });
-
-        // Si el gasto tiene cuotas y currentCuota es menor que numCuotas, agregarlo a 'expensesNextMonth'
-        if (
-          expense.numCuotas &&
-          expense.currentCuota &&
-          expense.currentCuota < expense.numCuotas
-        ) {
-          const expensesNextMonthCollection = collection(
-            this.firestore,
-            `users/${uid}/expensesNextMonth`
-          );
-
-          // Preparar el gasto para el próximo mes
-          const nextMonthExpense = {
+        // Convertir la promesa en un Observable usando 'from'
+        return from(
+          addDoc(gastosCollection, {
             ...expense,
-            date: '', // Mantener la fecha vacía para ser asignada cuando se importe
-            currentCuota: expense.currentCuota + 1, // Incrementar la cuota actual
-          };
-
-          // Usar el mismo ID del documento para mantener consistencia
-          const nextMonthDocRef = doc(expensesNextMonthCollection, docRef.id);
-          await setDoc(nextMonthDocRef, {
-            ...nextMonthExpense,
             timestamp: serverTimestamp(),
-          });
-        }
+          }).then(async (docRef) => {
+            // Asegurarse de que el campo timestamp se resuelva correctamente
+            await updateDoc(docRef, { timestamp: serverTimestamp() });
 
-        return docRef;
+            // Manejar cuotas
+            if (
+              expense.numCuotas &&
+              expense.currentCuota &&
+              expense.currentCuota < expense.numCuotas
+            ) {
+              const expensesNextMonthCollection = collection(
+                this.firestore,
+                `users/${uid}/expensesNextMonth`
+              );
+
+              // Preparar el gasto para el próximo mes
+              const nextMonthExpense = {
+                ...expense,
+                date: '', // Mantener la fecha vacía para ser asignada cuando se importe
+                currentCuota: expense.currentCuota + 1, // Incrementar la cuota actual
+              };
+
+              // Usar el mismo ID del documento para mantener consistencia
+              const nextMonthDocRef = doc(
+                expensesNextMonthCollection,
+                docRef.id
+              );
+              await setDoc(nextMonthDocRef, {
+                ...nextMonthExpense,
+                timestamp: serverTimestamp(),
+              });
+            }
+
+            return docRef;
+          })
+        );
       }),
       catchError((error) => {
         console.error('Error al agregar gasto a Firebase:', error);
@@ -417,11 +426,29 @@ export class FinanceService {
           throw new Error('Usuario no autenticado');
         }
 
-        // Importar gastos fijos desde 'gastosFijos'
-        await this.importFixedExpenses(uid);
+        // Obtener la fecha de la última importación
+        const lastImportDate = await this.authService
+          .getUserLastImportDate(uid)
+          .toPromise();
 
-        // Importar gastos con cuotas desde 'expensesNextMonth' si las fechas de vencimiento están configuradas
+        const now = new Date();
+        const startOfCurrentMonth = startOfMonth(now);
+
+        // Verificar si ya se realizó la importación este mes
+        if (lastImportDate && isSameMonth(lastImportDate, now)) {
+          console.log('La importación de gastos para este mes ya se realizó.');
+          return;
+        }
+
+        // Realizar la importación de gastos
+        await this.importFixedExpenses(uid);
         await this.importExpensesNextMonth(uid);
+
+        // Actualizar la fecha de la última importación
+        await this.authService.updateUserLastImportDate(
+          uid,
+          startOfCurrentMonth
+        );
 
         return;
       }),
@@ -433,6 +460,8 @@ export class FinanceService {
       })
     );
   }
+
+  // En FinanceService
 
   private async importFixedExpenses(uid: string): Promise<void> {
     const gastosFijosCollection = collection(
@@ -455,21 +484,27 @@ export class FinanceService {
 
       expenseData.date = formattedDate;
 
-      // Verificar si el gasto ya existe en 'gastos' para este mes
+      // Verificar si el gasto ya existe en 'gastos' usando el ID del gasto fijo
       const gastosCollection = collection(
         this.firestore,
         `users/${uid}/gastos`
       );
       const q = query(
         gastosCollection,
-        where('name', '==', expenseData.name),
+        where('fixedExpenseId', '==', docSnapshot.id),
         where('date', '==', expenseData.date)
       );
       const existingExpense = await getDocs(q);
 
       if (existingExpense.empty) {
+        // Agregar el campo 'fixedExpenseId' al gasto antes de guardarlo
+        const expenseWithFixedId = {
+          ...expenseData,
+          fixedExpenseId: docSnapshot.id,
+        };
+
         // Agregar el gasto a la colección 'gastos'
-        await this.addExpenseToFirebase(expenseData).toPromise();
+        await this.addExpenseToFirebase(expenseWithFixedId).toPromise();
       } else {
         console.log(
           `El gasto fijo "${expenseData.name}" ya existe para este mes.`
@@ -477,6 +512,8 @@ export class FinanceService {
       }
     }
   }
+
+  // En FinanceService
 
   private async importExpensesNextMonth(uid: string): Promise<void> {
     const expensesNextMonthCollection = collection(
@@ -490,77 +527,70 @@ export class FinanceService {
       return;
     }
 
-    // Obtener las tarjetas del usuario
-    const cardsCollection = collection(this.firestore, `users/${uid}/tarjetas`);
-    const cardsSnapshot = await getDocs(cardsCollection);
-
-    // Construir un mapa de cardId a datos de la tarjeta
-    const cardsMap = new Map<string, any>();
-    cardsSnapshot.forEach((docSnapshot) => {
-      const cardData = docSnapshot.data();
-      cardsMap.set(docSnapshot.id, cardData);
-    });
-
     for (const docSnapshot of querySnapshot.docs) {
       const expenseData = docSnapshot.data() as FinanceInterface;
 
-      const cardId = expenseData.cardId;
-      if (!cardId) {
-        console.warn(
-          `El gasto con ID ${docSnapshot.id} no tiene 'cardId' asociado.`
-        );
-        continue;
-      }
-
-      const cardData = cardsMap.get(cardId);
-      if (!cardData) {
-        console.warn(`La tarjeta con ID ${cardId} no existe.`);
-        continue;
-      }
-
-      // Verificar si la fecha de vencimiento de la tarjeta está configurada
-      if (!cardData.selectedDay || !cardData.selectedMonth) {
-        console.log(
-          `La tarjeta con ID ${cardId} no tiene fecha de vencimiento configurada. No se importará el gasto con ID ${docSnapshot.id}.`
-        );
-        continue;
-      }
-
-      // Establecer la fecha del gasto a la fecha de vencimiento de la tarjeta para este mes
-      const currentYear = new Date().getFullYear();
-      const expenseDate = new Date(
-        currentYear,
-        cardData.selectedMonth - 1,
-        cardData.selectedDay
+      // Establecer la fecha del gasto al primer día del mes actual
+      const today = new Date();
+      const firstDayOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
       );
-
-      const formattedDate = moment(expenseDate).format('DD/MM/YYYY');
+      const formattedDate = moment(firstDayOfMonth).format('DD/MM/YYYY');
 
       expenseData.date = formattedDate;
 
-      // Agregar el gasto a la colección 'gastos'
-      await this.addExpenseToFirebase(expenseData).toPromise();
+      // Verificar si el gasto ya existe en 'gastos' usando el ID del documento
+      const gastosCollection = collection(
+        this.firestore,
+        `users/${uid}/gastos`
+      );
+      const q = query(
+        gastosCollection,
+        where('nextMonthExpenseId', '==', docSnapshot.id),
+        where('date', '==', expenseData.date)
+      );
+      const existingExpense = await getDocs(q);
 
-      // Manejar cuotas
-      if (expenseData.numCuotas && expenseData.currentCuota) {
-        if (expenseData.currentCuota < expenseData.numCuotas) {
-          // Incrementar currentCuota
-          expenseData.currentCuota += 1;
+      if (existingExpense.empty) {
+        // Agregar el campo 'nextMonthExpenseId' al gasto antes de guardarlo
+        const expenseWithNextMonthId = {
+          ...expenseData,
+          nextMonthExpenseId: docSnapshot.id,
+        };
 
-          // Mantener date vacío para el próximo mes
-          expenseData.date = '';
+        // Agregar el gasto a la colección 'gastos'
+        await this.addExpenseToFirebase(expenseWithNextMonthId).toPromise();
 
-          // Actualizar el documento en 'expensesNextMonth'
-          const expenseDocRef = doc(
-            this.firestore,
-            `users/${uid}/expensesNextMonth/${docSnapshot.id}`
-          );
-          await updateDoc(expenseDocRef, {
-            ...expenseData,
-            timestamp: serverTimestamp(),
-          });
+        // Manejar cuotas
+        if (expenseData.numCuotas && expenseData.currentCuota) {
+          if (expenseData.currentCuota < expenseData.numCuotas) {
+            // Incrementar currentCuota
+            expenseData.currentCuota += 1;
+
+            // Mantener date vacío para el próximo mes
+            expenseData.date = '';
+
+            // Actualizar el documento en 'expensesNextMonth'
+            const expenseDocRef = doc(
+              this.firestore,
+              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+            );
+            await updateDoc(expenseDocRef, {
+              ...expenseData,
+              timestamp: serverTimestamp(),
+            });
+          } else {
+            // Si todas las cuotas se pagaron, eliminar de 'expensesNextMonth'
+            const expenseDocRef = doc(
+              this.firestore,
+              `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+            );
+            await deleteDoc(expenseDocRef);
+          }
         } else {
-          // Si todas las cuotas se pagaron, eliminar de 'expensesNextMonth'
+          // Si no es una cuota, eliminar de 'expensesNextMonth' después de agregar
           const expenseDocRef = doc(
             this.firestore,
             `users/${uid}/expensesNextMonth/${docSnapshot.id}`
@@ -568,12 +598,9 @@ export class FinanceService {
           await deleteDoc(expenseDocRef);
         }
       } else {
-        // Si no es una cuota, eliminar de 'expensesNextMonth' después de agregar
-        const expenseDocRef = doc(
-          this.firestore,
-          `users/${uid}/expensesNextMonth/${docSnapshot.id}`
+        console.log(
+          `El gasto con cuota "${expenseData.name}" ya existe para este mes.`
         );
-        await deleteDoc(expenseDocRef);
       }
     }
   }

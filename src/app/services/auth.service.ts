@@ -362,7 +362,7 @@ export class AuthService {
     const userDocRef = doc(this.firestore, `users/${uid}`);
     return docData(userDocRef).pipe(
       map((data: any) =>
-        data['lastImportDate'] ? data['lastImportDate'].toDate() : null
+        data.lastImportDate ? data.lastImportDate.toDate() : null
       )
     );
   }

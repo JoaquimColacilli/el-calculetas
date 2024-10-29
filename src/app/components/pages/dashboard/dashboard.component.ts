@@ -86,7 +86,7 @@ import { AhorrosService } from '../../../services/ahorros.service';
 
 import { DineroEnCuentaService } from '../../../services/dinero-en-cuenta.service';
 import { UserInterface } from '../../../interfaces/user.interface';
-import { Subscription } from 'rxjs';
+import { lastValueFrom, Subscription, take } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -264,7 +264,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.userSubscription = this.authService.user$.subscribe({
+    this.userSubscription = this.authService.user$.pipe(take(1)).subscribe({
       next: (user: any) => {
         if (user) {
           this.resetData();
@@ -944,7 +944,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   async saveExpense(): Promise<void> {
     this.isSaveAttempted = true;
 
-    // Validar si todos los campos requeridos están llenos
+    // Validar campos obligatorios
     if (
       !this.currentExpense.name ||
       !this.currentExpense.value ||
@@ -956,7 +956,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log(this.currentExpense.date);
+    // Formatear fecha y valor
     const validDate = this.formatDateDisplay(this.currentExpense.date);
     if (!validDate) {
       console.error(
@@ -967,60 +967,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
     this.currentExpense.date = validDate;
 
-    // Verificar cuotas
+    this.currentExpense.value = parseFloat(
+      this.currentExpense.value.replace(/\./g, '').replace(',', '.')
+    ).toFixed(2);
+
+    // Manejar cuotas
     if (this.isCuotasChecked) {
-      this.currentExpense.currentCuota = this.currentExpense.currentCuota || 1; // Si no hay cuota actual, inicializarla
-      this.currentExpense.numCuotas = this.numCuotas; // Actualizar el número de cuotas con el valor del select
+      this.currentExpense.currentCuota = this.currentExpense.currentCuota || 1;
+      this.currentExpense.numCuotas = this.numCuotas;
       this.currentExpense.nextMonth = true;
     } else {
       this.currentExpense.currentCuota = 0;
       this.currentExpense.numCuotas = 0;
     }
 
-    // Formatear valor numérico
-    this.currentExpense.value = parseFloat(
-      this.currentExpense.value.replace(/\./g, '').replace(',', '.')
-    ).toFixed(2);
-
+    // Actualizar estado
     if (this.currentExpense.isPaid) {
       this.currentExpense.status = 'Pagado';
     }
 
     try {
       if (this.editingIndex !== null && this.currentExpense.id) {
-        if (this.currentExpense.currentCuota) {
-          this.isCuotasChecked = true;
-        }
-
-        this.showEditExpense(this.currentExpense.name); // Notificación de edición
-        this.financeService
-          .updateExpense(this.currentExpense.id, this.currentExpense)
-          .subscribe({
-            next: () => {
-              console.log('Gasto actualizado exitosamente');
-              this.createEmptyExpense();
-
-              this.loadExpenses();
-            },
-            error: (error) => {
-              console.error('Error al actualizar el gasto:', error);
-            },
-          });
+        // Actualizar gasto existente
+        await lastValueFrom(
+          this.financeService.updateExpense(
+            this.currentExpense.id,
+            this.currentExpense
+          )
+        );
+        this.showEditExpense(this.currentExpense.name);
       } else {
+        // Agregar nuevo gasto
+        const docRef = await lastValueFrom(
+          this.financeService.addExpenseToFirebase(this.currentExpense)
+        );
+        this.currentExpense.id = docRef.id;
         this.showAddExpense(this.currentExpense.name);
-        this.financeService
-          .addExpenseToFirebase(this.currentExpense)
-          .subscribe({
-            next: (docRef) => {
-              this.currentExpense.id = docRef.id;
-              this.financeItems.unshift({ ...this.currentExpense });
-            },
-            error: (error) => {
-              console.error('Error al agregar el gasto:', error);
-            },
-          });
       }
 
+      // Resetear formulario y recargar datos
+      this.createEmptyExpense();
       this.calculateTotals();
       this.calculateCounts();
       this.calculateDineroRestante();
@@ -1028,7 +1014,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.cancelAddingExpense();
       this.toggleTodayDate();
       this.loadExpenses(); // Recargar los gastos
-      this.createEmptyExpense();
     } catch (error) {
       console.error('Error al guardar el gasto:', error);
     }
